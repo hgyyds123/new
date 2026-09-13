@@ -1,1 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>hg市 · MTR服务器贡献与成果</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
+    body {
+      background: #1a2533;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #e3edf5;
+      padding: 2rem 1rem 3rem;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #23303f;
+      border-radius: 2.5rem;
+      box-shadow: 0 25px 40px -8px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      padding: 2.5rem 2rem;
+      border: 1px solid #3c4d62;
+    }
+
+    /* 头部 */
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid #3a4b5e;
+      padding-bottom: 1.5rem;
+    }
+
+    .title-group h1 {
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #b3d9ff, #7bb3e6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.2rem;
+      text-shadow: 0 0 12px rgba(70, 150, 255, 0.2);
+    }
+
+    .title-group .subhead {
+      font-size: 1rem;
+      font-weight: 500;
+      background: #2f4055;
+      color: #b6d0e8;
+      display: inline-block;
+      padding: 0.25rem 1.2rem;
+      border-radius: 40px;
+      letter-spacing: 0.3px;
+      border: 1px solid #4e627a;
+      backdrop-filter: blur(2px);
+    }
+
+    .badge-server {
+      background: #1e2d3f;
+      color: #c3dcf2;
+      padding: 0.6rem 1.6rem;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      border: 1px solid #4d6a87;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      margin-top: 0.3rem;
+    }
+
+    .badge-server i {
+      color: #8fcbff;
+    }
+
+    /* 关键指标卡片 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2.8rem;
+    }
+
+    .stat-card {
+      background: #1b2939;
+      border-radius: 1.8rem;
+      padding: 1.4rem 0.8rem 1.2rem;
+      text-align: center;
+      border: 1px solid #3b5068;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+      transition: 0.15s ease;
+      cursor: pointer;
+    }
+
+    .stat-card:hover {
+      border-color: #6a8db0;
+      background: #22344a;
+    }
+
+    .stat-card .number {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: #b8d9ff;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #9bb4d0;
+      margin-top: 0.2rem;
+    }
+
+    .stat-card .icon {
+      font-size: 1.5rem;
+      color: #79b0e6;
+      margin-bottom: 0.2rem;
+      opacity: 0.9;
+    }
+
+    /* 弹窗 (Modal) */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #1e2d40;
+      border-radius: 2rem;
+      padding: 2rem 2.5rem;
+      max-width: 500px;
+      width: 90%;
+      border: 1px solid #4f7193;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+      animation: slideUp 0.3s ease;
+      position: relative;
+    }
+
+    .modal-box h2 {
+      font-size: 1.6rem;
+      color: #c9def5;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .modal-box h2 i {
+      color: #6ea6e6;
+    }
+
+    .modal-box .close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 1.8rem;
+      color: #8aaecf;
+      cursor: pointer;
+      transition: 0.15s;
+      background: none;
+      border: none;
+    }
+
+    .modal-box .close-btn:hover {
+      color: #cde2ff;
+      transform: scale(1.1);
+    }
+
+    .modal-box ul {
+      list-style: none;
+      margin: 1.2rem 0 0.5rem;
+      padding: 0;
+    }
+
+    .modal-box ul li {
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid #38506b;
+      color: #c2d7ed;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 1rem;
+    }
+
+    .modal-box ul li:last-child {
+      border-bottom: none;
+    }
+
+    .modal-box ul li i {
+      color: #79b0e6;
+      width: 1.5rem;
+      text-align: center;
+    }
+
+    .modal-box .route-tag {
+      background: #2b405a;
+      padding: 0.15rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: #b4d2f0;
+      border: 1px solid #4f6b89;
+      margin-left: auto;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* 贡献+成果双栏 */
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #d4e6fc;
+      margin: 2.2rem 0 1.8rem 0;
+    }
+
+    .section-title i {
+      color: #6da3dd;
+      font-size: 1.8rem;
+    }
+
+    .contrib-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 720px) {
+      .contrib-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      .container {
+        padding: 1.5rem 1rem;
+      }
+      .title-group h1 {
+        font-size: 2rem;
+      }
+      .modal-box {
+        padding: 1.5rem;
+      }
+    }
+
+    .contrib-item {
+      background: #1c2b3d;
+      border-radius: 1.8rem;
+      padding: 1.8rem 1.6rem;
+      border: 1px solid #3e556e;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+      transition: 0.15s;
+    }
+
+    .contrib-item:hover {
+      border-color: #5f81a3;
+      background: #1f3045;
+    }
+
+    .contrib-item h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #c9def5;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .contrib-item h3 i {
+      color: #6ea6e6;
+      font-size: 1.4rem;
+      width: 2rem;
+      text-align: center;
+    }
+
+    .contrib-item .highlight {
+      background: #2b405a;
+      padding: 0.2rem 0.9rem;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #b4d2f0;
+      display: inline-block;
+      margin: 0.3rem 0 0.6rem;
+      border: 1px solid #4f6b89;
+    }
+
+    .contrib-item p {
+      color: #c2d7ed;
+      margin-top: 0.5rem;
+      font-size: 0.98rem;
+    }
+
+    .contrib-item .metric-line {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin: 0.8rem 0 0.2rem;
+      background: #14212f;
+      padding: 0.5rem 1.2rem;
+      border-radius: 50px;
+      border: 1px solid #39506a;
+    }
+
+    .metric-line .value {
+      font-weight: 700;
+      color: #9ec4f0;
+      font-size: 1.2rem;
+    }
+
+    .metric-line .desc {
+      color: #a0bbd6;
+      font-size: 0.9rem;
+    }
+
+    /* 时间线 */
+    .timeline-block {
+      margin: 2.5rem 0 1rem;
+      background: #1a283b;
+      border-radius: 2rem;
+      padding: 1.8rem 1.8rem 2rem;
+      border: 1px solid #40576f;
+    }
+
+    .timeline-block h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #d0e4f9;
+      margin-bottom: 1.5rem;
+    }
+
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      border-bottom: 1px dashed #3e5670;
+      padding-bottom: 1rem;
+    }
+
+    .timeline-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .timeline-badge {
+      background: #2e4a6b;
+      color: #d6eaff;
+      font-weight: 600;
+      font-size: 0.75rem;
+      padding: 0.2rem 1rem;
+      border-radius: 30px;
+      white-space: nowrap;
+      margin-top: 0.1rem;
+      border: 1px solid #53759b;
+    }
+
+    .timeline-content {
+      flex: 1;
+    }
+
+    .timeline-content strong {
+      color: #c2daf5;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .timeline-content span {
+      color: #b0c9e3;
+      font-size: 0.95rem;
+    }
+
+    .footer-note {
+      margin-top: 2.8rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #3b5169;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      color: #9eb9d4;
+      font-size: 0.9rem;
+    }
+
+    .footer-note i {
+      color: #7cb0e8;
+      margin-right: 0.3rem;
+    }
+
+    .tag-group {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: #263b52;
+      padding: 0.2rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 500;
+      font-size: 0.75rem;
+      color: #c1d9f2;
+      border: 1px solid #4b6685;
+    }
+
+    @media (max-width: 480px) {
+      .badge-server {
+        font-size: 0.8rem;
+        padding: 0.4rem 1rem;
+      }
+      .stat-card .number {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <div class="title-group">
+        <h1>hg市</h1>
+        <div class="subhead">
+          <i class="fas fa-train" style="margin-right: 6px;"></i> 我的世界 · MTR 服务器中的虚拟城市
+        </div>
+      </div>
+      <div class="badge-server">
+        <i class="fas fa-crown"></i> 交通枢纽 · 目标旗舰城市
+      </div>
+    </div>
+
+    <!-- 关键数据看板 -->
+    <div class="stats-grid">
+      <div class="stat-card" id="routeCard">
+        <div class="icon"><i class="fas fa-plane-departure"></i></div>
+        <div class="number">6</div>
+        <div class="label">运营航路</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-plane"></i></div>
+        <div class="number">10</div>
+        <div class="label">飞机数量</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-clock"></i></div>
+        <div class="number">99.2%</div>
+        <div class="label">准点率</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i class="fas fa-users"></i></div>
+        <div class="number">0w</div>
+        <div class="label">日均乘客</div>
+      </div>
+    </div>
+
+    <!-- 贡献与成果 -->
+    <div class="section-title">
+      <i class="fas fa-code-branch"></i> 贡献 · 成果
+    </div>
+    <div class="contrib-grid">
+      <div class="contrib-item">
+        <h3><i class="fas fa-plug"></i> 交通贡献</h3>
+        <div class="highlight"><i class="far fa-clock"></i> 运营 3.5 年</div>
+        <p>hg市建设了全服首个 <strong>“4C机场”</strong> 大型枢纽，后升级为<strong>“4E机场”</strong> 并主导服务器机场系统，目标使服务器机场建设成为主流 <strong>34%</strong>。</p>
+        <div class="metric-line">
+          <span class="value"><i class="fas fa-route"></i> 6条</span>
+          <span class="desc">航线数量</span>
+        </div>
+        <div class="metric-line">
+          <span class="value"><i class="fas fa-building"></i> 2 座</span>
+          <span class="desc">机场</span>
+        </div>
+      </div>
+      <div class="contrib-item">
+        <h3><i class="fas fa-trophy"></i> 核心成果</h3>
+        <div class="highlight"><i class="fas fa-star"></i> 旗舰机场</div>
+        <p><strong>青韵机场</strong> 成为服务器内首个4E级机场，拥有2100m跑道、2座航站楼，并率先实现I类精密进近。</p>
+        <div class="metric-line">
+          <span class="value"><i class="fas fa-flag-checkered"></i> 4E</span>
+          <span class="desc">飞行区等级</span>
+        </div>
+        <div class="metric-line">
+          <span class="value"><i class="fas fa-train"></i> 2 条</span>
+          <span class="desc">城际航线</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 里程碑 -->
+    <div class="timeline-block">
+      <h3><i class="fas fa-history"></i> 里程碑 · 交通</h3>
+      <div class="timeline-list">
+        <div class="timeline-item">
+          <div class="timeline-badge">1</div>
+          <div class="timeline-content">
+            <strong>◈ hg机场---长町 </strong>
+            <span>连接服务器内繁华的两座城市，日均客流突破 0 人</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-badge">2</div>
+          <div class="timeline-content">
+            <strong>◈ hg机场---定溪</strong>
+            <span>“第一座帮扶机场” 落成，实现第二条线路。</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-badge">3</div>
+          <div class="timeline-content">
+            <strong>◈ 青韵机场建设</strong>
+            <span>【青云机场基本建造参数通报】<br>
+            · 航站楼：2座，4E级<br>
+            · 跑道：长度2100m，宽度63m，飞行区指标4E（指标I=4，指标II=E）<br>
+            · 运行类别：I类精密<br>
+            · 跑道入口：未内移 <br>
+            · 平行滑行道：有，宽度23m<br>
+            · 跑道端安全区：一端有，长度60m<br>
+            · 机场海拔：102 m<br>
+            · 周边障碍物：无。</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-badge">未来</div>
+          <div class="timeline-content">
+            <strong>◈ 城市CBD计划</strong>
+            <span>预计建设hg市CBD。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 徽章 -->
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.8rem 0 0.5rem; justify-content: center;">
+      <span style="background: #243b53; padding: 0.4rem 1.6rem; border-radius: 40px; font-weight: 500; color: #b8d6f5; border: 1px solid #4f7193;"><i class="fas fa-check-circle" style="color: #6aa8f0;"></i> 目标全服最大车站</span>
+      <span style="background: #243b53; padding: 0.4rem 1.6rem; border-radius: 40px; font-weight: 500; color: #b8d6f5; border: 1px solid #4f7193;"><i class="fas fa-paint-brush"></i> 0种特色站台</span>
+      <span style="background: #243b53; padding: 0.4rem 1.6rem; border-radius: 40px; font-weight: 500; color: #b8d6f5; border: 1px solid #4f7193;"><i class="fas fa-rocket"></i> 0项模组适配</span>
+    </div>
+
+    <!-- 底部 -->
+    <div class="footer-note">
+      <div>
+        <i class="fas fa-map-pin"></i> hg市 · MTR 服务器贡献与成果
+      </div>
+      <div class="tag-group">
+        <span class="tag"><i class="far fa-calendar-alt"></i> 8月10日建设CBD</span>
+        <span class="tag"><i class="fas fa-train"></i> MTR 4.0</span>
+        <span class="tag"><i class="fas fa-certificate"></i> 滚木滚木滚木</span>
+      </div>
+    </div>
+
+    <div style="margin-top: 1.2rem; font-size: 0.75rem; color: #7b97b8; text-align: right; border-top: 1px solid #36506a; padding-top: 1rem;">
+      <i class="fas fa-asterisk" style="color: #6095d0;"></i> 网页由ai生成。
+    </div>
+  </div>
+
+  <!-- ===== 弹窗 (Modal) ===== -->
+  <div class="modal-overlay" id="routeModal">
+    <div class="modal-box">
+      <button class="close-btn" id="closeModalBtn">&times;</button>
+      <h2><i class="fas fa-route"></i> 运营航路详情</h2>
+      <ul>
+        <li><i class="fas fa-location-dot"></i> hg机场 → 长町 <span class="route-tag">国内</span></li>
+        <li><i class="fas fa-location-dot"></i> hg机场 → 定溪 <span class="route-tag">国内</span></li>
+        <li><i class="fas fa-location-dot"></i> hg机场 → 青 <span class="route-tag">国内</span></li>
+        <li><i class="fas fa-location-dot"></i> 青韵机场 → 长町 <span class="route-tag">国内</span></li>
+        <li><i class="fas fa-location-dot"></i> 青韵机场 → 星落 <span class="route-tag">国际</span></li>
+        <li><i class="fas fa-location-dot"></i> 青韵机场 → 云栖 <span class="route-tag">国际</span></li>
+      </ul>
+      <p style="margin-top: 0.8rem; color: #9bb4d0; font-size: 0.85rem; border-top: 1px solid #38506b; padding-top: 0.8rem;">
+        <i class="fas fa-info-circle"></i> 共 6 条航路，覆盖 5 座城市
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== JavaScript ===== -->
+  <script>
+    (function() {
+      const modal = document.getElementById('routeModal');
+      const openBtn = document.getElementById('routeCard');
+      const closeBtn = document.getElementById('closeModalBtn');
+
+      // 打开弹窗
+      function openModal() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // 禁止背景滚动
+      }
+
+      // 关闭弹窗
+      function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      // 点击卡片打开
+      openBtn.addEventListener('click', openModal);
+
+      // 点击关闭按钮
+      closeBtn.addEventListener('click', closeModal);
+
+      // 点击弹窗背景（遮罩）关闭
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      // ESC 键关闭
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          closeModal();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
