@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机场世界 · BKK </title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(circle at 30% 10%, #0b1a2b 0%, #03080f 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 1.5rem; color: #e3e9f1;
+        }
+
+        .resume-card {
+            max-width: 1100px; width: 100%;
+            background: rgba(12, 22, 35, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 180, 255, 0.25);
+            border-radius: 2.5rem 2.5rem 2rem 2rem;
+            box-shadow: 0 30px 50px -15px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,255,255,0.1) inset;
+            padding: 2.5rem 2.2rem 2.2rem 2.2rem;
+            position: relative; overflow: hidden;
+        }
+
+        .resume-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, #00c8ff, #4d9fff, #00c8ff);
+            opacity: 0.7; box-shadow: 0 0 15px #00a6ff;
+        }
+
+        .radar-bg {
+            position: absolute; top: -80px; right: -80px; width: 300px; height: 300px;
+            border-radius: 50%; border: 1px dashed rgba(0,180,255,0.15);
+            pointer-events: none; z-index: 0;
+        }
+        .radar-bg::after {
+            content: ''; position: absolute; top: 60px; left: 60px;
+            width: 180px; height: 180px; border-radius: 50%;
+            border: 1px dashed rgba(0,180,255,0.2);
+        }
+
+        .plane-icon {
+            position: absolute; font-size: 1.6rem; opacity: 0.25; color: #4db8ff;
+            transform: rotate(-15deg); right: 2rem; bottom: 1.5rem;
+            z-index: 0; pointer-events: none;
+        }
+
+        .content { position: relative; z-index: 2; }
+
+        .header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 1px solid rgba(0,180,255,0.3);
+            padding-bottom: 1.2rem; margin-bottom: 1.5rem;
+            flex-wrap: wrap; gap: 0.8rem;
+        }
+
+        .badge {
+            background: rgba(0,150,255,0.15); border-left: 4px solid #00a6ff;
+            padding: 0.4rem 1rem; border-radius: 30px;
+            font-size: 0.8rem; font-weight: 600; letter-spacing: 1px;
+            color: #7ac8ff; text-transform: uppercase;
+            display: inline-block; margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2.6rem; font-weight: 700; letter-spacing: -0.5px;
+            line-height: 1.2; background: linear-gradient(to right, #fff, #b8e2ff);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            display: flex; align-items: center; gap: 0.7rem;
+        }
+        h1 span {
+            font-size: 1.8rem; background: rgba(0,160,255,0.2);
+            border-radius: 50px; padding: 0 0.6rem; color: #6bc4ff;
+        }
+
+        .subhead {
+            font-size: 1rem; color: #9bb8da; margin-top: 0.3rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .subhead .dot {
+            width: 6px; height: 6px; background: #00e0a0;
+            border-radius: 50%; display: inline-block;
+            box-shadow: 0 0 8px #00e0a0;
+        }
+
+        .motto {
+            font-style: italic; color: #aac7e8;
+            border-left: 2px solid #00a6ff;
+            padding-left: 1rem; margin: 1rem 0 1.8rem 0; font-size: 1.1rem;
+        }
+        .motto i { color: #00c3ff; margin-right: 0.3rem; }
+
+        .grid-2 {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 1.8rem; margin-bottom: 1.8rem;
+        }
+
+        .panel {
+            background: rgba(0,30,60,0.35);
+            border: 1px solid rgba(0,150,255,0.2);
+            border-radius: 1.5rem; padding: 1.5rem 1.4rem;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 10px 20px -10px rgba(0,0,0,0.6);
+        }
+
+        .panel-title {
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px;
+            color: #5f9fd9; margin-bottom: 1.2rem;
+            display: flex; align-items: center; gap: 0.5rem; font-weight: 600;
+        }
+        .panel-title i { font-size: 1.1rem; }
+
+        .info-table { display: flex; flex-direction: column; gap: 0.9rem; }
+        .info-row {
+            display: flex; justify-content: space-between; font-size: 0.98rem;
+            border-bottom: 1px dashed rgba(70,130,200,0.25); padding-bottom: 0.6rem;
+        }
+        .info-label { color: #8aa9ca; font-weight: 500; }
+        .info-value { font-weight: 600; color: #e0efff; text-align: right; }
+        .info-value.airport { color: #aad4ff; font-weight: 700; }
+
+        .fleet-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .fleet-table th {
+            text-align: left; color: #6b9dc9; font-weight: 600;
+            font-size: 0.7rem; letter-spacing: 0.8px; text-transform: uppercase;
+            padding-bottom: 0.6rem; border-bottom: 1px solid rgba(0,150,255,0.3);
+        }
+        .fleet-table td {
+            padding: 0.7rem 0.2rem 0.7rem 0;
+            border-bottom: 1px solid rgba(60,110,170,0.2); color: #d3e5fc;
+        }
+        .fleet-table tr:last-child td { border-bottom: none; }
+        .aircraft-type { font-weight: 600; color: #b3dcff; }
+        .badge-sm {
+            background: rgba(0,180,255,0.2); border-radius: 30px;
+            padding: 0.15rem 0.5rem; font-size: 0.7rem;
+            font-weight: 700; color: #8ecbff; margin-left: 0.4rem;
+        }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 1rem; margin-top: 0.5rem;
+        }
+        .stat-item {
+            background: rgba(0,70,130,0.2); border-radius: 1rem;
+            padding: 0.9rem 0.8rem;
+            border: 1px solid rgba(0,180,255,0.15);
+        }
+        .stat-label {
+            font-size: 0.7rem; text-transform: uppercase; color: #6f97bf;
+            letter-spacing: 0.5px; margin-bottom: 0.25rem;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        .stat-value small { font-size: 0.8rem; font-weight: 500; color: #9dc4f0; margin-left: 0.2rem; }
+
+        .achievement-list { list-style: none; display: flex; flex-direction: column; gap: 0.8rem; }
+        .achievement-list li {
+            display: flex; align-items: flex-start; gap: 0.7rem;
+            font-size: 0.92rem; color: #c9defa;
+        }
+        .achievement-list li::before {
+            content: "✓"; color: #00e0b0; font-weight: 700;
+            background: rgba(0,224,176,0.15);
+            width: 1.3rem; height: 1.3rem; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; flex-shrink: 0; margin-top: 0.1rem;
+        }
+        .highlight { color: #ffd966; font-weight: 600; }
+
+        .philosophy {
+            background: linear-gradient(135deg, rgba(0,80,130,0.3) 0%, rgba(0,40,70,0.2) 100%);
+            border-radius: 1.5rem; padding: 1.4rem 1.6rem;
+            margin: 1.5rem 0 1rem 0;
+            border: 1px solid rgba(0,170,255,0.25);
+        }
+        .philosophy p {
+            font-size: 1rem; line-height: 1.6; color: #c2d9f0; margin-bottom: 0.8rem;
+        }
+        .philosophy p:last-child { margin-bottom: 0; }
+        .philosophy strong { color: #8ecbff; font-weight: 600; }
+        .quote-mark { font-size: 2rem; color: #3a7bb0; line-height: 1; margin-right: 0.2rem; vertical-align: middle; }
+
+        .footer {
+            display: flex; justify-content: space-between; margin-top: 1.8rem;
+            font-size: 0.8rem; color: #5e7e9e;
+            border-top: 1px solid rgba(70,130,200,0.3);
+            padding-top: 1.2rem; flex-wrap: wrap; gap: 0.5rem;
+        }
+        .footer span i { color: #4da6ff; margin-right: 0.3rem; }
+
+        .runway-line {
+            display: inline-block; width: 24px; height: 2px;
+            background: #00a6ff; margin-right: 6px; vertical-align: middle;
+            box-shadow: 0 0 6px #00a6ff;
+        }
+
+        .signature { font-family: 'Courier New', monospace; font-size: 0.75rem; color: #4379a8; }
+
+        @media (max-width: 750px) {
+            .resume-card { padding: 1.6rem 1.2rem; border-radius: 1.5rem; }
+            h1 { font-size: 1.9rem; }
+            .grid-2 { grid-template-columns: 1fr; gap: 1.4rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .badge { font-size: 0.7rem; }
+        }
+        @media (max-width: 400px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .info-row { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="resume-card">
+        <div class="radar-bg"></div>
+        <div class="plane-icon">✈️</div>
+
+        <div class="content">
+            <!-- 头部 -->
+            <div class="header">
+                <div>
+                    <div class="badge">✈️ 机场世界 · 玄武航空 X-Win Air · BKK</div>
+                    <h1>
+                        玄武航空 X-Win Air
+                        <span>★★★</span>
+                    </h1>
+                    <div class="subhead">
+                        <span class="dot"></span> 曼谷素万那普机场 (BKK) · 主基地
+                    </div>
+                </div>
+                <div class="signature"># WoA · 机场世界</div>
+            </div>
+
+            <!-- 两列：基本信息 + 运营数据 -->
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-title"><i>🛫</i> 基本信息 / 管理方向</div>
+                    <div class="info-table">
+                        <div class="info-row">
+                            <span class="info-label">名称</span>
+                            <span class="info-value">玄武航空 X-Win Air </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">当前等级 满级</span>
+                            <span class="info-value">机场等级 ★★★</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">主基地</span>
+                            <span class="info-value airport">曼谷素万那普 (BKK)</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">枢纽联动</span>
+                            <span class="info-value">HKG  · MCT · LHR</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">机队</span>
+                            <span class="info-value">A21NY A359 A388 B744</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.2rem; font-size: 0.85rem; color: #87b0d6; background: rgba(0,100,180,0.1); padding: 0.7rem 1rem; border-radius: 1rem;">
+                        <span class="runway-line"></span> 以 BKK 为圆心，辐射亚洲与欧洲高收益航线。
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title"><i>📊</i> 运营数据</div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">地勤人员</div>
+                            <div class="stat-value">273<small>人</small></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">BKK 机位</div>
+                            <div class="stat-value">全解锁</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.2rem; font-size: 0.85rem; color: #87b0d6; display: flex; justify-content: space-between;">
+                        <span>🛬 设备投入: 90 件</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 机队规模 -->
+            <div class="panel" style="margin-bottom: 1.5rem;">
+                <div class="panel-title"><i>✈️</i> 机队规模 · 30余架 · 以 BKK 为基地</div>
+                <table class="fleet-table">
+                    <thead>
+                        <tr>
+                            <th>类别</th>
+                            <th>数量</th>
+                            <th>代表机型</th>
+                            <th>定位</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="aircraft-type">C 级（窄体）</span> <span class="badge-sm">主力</span></td>
+                            <td>18</td>
+                            <td>A21NY</td>
+                            <td>覆盖亚洲与部分欧洲，性价比极高</td>
+                        </tr>
+                        <tr>
+                            <td><span class="aircraft-type">E 级（宽体）</span></td>
+                            <td>5</td>
+                            <td>A359 B744</td>
+                            <td>BKK 远程高收益，兼顾 银币 产出</td>
+                        </tr>
+                        <tr>
+                            <td><span class="aircraft-type">F 级（超大型）</span></td>
+                            <td>4</td>
+                            <td>A388</td>
+                            <td>旗舰航线，XP 与银币担当</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.8rem 1.5rem; margin-top: 1.2rem; font-size: 0.85rem; color: #9ec2e8;">
+                    <span>🔹 BKK ↔ HKG (1900 km) · A21NY</span>
+                    <span>🔹 BKK ↔ LHR (9500 km) · B744</span>
+                    <span>🔹 BKK ↔ MCT (4300 km) · B748</span>
+                </div>
+            </div>
+
+            <!-- 成就 + 机队哲学 -->
+            <div class="grid-2" style="margin-bottom: 1rem;">
+                <div class="panel">
+                    <div class="panel-title"><i>🏆</i> 成就解锁</div>
+                    <ul class="achievement-list">>
+                        <li><span><span class="highlight">枢纽联动</span> · BKK 与 HKG、MCT、LHR 稳定互派</span></li>
+                        <li><span><span class="highlight">全机位解锁</span> · 素万那普 (BKK)</span></li>
+                    </ul>
+                </div>
+
+            <!-- 底部 -->
+            <div class="footer">
+                <span><i>📧</i> hgyyds123456789@163.com</span>
+            </div>
+            <div style="text-align: right; margin-top: 0.5rem; font-size: 0.7rem; color: #38658b; letter-spacing: 1px;">
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
