@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天室 · hgt.l.cd</title>
+    <script src="/auth.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 28px 24px;
+            max-width: 560px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        h1 { font-size: 22px; color: #333; margin-bottom: 16px; text-align: center; }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            background: #f7f8fc;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg {
+            background: #fff;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            color: #333;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            word-break: break-word;
+        }
+
+        .msg .name {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .input-row { display: flex; gap: 10px; }
+
+        .input-row input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.25s;
+        }
+
+        .input-row input:focus { border-color: #667eea; }
+
+        .input-row button {
+            background: #667eea;
+            color: #fff;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .input-row button:hover { background: #5568d3; }
+
+        .placeholder-tip {
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>💬 聊天室</h1>
+        <div class="messages" id="messages">
+            <div class="msg">
+                <span class="name">系统</span>
+                门禁已通过。聊天功能还没接后端，下面输入框目前只是界面演示。
+            </div>
+        </div>
+        <div class="input-row">
+            <input type="text" id="msgInput" placeholder="说点什么…">
+            <button id="sendBtn">发送</button>
+        </div>
+        <div class="placeholder-tip">接上 CloudBase 后才能真正收发消息</div>
+    </div>
+
+    <script>
+        // ===== 本地演示：自己发自己看 =====
+        const messages = document.getElementById("messages");
+        const msgInput = document.getElementById("msgInput");
+        const sendBtn = document.getElementById("sendBtn");
+
+        sendBtn.addEventListener("click", function () {
+            const text = msgInput.value.trim();
+            if (!text) return;
+            const div = document.createElement("div");
+            div.className = "msg";
+            div.innerHTML = '<span class="name">我</span>' + text;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+            msgInput.value = "";
+        });
+
+        msgInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") sendBtn.click();
+        });
+    </script>
+</body>
+</html>
