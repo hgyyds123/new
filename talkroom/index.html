@@ -37,10 +37,22 @@
             text-align: center;
             font-size: 13px;
             color: #888;
-            margin-bottom: 14px;
+            margin-bottom: 6px;
         }
 
         .my-nickname span {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .online-info {
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 14px;
+        }
+
+        .online-info span {
             color: #667eea;
             font-weight: 600;
         }
@@ -115,6 +127,7 @@
     <div class="card">
         <h1>💬 聊天室</h1>
         <div class="my-nickname">当前昵称：<span id="myNickname">…</span></div>
+        <div class="online-info">在线：<span id="onlineCount">0</span> 人</div>
         <div class="messages" id="messages">
             <div class="msg">
                 <span class="name">系统</span>
@@ -158,20 +171,42 @@
         const sendBtn = document.getElementById("sendBtn");
         const statusTip = document.getElementById("statusTip");
 
-        // ===== 只订阅实时消息，不加载历史 =====
+        // ===== 连接聊天室 + 在线状态 =====
         function initChat() {
             messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>已连接，你只能看到进来之后的消息。</div>';
             statusTip.textContent = "已连接";
 
-            db.channel("messages-channel")
-                .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-                    if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
-                        messagesEl.innerHTML = "";
+            // 用昵称作为唯一标识来追踪在线状态
+            const channel = db.channel("messages-channel", {
+                config: {
+                    presence: {
+                        key: nickname
                     }
-                    renderMessage(payload.new);
-                    scrollToBottom();
-                })
-                .subscribe();
+                }
+            });
+
+            // 监听新消息
+            channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+                if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
+                    messagesEl.innerHTML = "";
+                }
+                renderMessage(payload.new);
+                scrollToBottom();
+            });
+
+            // 监听在线状态变化
+            channel.on("presence", { event: "sync" }, () => {
+                const state = channel.presenceState();
+                const onlineCount = Object.keys(state).length;
+                document.getElementById("onlineCount").textContent = onlineCount;
+            });
+
+            // 订阅频道并报到
+            channel.subscribe(async (status) => {
+                if (status === "SUBSCRIBED") {
+                    await channel.track({ nickname: nickname });
+                }
+            });
         }
 
         function renderMessage(row) {
