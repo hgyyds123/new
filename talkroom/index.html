@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>聊天室 · hgt.l.cd</title>
     <script src="/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -89,11 +90,12 @@
 
         .input-row button:hover { background: #5568d3; }
 
-        .placeholder-tip {
+        .status-tip {
             text-align: center;
             font-size: 12px;
             color: #aaa;
             margin-top: 10px;
+            min-height: 16px;
         }
     </style>
 </head>
@@ -103,36 +105,122 @@
         <div class="messages" id="messages">
             <div class="msg">
                 <span class="name">系统</span>
-                门禁已通过。聊天功能还没接后端，下面输入框目前只是界面演示。
+                正在连接聊天室…
             </div>
         </div>
         <div class="input-row">
             <input type="text" id="msgInput" placeholder="说点什么…">
             <button id="sendBtn">发送</button>
         </div>
-        <div class="placeholder-tip">接上 CloudBase 后才能真正收发消息</div>
+        <div class="status-tip" id="statusTip"></div>
     </div>
 
     <script>
-        // ===== 本地演示：自己发自己看 =====
-        const messages = document.getElementById("messages");
+        // ===== 屏蔽词配置（按需增删） =====
+        const BLOCKED_WORDS = [
+            "脏话1", "脏话2", "广告", "加群", "代练"
+        ];
+
+        function containsBlockedWord(text) {
+            return BLOCKED_WORDS.some(word => text.includes(word));
+        }
+
+        // ===== Supabase 初始化 =====
+        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
+
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const messagesEl = document.getElementById("messages");
         const msgInput = document.getElementById("msgInput");
         const sendBtn = document.getElementById("sendBtn");
+        const statusTip = document.getElementById("statusTip");
 
-        sendBtn.addEventListener("click", function () {
-            const text = msgInput.value.trim();
-            if (!text) return;
+        // ===== 加载历史消息 + 订阅实时更新 =====
+        async function initChat() {
+            // 先拉取已有消息
+            const { data, error } = await db
+                .from("messages")
+                .select("*")
+                .order("created_at", { ascending: true });
+
+            if (error) {
+                console.error("加载失败:", error);
+                statusTip.textContent = "加载失败，请刷新重试";
+                return;
+            }
+
+            messagesEl.innerHTML = "";
+            if (data.length === 0) {
+                messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>还没有消息，来说第一句吧。</div>';
+            } else {
+                data.forEach(renderMessage);
+            }
+            statusTip.textContent = "已连接";
+            scrollToBottom();
+
+            // 订阅新消息
+            db.channel("messages-channel")
+                .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+                    if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
+                        messagesEl.innerHTML = "";
+                    }
+                    renderMessage(payload.new);
+                    scrollToBottom();
+                })
+                .subscribe();
+        }
+
+        function renderMessage(row) {
             const div = document.createElement("div");
             div.className = "msg";
-            div.innerHTML = '<span class="name">我</span>' + text;
-            messages.appendChild(div);
-            messages.scrollTop = messages.scrollHeight;
+            div.innerHTML = `<span class="name">${escapeHtml(row.nickname || "匿名")}</span>${escapeHtml(row.content)}`;
+            messagesEl.appendChild(div);
+        }
+
+        function scrollToBottom() {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        // ===== 发送消息 =====
+        async function sendMessage() {
+            const text = msgInput.value.trim();
+            if (!text) return;
+
+            if (containsBlockedWord(text)) {
+                alert("消息包含不允许的内容，请修改后再发送");
+                return;
+            }
+
             msgInput.value = "";
+            const { error } = await db.from("messages").insert({
+                content: text,
+                nickname: "同学"
+            });
+
+            if (error) {
+                console.error("发送失败:", error);
+                alert("发送失败，请检查网络");
+            }
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        msgInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") sendMessage();
         });
 
-        msgInput.addEventListener("keydown", function (e) {
-            if (e.key === "Enter") sendBtn.click();
-        });
+        // 防 XSS
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        initChat();
     </script>
 </body>
 </html>
