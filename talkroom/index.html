@@ -31,7 +31,19 @@
             height: 80vh;
         }
 
-        h1 { font-size: 22px; color: #333; margin-bottom: 16px; text-align: center; }
+        h1 { font-size: 22px; color: #333; margin-bottom: 6px; text-align: center; }
+
+        .my-nickname {
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 14px;
+        }
+
+        .my-nickname span {
+            color: #667eea;
+            font-weight: 600;
+        }
 
         .messages {
             flex: 1;
@@ -102,6 +114,7 @@
 <body>
     <div class="card">
         <h1>💬 聊天室</h1>
+        <div class="my-nickname">当前昵称：<span id="myNickname">…</span></div>
         <div class="messages" id="messages">
             <div class="msg">
                 <span class="name">系统</span>
@@ -125,6 +138,14 @@
             return BLOCKED_WORDS.some(word => text.includes(word));
         }
 
+        // ===== 昵称设置 =====
+        let nickname = sessionStorage.getItem("chat_nickname");
+        if (!nickname) {
+            nickname = prompt("请输入你的昵称：") || "匿名";
+            sessionStorage.setItem("chat_nickname", nickname);
+        }
+        document.getElementById("myNickname").textContent = nickname;
+
         // ===== Supabase 初始化 =====
         const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
@@ -139,7 +160,6 @@
 
         // ===== 加载历史消息 + 订阅实时更新 =====
         async function initChat() {
-            // 先拉取已有消息
             const { data, error } = await db
                 .from("messages")
                 .select("*")
@@ -160,7 +180,6 @@
             statusTip.textContent = "已连接";
             scrollToBottom();
 
-            // 订阅新消息
             db.channel("messages-channel")
                 .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
                     if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
@@ -196,7 +215,7 @@
             msgInput.value = "";
             const { error } = await db.from("messages").insert({
                 content: text,
-                nickname: "同学"
+                nickname: nickname
             });
 
             if (error) {
