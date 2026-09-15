@@ -158,27 +158,10 @@
         const sendBtn = document.getElementById("sendBtn");
         const statusTip = document.getElementById("statusTip");
 
-        // ===== 加载历史消息 + 订阅实时更新 =====
-        async function initChat() {
-            const { data, error } = await db
-                .from("messages")
-                .select("*")
-                .order("created_at", { ascending: true });
-
-            if (error) {
-                console.error("加载失败:", error);
-                statusTip.textContent = "加载失败，请刷新重试";
-                return;
-            }
-
-            messagesEl.innerHTML = "";
-            if (data.length === 0) {
-                messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>还没有消息，来说第一句吧。</div>';
-            } else {
-                data.forEach(renderMessage);
-            }
+        // ===== 只订阅实时消息，不加载历史 =====
+        function initChat() {
+            messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>已连接，你只能看到进来之后的消息。</div>';
             statusTip.textContent = "已连接";
-            scrollToBottom();
 
             db.channel("messages-channel")
                 .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
