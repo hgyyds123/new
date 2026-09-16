@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>更新日志 · hgt.l.cd</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 640px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 40px 36px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 { font-size: 26px; color: #333; margin-bottom: 8px; text-align: center; }
+
+        .subtitle { text-align: center; font-size: 14px; color: #999; margin-bottom: 32px; }
+
+        .entry {
+            border-left: 3px solid #667eea;
+            padding-left: 20px;
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .entry::before {
+            content: "";
+            position: absolute;
+            left: -7px;
+            top: 6px;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #667eea;
+        }
+
+        .entry .date { font-size: 13px; color: #667eea; font-weight: 600; margin-bottom: 4px; }
+
+        .entry .version { font-size: 18px; color: #333; font-weight: 700; margin-bottom: 8px; }
+
+        .entry ul { list-style: none; padding: 0; }
+
+        .entry ul li {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.8;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .entry ul li::before {
+            content: "·";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .back { text-align: center; margin-top: 20px; }
+        .back a { color: #667eea; text-decoration: none; font-size: 14px; }
+        .back a:hover { text-decoration: underline; }
+
+        .empty { text-align: center; color: #999; font-size: 14px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 更新日志</h1>
+        <p class="subtitle">hgt.l.cd 的变更记录</p>
+        <div id="logContainer">
+            <div class="empty">加载中…</div>
+        </div>
+        <div class="back">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        async function loadLog() {
+            const container = document.getElementById("logContainer");
+            try {
+                const res = await fetch("./log.txt?t=" + Date.now());
+                if (!res.ok) throw new Error("找不到 log.txt");
+                const text = await res.text();
+
+                const lines = text.split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+
+                if (lines.length === 0) {
+                    container.innerHTML = '<div class="empty">暂无更新记录</div>';
+                    return;
+                }
+
+                // 按“日期|版本”分组
+                const groups = {};
+                const order = [];
+                lines.forEach(line => {
+                    const parts = line.split("|");
+                    if (parts.length < 3) return;
+                    const [date, version, ...rest] = parts;
+                    const content = rest.join("|");
+                    const key = date + "|" + version;
+                    if (!groups[key]) {
+                        groups[key] = { date, version, items: [] };
+                        order.push(key);
+                    }
+                    groups[key].items.push(content);
+                });
+
+                // 倒序显示，最新的在最上面
+                container.innerHTML = "";
+                order.reverse().forEach(key => {
+                    const g = groups[key];
+                    const div = document.createElement("div");
+                    div.className = "entry";
+                    div.innerHTML = `
+                        <div class="date">${escapeHtml(g.date)}</div>
+                        <div class="version">${escapeHtml(g.version)}</div>
+                        <ul>${g.items.map(i => `<li>${escapeHtml(i)}</li>`).join("")}</ul>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                container.innerHTML = '<div class="empty">加载失败：' + escapeHtml(err.message) + '</div>';
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        loadLog();
+    </script>
+</body>
+</html>
