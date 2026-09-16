@@ -17,6 +17,8 @@
             background: linear-gradient(160deg, #e8f0fe 0%, #f3e8ff 100%);
             background-size: 100% 200%;
             animation: breathe 8s ease-in-out infinite;
+            overflow-x: hidden;
+            position: relative;
         }
 
         @keyframes breathe {
@@ -25,12 +27,47 @@
             100% { background-position: 0% 0%; }
         }
 
+        /* ===== 飘浮暖语背景 ===== */
+        .floating-words {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;   /* 不挡点击 */
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .word {
+            position: absolute;
+            white-space: nowrap;
+            color: #a8b8d8;              /* 和背景接近的淡蓝灰 */
+            opacity: 0.35;
+            font-weight: 400;
+            will-change: transform;
+            user-select: none;
+        }
+
+        /* 不同方向、不同速度的漂浮 */
+        @keyframes float1 {
+            0%   { transform: translate(0, 0); }
+            100% { transform: translate(60px, -40px); }
+        }
+        @keyframes float2 {
+            0%   { transform: translate(0, 0); }
+            100% { transform: translate(-50px, 50px); }
+        }
+        @keyframes float3 {
+            0%   { transform: translate(0, 0); }
+            100% { transform: translate(40px, 60px); }
+        }
+
+        /* 内容层，盖在飘字上面 */
         .container {
             max-width: 560px;
             width: 100%;
+            position: relative;
+            z-index: 1;
         }
 
-        /* 欢迎语 */
         .welcome {
             background: rgba(255, 255, 255, 0.85);
             border-radius: 24px;
@@ -38,6 +75,7 @@
             margin-bottom: 24px;
             text-align: center;
             box-shadow: 0 10px 40px rgba(100, 130, 200, 0.12);
+            backdrop-filter: blur(4px);
         }
 
         .welcome h1 {
@@ -53,38 +91,12 @@
             line-height: 2;
         }
 
-        /* 暖语轮播 */
-        .quote-box {
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 24px;
-            padding: 48px 32px;
-            margin-bottom: 24px;
-            text-align: center;
-            min-height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 40px rgba(100, 130, 200, 0.1);
-        }
-
-        .quote {
-            font-size: 19px;
-            color: #5a6b8a;
-            line-height: 2;
-            font-weight: 500;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
-            max-width: 420px;
-        }
-
-        .quote.show { opacity: 1; }
-
-        /* 心理援助资源 */
         .resources {
             background: rgba(255, 255, 255, 0.9);
             border-radius: 24px;
             padding: 36px 32px;
             box-shadow: 0 10px 40px rgba(100, 130, 200, 0.12);
+            backdrop-filter: blur(4px);
         }
 
         .resources h2 {
@@ -160,9 +172,12 @@
     </style>
 </head>
 <body>
+
+    <!-- 飘浮暖语背景 -->
+    <div class="floating-words" id="floatingWords"></div>
+
     <div class="container">
 
-        <!-- 欢迎语 -->
         <div class="welcome">
             <h1>你在这里是安全的</h1>
             <p>
@@ -171,12 +186,6 @@
             </p>
         </div>
 
-        <!-- 暖语轮播 -->
-        <div class="quote-box">
-            <div class="quote" id="quote"></div>
-        </div>
-
-        <!-- 心理援助资源 -->
         <div class="resources">
             <h2>如果你需要专业帮助</h2>
             <p class="note">以下热线都是免费的、保密的，随时可以打</p>
@@ -219,38 +228,62 @@
     </div>
 
     <script>
+        // ===== 暖语列表（按需增删） =====
         const quotes = [
-            "你现在的感受是真实的，不需要向任何人证明。",
-            "你已经撑过很多很难的时刻了，这一次也一样。",
-            "累的时候可以停下来，没有人有资格催你。",
-            "你不需要变得更好，才值得被温柔对待。",
-            "难过不是软弱，是你还愿意感受这个世界。",
-            "如果今天只能做到呼吸，那也已经很好了。",
-            "你不是负担，你只是暂时需要被接住。",
-            "慢慢来，你不需要立刻好起来。",
-            "有人愿意听你说，你不需要一个人扛。",
-            "你存在本身，就已经足够。"
+            "你现在的感受是真实的",
+            "你已经撑过很多很难的时刻",
+            "累的时候可以停下来",
+            "你不需要证明什么",
+            "难过不是软弱",
+            "今天只做到呼吸，也很好",
+            "你不是负担",
+            "慢慢来，不用急着好起来",
+            "有人愿意听你说",
+            "你存在本身就已经足够",
+            "你值得被温柔对待",
+            "你不孤单",
+            "可以哭出来",
+            "不用假装没事",
+            "你已经很努力了",
+            "休息不是浪费时间",
+            "你不需要让所有人满意",
+            "你的感受很重要",
+            "今天也可以慢一点",
+            "谢谢你还在坚持"
         ];
 
-        const quoteEl = document.getElementById("quote");
-        let index = 0;
+        const container = document.getElementById("floatingWords");
+        const colors = ["#a8b8d8", "#b8c8e0", "#c8b8e0", "#b0c8e8", "#c0c8e0"];
+        const animations = ["float1", "float2", "float3"];
 
-        function showQuote() {
-            quoteEl.classList.remove("show");
-            setTimeout(() => {
-                quoteEl.textContent = quotes[index];
-                quoteEl.classList.add("show");
-                index = (index + 1) % quotes.length;
-            }, 1500);
+        // 生成 30 条飘浮文字
+        const TOTAL = 30;
+        for (let i = 0; i < TOTAL; i++) {
+            const el = document.createElement("div");
+            el.className = "word";
+            el.textContent = quotes[i % quotes.length];
+
+            // 随机大小
+            const size = 12 + Math.random() * 16;   // 12px ~ 28px
+            el.style.fontSize = size + "px";
+
+            // 随机位置
+            el.style.left = Math.random() * 100 + "%";
+            el.style.top = Math.random() * 100 + "%";
+
+            // 随机颜色
+            el.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+            // 随机透明度
+            el.style.opacity = (0.2 + Math.random() * 0.25).toFixed(2);
+
+            // 随机动画
+            const anim = animations[Math.floor(Math.random() * animations.length)];
+            const duration = 12 + Math.random() * 12;   // 12s ~ 24s
+            el.style.animation = `${anim} ${duration}s ease-in-out infinite alternate`;
+
+            container.appendChild(el);
         }
-
-        // 第一句立刻显示
-        quoteEl.textContent = quotes[0];
-        quoteEl.classList.add("show");
-        index = 1;
-
-        // 每 7 秒换一句（1.5秒淡出 + 5.5秒停留）
-        setInterval(showQuote, 7000);
     </script>
 </body>
 </html>
