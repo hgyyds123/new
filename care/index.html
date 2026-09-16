@@ -19,7 +19,6 @@
             animation: breathe 8s ease-in-out infinite;
         }
 
-        /* 整个页面的呼吸感：背景缓慢明暗流动 */
         @keyframes breathe {
             0%   { background-position: 0% 0%; }
             50%  { background-position: 0% 100%; }
@@ -54,13 +53,31 @@
             line-height: 2;
         }
 
-        /* 温柔提示 */
-        .gentle-hint {
-            text-align: center;
-            font-size: 13px;
-            color: #9aabcc;
+        /* 暖语轮播 */
+        .quote-box {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 24px;
+            padding: 48px 32px;
             margin-bottom: 24px;
+            text-align: center;
+            min-height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 40px rgba(100, 130, 200, 0.1);
         }
+
+        .quote {
+            font-size: 19px;
+            color: #5a6b8a;
+            line-height: 2;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            max-width: 420px;
+        }
+
+        .quote.show { opacity: 1; }
 
         /* 心理援助资源 */
         .resources {
@@ -154,7 +171,10 @@
             </p>
         </div>
 
-        <p class="gentle-hint">如果心里很乱，可以什么都不做，就看着背景慢慢呼吸。</p>
+        <!-- 暖语轮播 -->
+        <div class="quote-box">
+            <div class="quote" id="quote"></div>
+        </div>
 
         <!-- 心理援助资源 -->
         <div class="resources">
@@ -197,5 +217,40 @@
         </div>
 
     </div>
+
+    <script>
+        const quotes = [
+            "你现在的感受是真实的，不需要向任何人证明。",
+            "你已经撑过很多很难的时刻了，这一次也一样。",
+            "累的时候可以停下来，没有人有资格催你。",
+            "你不需要变得更好，才值得被温柔对待。",
+            "难过不是软弱，是你还愿意感受这个世界。",
+            "如果今天只能做到呼吸，那也已经很好了。",
+            "你不是负担，你只是暂时需要被接住。",
+            "慢慢来，你不需要立刻好起来。",
+            "有人愿意听你说，你不需要一个人扛。",
+            "你存在本身，就已经足够。"
+        ];
+
+        const quoteEl = document.getElementById("quote");
+        let index = 0;
+
+        function showQuote() {
+            quoteEl.classList.remove("show");
+            setTimeout(() => {
+                quoteEl.textContent = quotes[index];
+                quoteEl.classList.add("show");
+                index = (index + 1) % quotes.length;
+            }, 1500);
+        }
+
+        // 第一句立刻显示
+        quoteEl.textContent = quotes[0];
+        quoteEl.classList.add("show");
+        index = 1;
+
+        // 每 7 秒换一句（1.5秒淡出 + 5.5秒停留）
+        setInterval(showQuote, 7000);
+    </script>
 </body>
 </html>
