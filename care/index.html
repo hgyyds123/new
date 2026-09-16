@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理关怀 · hgt.l.cd</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(160deg, #e8f0fe 0%, #f3e8ff 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 560px;
+            width: 100%;
+        }
+
+        /* 欢迎语 */
+        .welcome {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 24px;
+            padding: 40px 32px;
+            margin-bottom: 24px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(100, 130, 200, 0.12);
+        }
+
+        .welcome h1 {
+            font-size: 24px;
+            color: #4a5a7a;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .welcome p {
+            font-size: 15px;
+            color: #6b7a99;
+            line-height: 2;
+        }
+
+        /* 呼吸引导 */
+        .breath-section {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 24px;
+            padding: 36px 32px;
+            margin-bottom: 24px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(100, 130, 200, 0.12);
+        }
+
+        .breath-section h2 {
+            font-size: 17px;
+            color: #6b7a99;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+
+        .breath-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a8c8f0, #c8b8e8);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            color: #fff;
+            font-weight: 500;
+            transition: transform 4s ease-in-out, opacity 4s ease-in-out;
+            transform: scale(1);
+            opacity: 0.7;
+            box-shadow: 0 0 40px rgba(168, 200, 240, 0.5);
+        }
+
+        .breath-circle.inhale {
+            transform: scale(1.3);
+            opacity: 1;
+        }
+
+        .breath-hint {
+            font-size: 13px;
+            color: #9aabcc;
+        }
+
+        /* 心理援助资源 */
+        .resources {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            padding: 36px 32px;
+            box-shadow: 0 10px 40px rgba(100, 130, 200, 0.12);
+        }
+
+        .resources h2 {
+            font-size: 18px;
+            color: #4a5a7a;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .resources .note {
+            font-size: 13px;
+            color: #9aabcc;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .hotline {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .hotline-item {
+            background: #f5f8ff;
+            border-radius: 16px;
+            padding: 18px 20px;
+            border-left: 4px solid #a8c8f0;
+        }
+
+        .hotline-item .name {
+            font-size: 15px;
+            color: #4a5a7a;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .hotline-item .number {
+            font-size: 20px;
+            color: #6b8fd4;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: block;
+            text-decoration: none;
+        }
+
+        .hotline-item .number:hover { text-decoration: underline; }
+
+        .hotline-item .desc {
+            font-size: 12px;
+            color: #9aabcc;
+            margin-top: 4px;
+        }
+
+        .hotline-item .link {
+            font-size: 13px;
+            color: #8a9fc0;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 4px;
+            border-bottom: 1px dashed #c8d8f0;
+        }
+
+        .hotline-item .link:hover { color: #6b8fd4; }
+
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: #b0bdd4;
+            margin-top: 32px;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- 欢迎语 -->
+        <div class="welcome">
+            <h1>你在这里是安全的</h1>
+            <p>
+                无论你现在感受到什么，都是真实的，也都值得被认真对待。<br>
+                你不需要一个人扛着。
+            </p>
+        </div>
+
+        <!-- 呼吸引导 -->
+        <div class="breath-section">
+            <h2>如果现在心里很乱，可以跟着这个圆圈慢慢呼吸</h2>
+            <div class="breath-circle" id="breathCircle">吸气</div>
+            <div class="breath-hint">跟着圆圈变大时吸气，变小时呼气</div>
+        </div>
+
+        <!-- 心理援助资源 -->
+        <div class="resources">
+            <h2>如果你需要专业帮助</h2>
+            <p class="note">以下热线都是免费的、保密的，随时可以打</p>
+
+            <div class="hotline">
+
+                <!-- 全国统一热线 -->
+                <div class="hotline-item">
+                    <div class="name">全国心理援助热线</div>
+                    <a class="number" href="tel:12356">12356</a>
+                    <div class="desc">24小时 · 国家卫健委统一热线 · 手机直接拨打即可接通本地</div>
+                </div>
+
+                <!-- 希望24热线 -->
+                <div class="hotline-item">
+                    <div class="name">希望24热线（生命教育与危机干预）</div>
+                    <a class="number" href="tel:4001619995">400-161-9995</a>
+                    <div class="desc">24小时 · 按1抗疫专线，按2学生专线，按3抑郁专线，按4生命专线</div>
+                    <a class="link" href="http://www.hope9995.com" target="_blank">www.hope9995.com</a>
+                </div>
+
+                <!-- 北京心理危机干预中心 -->
+                <div class="hotline-item">
+                    <div class="name">北京心理危机研究与干预中心</div>
+                    <a class="number" href="tel:01082951332">010-82951332</a>
+                    <div class="desc">24小时 · 手机用户拨打</div>
+                    <a class="link" href="https://www.crisis.org.cn" target="_blank">www.crisis.org.cn</a>
+                </div>
+
+                <!-- 青少年服务台 -->
+                <div class="hotline-item">
+                    <div class="name">12355 青少年服务台</div>
+                    <a class="number" href="tel:12355">12355</a>
+                    <div class="desc">共青团 · 免费专业保密 · 心理与法律咨询</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer-note">
+            你不需要变得“更好”才值得被关心。
+        </div>
+
+    </div>
+
+    <script>
+        // 呼吸引导动画
+        const circle = document.getElementById("breathCircle");
+        let inhaling = false;
+
+        function breathe() {
+            if (inhaling) {
+                circle.classList.remove("inhale");
+                circle.textContent = "呼气";
+            } else {
+                circle.classList.add("inhale");
+                circle.textContent = "吸气";
+            }
+            inhaling = !inhaling;
+        }
+
+        // 每 4 秒切换一次
+        setInterval(breathe, 4000);
+        breathe();
+    </script>
+</body>
+</html>
