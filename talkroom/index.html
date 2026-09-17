@@ -176,7 +176,12 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
 
         const { createClient } = supabase;
-        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true
+            }
+        });
 
         const messagesEl = document.getElementById("messages");
         const msgInput = document.getElementById("msgInput");
@@ -186,13 +191,22 @@
         let userId = null;
 
         async function initAuth() {
-            const { data, error } = await db.auth.signInAnonymously();
-            if (error) {
-                console.error("匿名登录失败:", error);
-                statusTip.textContent = "登录失败，请刷新重试";
-                return;
+            // 先看有没有已保存的会话，有就直接用
+            const { data: { session } } = await db.auth.getSession();
+
+            if (session && session.user) {
+                userId = session.user.id;
+            } else {
+                const { data, error } = await db.auth.signInAnonymously();
+                if (error) {
+                    console.error("匿名登录失败:", error);
+                    statusTip.textContent = "登录失败，请刷新重试";
+                    return;
+                }
+                userId = data.user.id;
             }
-            userId = data.user.id;
+
+            console.log("我的 user_id:", userId);
 
             // 检查是否被封禁
             const { data: banData } = await db
@@ -285,7 +299,7 @@
 
             if (error) {
                 console.error("发送失败:", error);
-                alert("发送失败，可能你已被封禁");
+                alert("发送失败，你已被封禁，返回403");
             }
         }
 
