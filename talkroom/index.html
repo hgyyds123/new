@@ -115,18 +115,31 @@
             margin-top: 10px;
             min-height: 16px;
         }
+
+        .forbidden {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .forbidden h1 {
+            font-size: 64px;
+            color: #e74c3c;
+            margin-bottom: 16px;
+        }
+
+        .forbidden p {
+            font-size: 17px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="card" id="app">
         <h1>💬 聊天室</h1>
         <div class="my-nickname">当前昵称：<span id="myNickname">…</span></div>
         <div class="online-info">在线：<span id="onlineCount">0</span> 人</div>
         <div class="messages" id="messages">
-            <div class="msg">
-                <span class="name">系统</span>
-                正在连接聊天室…
-            </div>
+            <div class="msg"><span class="name">系统</span>正在连接聊天室…</div>
         </div>
         <div class="input-row">
             <input type="text" id="msgInput" placeholder="说点什么…" maxlength="100">
@@ -135,30 +148,30 @@
         <div class="status-tip" id="statusTip"></div>
     </div>
 
+    <noscript>
+        <div class="forbidden">
+            <h1>403</h1>
+            <p>请启用 JavaScript 才能进入聊天室</p>
+        </div>
+    </noscript>
+
     <script>
-        // ===== 屏蔽词配置（按需增删） =====
-        const BLOCKED_WORDS = [
-            "广告", "加群", "代练", "傻逼", "操你", "尼玛", "滚"
-        ];
+        const BLOCKED_WORDS = ["广告", "加群", "代练", "傻逼", "操你", "尼玛", "滚"];
+        const MAX_MSG_LENGTH = 100;
+        const SEND_COOLDOWN = 3000;
 
         function containsBlockedWord(text) {
             return BLOCKED_WORDS.some(word => text.includes(word));
         }
 
-        // ===== 限制配置 =====
-        const MAX_MSG_LENGTH = 100;   // 消息最长 100 字
-        const SEND_COOLDOWN = 3000;   // 同一个人 3 秒内只能发一条
-
-        // ===== 昵称设置 =====
         let nickname = sessionStorage.getItem("chat_nickname");
         if (!nickname) {
             nickname = prompt("请输入你的昵称（最多 12 个字）：") || "匿名";
-            nickname = nickname.slice(0, 12); // 截断超长昵称
+            nickname = nickname.slice(0, 12);
             sessionStorage.setItem("chat_nickname", nickname);
         }
         document.getElementById("myNickname").textContent = nickname;
 
-        // ===== Supabase 初始化 =====
         const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
 
@@ -170,15 +183,43 @@
         const sendBtn = document.getElementById("sendBtn");
         const statusTip = document.getElementById("statusTip");
 
-        // ===== 连接聊天室 + 在线状态 =====
+        let userId = null;
+
+        async function initAuth() {
+            const { data, error } = await db.auth.signInAnonymously();
+            if (error) {
+                console.error("匿名登录失败:", error);
+                statusTip.textContent = "登录失败，请刷新重试";
+                return;
+            }
+            userId = data.user.id;
+
+            // 检查是否被封禁
+            const { data: banData } = await db
+                .from("banned")
+                .select("user_id")
+                .eq("user_id", userId)
+                .maybeSingle();
+
+            if (banData) {
+                document.body.innerHTML = `
+                    <div class="forbidden">
+                        <h1>403</h1>
+                        <p>你已被禁止访问本聊天室</p>
+                    </div>
+                `;
+                return;
+            }
+
+            initChat();
+        }
+
         function initChat() {
             messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>已连接，你只能看到进来之后的消息。</div>';
             statusTip.textContent = "已连接";
 
             const channel = db.channel("messages-channel", {
-                config: {
-                    presence: { key: nickname }
-                }
+                config: { presence: { key: userId } }
             });
 
             channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
@@ -212,7 +253,6 @@
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
 
-        // ===== 发送消息 =====
         let lastSendTime = 0;
 
         async function sendMessage() {
@@ -239,12 +279,13 @@
             msgInput.value = "";
             const { error } = await db.from("messages").insert({
                 content: text,
-                nickname: nickname
+                nickname: nickname,
+                user_id: userId
             });
 
             if (error) {
                 console.error("发送失败:", error);
-                alert("发送失败，请检查网络");
+                alert("发送失败，可能你已被封禁");
             }
         }
 
@@ -262,7 +303,7 @@
                 .replaceAll("'", "&#39;");
         }
 
-        initChat();
+        initAuth();
     </script>
 </body>
 </html>
