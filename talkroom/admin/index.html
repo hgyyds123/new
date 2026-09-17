@@ -52,23 +52,13 @@
             border-radius: 50px;
             font-size: 15px;
             cursor: pointer;
-            transition: background 0.3s;
         }
-
-        .login-box button:hover { background: #5568d3; }
 
         .error { color: #e74c3c; font-size: 14px; margin-top: 12px; min-height: 20px; }
 
         .admin-panel { max-width: 800px; margin: 0 auto; display: none; }
 
-        .admin-panel h1 {
-            font-size: 24px;
-            color: #c9def5;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .admin-panel h1 { font-size: 24px; color: #c9def5; margin-bottom: 20px; }
 
         .card {
             background: #23303f;
@@ -78,20 +68,9 @@
             border: 1px solid #3c4d62;
         }
 
-        .card h2 {
-            font-size: 16px;
-            color: #9bb4d0;
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .card h2 { font-size: 16px; color: #9bb4d0; margin-bottom: 14px; }
 
-        .online-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+        .online-list { display: flex; flex-wrap: wrap; gap: 8px; }
 
         .online-tag {
             background: #2b405a;
@@ -104,7 +83,7 @@
 
         .msg-row {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 12px;
             padding: 10px 0;
             border-bottom: 1px solid #2f4055;
@@ -113,30 +92,53 @@
 
         .msg-row:last-child { border-bottom: none; }
 
-        .msg-row .nick {
-            color: #7bb3e6;
-            font-weight: 600;
-            min-width: 80px;
-            flex-shrink: 0;
-        }
+        .msg-row .nick { color: #7bb3e6; font-weight: 600; min-width: 70px; flex-shrink: 0; }
+        .msg-row .content { color: #c2d7ed; flex: 1; word-break: break-word; }
+        .msg-row .time { color: #6a8099; font-size: 12px; flex-shrink: 0; }
 
-        .msg-row .content {
-            color: #c2d7ed;
-            flex: 1;
-            word-break: break-word;
-        }
-
-        .msg-row .time {
-            color: #6a8099;
+        .ban-btn {
+            background: #c0392b;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 12px;
+            cursor: pointer;
             flex-shrink: 0;
+            transition: background 0.2s;
         }
+
+        .ban-btn:hover { background: #e74c3c; }
+        .ban-btn:disabled { background: #555; cursor: default; }
 
         .empty { color: #6a8099; font-size: 14px; text-align: center; padding: 20px; }
+
+        .banned-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2f4055;
+            font-size: 13px;
+            color: #c2d7ed;
+        }
+
+        .banned-item:last-child { border-bottom: none; }
+
+        .unban-btn {
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .unban-btn:hover { background: #2ecc71; }
     </style>
 </head>
 <body>
-    <!-- 登录框 -->
     <div class="login-box" id="loginBox">
         <h1>🔒 管理后台</h1>
         <input type="password" id="pwd" placeholder="请输入管理员密码" autocomplete="off">
@@ -144,7 +146,6 @@
         <div class="error" id="errorMsg"></div>
     </div>
 
-    <!-- 管理面板 -->
     <div class="admin-panel" id="adminPanel">
         <h1>🛠️ 管理后台</h1>
 
@@ -152,6 +153,13 @@
             <h2>🟢 当前在线（<span id="onlineCount">0</span> 人）</h2>
             <div class="online-list" id="onlineList">
                 <span class="empty">暂无人在线</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🚫 已封禁（<span id="bannedCount">0</span> 人）</h2>
+            <div id="bannedList">
+                <span class="empty">暂无封禁记录</span>
             </div>
         </div>
 
@@ -164,7 +172,7 @@
     </div>
 
     <script>
-        const ADMIN_PASSWORD = "hgyyds123456"; // 想改密码就改这里
+        const ADMIN_PASSWORD = "hgyyds123";
 
         const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
@@ -191,22 +199,18 @@
         }
 
         loginBtn.addEventListener("click", login);
-        pwdInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") login();
-        });
+        pwdInput.addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
 
         function initAdmin() {
-            // ===== 加载所有历史消息 =====
             loadAllMessages();
+            loadBanned();
 
-            // ===== 监听新消息 =====
             db.channel("admin-messages")
                 .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
                     prependMessage(payload.new);
                 })
                 .subscribe();
 
-            // ===== 监听在线状态 =====
             const presenceChannel = db.channel("messages-channel");
             presenceChannel
                 .on("presence", { event: "sync" }, () => {
@@ -243,12 +247,19 @@
             const div = document.createElement("div");
             div.className = "msg-row";
             const time = new Date(row.created_at).toLocaleString("zh-CN");
+            const uid = row.user_id || "";
             div.innerHTML = `
                 <span class="nick">${escapeHtml(row.nickname || "匿名")}</span>
                 <span class="content">${escapeHtml(row.content)}</span>
                 <span class="time">${time}</span>
+                ${uid ? `<button class="ban-btn" data-uid="${uid}" data-nick="${escapeHtml(row.nickname || "")}">封禁</button>` : ""}
             `;
             container.appendChild(div);
+
+            const btn = div.querySelector(".ban-btn");
+            if (btn) {
+                btn.addEventListener("click", () => banUser(btn));
+            }
         }
 
         function prependMessage(row) {
@@ -257,12 +268,71 @@
             const div = document.createElement("div");
             div.className = "msg-row";
             const time = new Date(row.created_at).toLocaleString("zh-CN");
+            const uid = row.user_id || "";
             div.innerHTML = `
                 <span class="nick">${escapeHtml(row.nickname || "匿名")}</span>
                 <span class="content">${escapeHtml(row.content)}</span>
                 <span class="time">${time}</span>
+                ${uid ? `<button class="ban-btn" data-uid="${uid}" data-nick="${escapeHtml(row.nickname || "")}">封禁</button>` : ""}
             `;
             list.insertBefore(div, list.firstChild);
+
+            const btn = div.querySelector(".ban-btn");
+            if (btn) {
+                btn.addEventListener("click", () => banUser(btn));
+            }
+        }
+
+        async function banUser(btn) {
+            const uid = btn.dataset.uid;
+            const nick = btn.dataset.nick;
+            if (!confirm(`确定要封禁「${nick}」吗？`)) return;
+
+            const { error } = await db.from("banned").insert({
+                user_id: uid,
+                nickname: nick,
+                reason: "管理员封禁"
+            });
+
+            if (error) {
+                alert("封禁失败：" + error.message);
+            } else {
+                btn.textContent = "已封禁";
+                btn.disabled = true;
+                loadBanned();
+            }
+        }
+
+        async function loadBanned() {
+            const { data, error } = await db
+                .from("banned")
+                .select("*")
+                .order("banned_at", { ascending: false });
+
+            const list = document.getElementById("bannedList");
+            if (error || !data || data.length === 0) {
+                list.innerHTML = '<span class="empty">暂无封禁记录</span>';
+                document.getElementById("bannedCount").textContent = "0";
+                return;
+            }
+
+            document.getElementById("bannedCount").textContent = data.length;
+            list.innerHTML = "";
+            data.forEach(row => {
+                const div = document.createElement("div");
+                div.className = "banned-item";
+                div.innerHTML = `
+                    <span>${escapeHtml(row.nickname || "未知")}（${String(row.user_id).slice(0, 8)}…）</span>
+                    <button class="unban-btn" data-uid="${row.user_id}">解封</button>
+                `;
+                list.appendChild(div);
+                div.querySelector(".unban-btn").addEventListener("click", async () => {
+                    if (!confirm("确定要解封吗？")) return;
+                    const { error } = await db.from("banned").delete().eq("user_id", row.user_id);
+                    if (error) alert("解封失败：" + error.message);
+                    else loadBanned();
+                });
+            });
         }
 
         function renderOnline(names) {
@@ -271,9 +341,7 @@
             if (names.length === 0) {
                 list.innerHTML = '<span class="empty">暂无人在线</span>';
             } else {
-                list.innerHTML = names
-                    .map(n => `<span class="online-tag">${escapeHtml(n)}</span>`)
-                    .join("");
+                list.innerHTML = names.map(n => `<span class="online-tag">${escapeHtml(n)}</span>`).join("");
             }
         }
 
