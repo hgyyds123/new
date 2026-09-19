@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 · 聊天室</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 40px 36px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 { font-size: 24px; color: #333; text-align: center; margin-bottom: 8px; }
+
+        .sub { text-align: center; font-size: 13px; color: #999; margin-bottom: 28px; }
+
+        input {
+            width: 100%;
+            padding: 13px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 14px;
+            transition: border-color 0.25s;
+        }
+
+        input:focus { border-color: #667eea; }
+
+        .btn {
+            width: 100%;
+            padding: 13px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .btn:hover { background: #5568d3; }
+
+        .switch {
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .switch a { color: #667eea; cursor: pointer; text-decoration: none; }
+        .switch a:hover { text-decoration: underline; }
+
+        .msg {
+            text-align: center;
+            font-size: 13px;
+            min-height: 18px;
+            margin-bottom: 12px;
+        }
+
+        .msg.error { color: #e74c3c; }
+        .msg.ok { color: #27ae60; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 id="title">登录聊天室</h1>
+        <p class="sub" id="subtitle">输入用户名和密码</p>
+
+        <input type="text" id="username" placeholder="用户名" autocomplete="off">
+        <input type="password" id="password" placeholder="密码" autocomplete="off">
+
+        <div class="msg" id="msg"></div>
+
+        <button class="btn" id="submitBtn">登录</button>
+
+        <div class="switch">
+            <span id="switchText">还没有账号？</span>
+            <a id="switchBtn">注册</a>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
+
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true }
+        });
+
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const submitBtn = document.getElementById("submitBtn");
+        const msg = document.getElementById("msg");
+        const title = document.getElementById("title");
+        const subtitle = document.getElementById("subtitle");
+        const switchText = document.getElementById("switchText");
+        const switchBtn = document.getElementById("switchBtn");
+
+        let isLogin = true;
+
+        function setMode(login) {
+            isLogin = login;
+            if (login) {
+                title.textContent = "登录聊天室";
+                subtitle.textContent = "输入用户名和密码";
+                submitBtn.textContent = "登录";
+                switchText.textContent = "还没有账号？";
+                switchBtn.textContent = "注册";
+            } else {
+                title.textContent = "注册新账号";
+                subtitle.textContent = "选一个用户名和密码";
+                submitBtn.textContent = "注册";
+                switchText.textContent = "已有账号？";
+                switchBtn.textContent = "登录";
+            }
+            msg.textContent = "";
+            msg.className = "msg";
+        }
+
+        switchBtn.addEventListener("click", () => setMode(!isLogin));
+
+        submitBtn.addEventListener("click", async () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!username || !password) {
+                msg.textContent = "用户名和密码都不能为空";
+                msg.className = "msg error";
+                return;
+            }
+
+            if (username.length > 20) {
+                msg.textContent = "用户名最多 20 个字";
+                msg.className = "msg error";
+                return;
+            }
+
+            if (password.length < 6) {
+                msg.textContent = "密码至少 6 位";
+                msg.className = "msg error";
+                return;
+            }
+
+            // 用户名拼成假邮箱
+            const fakeEmail = `${username}@hgt.l.cd`;
+
+            if (isLogin) {
+                // 登录
+                const { data, error } = await db.auth.signInWithPassword({
+                    email: fakeEmail,
+                    password: password
+                });
+
+                if (error) {
+                    msg.textContent = "用户名或密码错误";
+                    msg.className = "msg error";
+                    return;
+                }
+
+                msg.textContent = "登录成功，正在跳转…";
+                msg.className = "msg ok";
+                setTimeout(() => {
+                    window.location.href = "/talkroom/";
+                }, 500);
+
+            } else {
+                // 注册
+                const { data, error } = await db.auth.signUp({
+                    email: fakeEmail,
+                    password: password
+                });
+
+                if (error) {
+                    if (error.message.includes("already")) {
+                        msg.textContent = "这个用户名已经被注册了";
+                    } else {
+                        msg.textContent = "注册失败：" + error.message;
+                    }
+                    msg.className = "msg error";
+                    return;
+                }
+
+                // 存用户名到 profiles 表
+                if (data.user) {
+                    const { error: profileError } = await db.from("profiles").insert({
+                        id: data.user.id,
+                        username: username
+                    });
+                    if (profileError) {
+                        console.error("存用户名失败:", profileError);
+                    }
+                }
+
+                msg.textContent = "注册成功，正在跳转…";
+                msg.className = "msg ok";
+                setTimeout(() => {
+                    window.location.href = "/talkroom/";
+                }, 500);
+            }
+        });
+
+        // 按回车提交
+        passwordInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") submitBtn.click();
+        });
+    </script>
+</body>
+</html>
