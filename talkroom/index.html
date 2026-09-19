@@ -33,22 +33,10 @@
 
         h1 { font-size: 22px; color: #333; margin-bottom: 6px; text-align: center; }
 
-        .my-nickname {
-            text-align: center;
-            font-size: 13px;
-            color: #888;
-            margin-bottom: 6px;
-        }
-
+        .my-nickname { text-align: center; font-size: 13px; color: #888; margin-bottom: 6px; }
         .my-nickname span { color: #667eea; font-weight: 600; }
 
-        .online-info {
-            text-align: center;
-            font-size: 12px;
-            color: #aaa;
-            margin-bottom: 14px;
-        }
-
+        .online-info { text-align: center; font-size: 12px; color: #aaa; margin-bottom: 14px; }
         .online-info span { color: #667eea; font-weight: 600; }
 
         .messages {
@@ -108,35 +96,17 @@
 
         .input-row button:hover { background: #5568d3; }
 
-        .status-tip {
-            text-align: center;
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 10px;
-            min-height: 16px;
-        }
+        .status-tip { text-align: center; font-size: 12px; color: #aaa; margin-top: 10px; min-height: 16px; }
 
-        .forbidden {
-            text-align: center;
-            padding: 80px 20px;
-        }
-
-        .forbidden h1 {
-            font-size: 64px;
-            color: #e74c3c;
-            margin-bottom: 16px;
-        }
-
-        .forbidden p {
-            font-size: 17px;
-            color: #666;
-        }
+        .forbidden { text-align: center; padding: 80px 20px; }
+        .forbidden h1 { font-size: 64px; color: #e74c3c; margin-bottom: 16px; }
+        .forbidden p { font-size: 17px; color: #666; }
     </style>
 </head>
 <body>
     <div class="card" id="app">
         <h1>💬 聊天室</h1>
-        <div class="my-nickname">当前昵称：<span id="myNickname">…</span></div>
+        <div class="my-nickname">当前账号：<span id="myNickname">…</span></div>
         <div class="online-info">在线：<span id="onlineCount">0</span> 人</div>
         <div class="messages" id="messages">
             <div class="msg"><span class="name">系统</span>正在连接聊天室…</div>
@@ -164,23 +134,12 @@
             return BLOCKED_WORDS.some(word => text.includes(word));
         }
 
-        let nickname = sessionStorage.getItem("chat_nickname");
-        if (!nickname) {
-            nickname = prompt("请输入你的昵称（最多 12 个字）：") || "匿名";
-            nickname = nickname.slice(0, 12);
-            sessionStorage.setItem("chat_nickname", nickname);
-        }
-        document.getElementById("myNickname").textContent = nickname;
-
         const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true
-            }
+            auth: { persistSession: true, autoRefreshToken: true }
         });
 
         const messagesEl = document.getElementById("messages");
@@ -189,24 +148,28 @@
         const statusTip = document.getElementById("statusTip");
 
         let userId = null;
+        let username = null;
 
         async function initAuth() {
-            // 先看有没有已保存的会话，有就直接用
             const { data: { session } } = await db.auth.getSession();
 
-            if (session && session.user) {
-                userId = session.user.id;
-            } else {
-                const { data, error } = await db.auth.signInAnonymously();
-                if (error) {
-                    console.error("匿名登录失败:", error);
-                    statusTip.textContent = "登录失败，请刷新重试";
-                    return;
-                }
-                userId = data.user.id;
+            if (!session || !session.user) {
+                // 没登录，跳登录页
+                window.location.href = "/talkroom/login/";
+                return;
             }
 
-            console.log("我的 user_id:", userId);
+            userId = session.user.id;
+
+            // 从 profiles 表拿用户名
+            const { data: profile } = await db
+                .from("profiles")
+                .select("username")
+                .eq("id", userId)
+                .maybeSingle();
+
+            username = profile ? profile.username : "未知用户";
+            document.getElementById("myNickname").textContent = username;
 
             // 检查是否被封禁
             const { data: banData } = await db
@@ -218,9 +181,8 @@
             if (banData) {
                 document.body.innerHTML = `
                     <div class="forbidden">
-                        <h1>403 forbidden</h1>
-                        <h1>你已被禁止访问本聊天室</h1>
-                        <h1>你已被管理员封禁</h1>
+                        <h1>403</h1>
+                        <p>你已被禁止访问本聊天室</p>
                     </div>
                 `;
                 return;
@@ -252,7 +214,7 @@
 
             channel.subscribe(async (status) => {
                 if (status === "SUBSCRIBED") {
-                    await channel.track({ nickname: nickname });
+                    await channel.track({ username: username });
                 }
             });
         }
@@ -294,13 +256,13 @@
             msgInput.value = "";
             const { error } = await db.from("messages").insert({
                 content: text,
-                nickname: nickname,
+                nickname: username,
                 user_id: userId
             });
 
             if (error) {
                 console.error("发送失败:", error);
-                alert("发送失败，你已被封禁，返回403");
+                alert("发送失败，你已被封禁");
             }
         }
 
