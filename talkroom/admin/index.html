@@ -16,47 +16,7 @@
             color: #e3edf5;
         }
 
-        .login-box {
-            max-width: 360px;
-            margin: 120px auto;
-            background: #23303f;
-            border-radius: 20px;
-            padding: 40px 32px;
-            text-align: center;
-            border: 1px solid #3c4d62;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-
-        .login-box h1 { font-size: 22px; color: #c9def5; margin-bottom: 24px; }
-
-        .login-box input {
-            width: 100%;
-            padding: 12px 18px;
-            border: 2px solid #3c4d62;
-            border-radius: 50px;
-            background: #1a2533;
-            color: #e3edf5;
-            font-size: 15px;
-            outline: none;
-            margin-bottom: 14px;
-        }
-
-        .login-box input:focus { border-color: #667eea; }
-
-        .login-box button {
-            width: 100%;
-            padding: 12px;
-            background: #667eea;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        .error { color: #e74c3c; font-size: 14px; margin-top: 12px; min-height: 20px; }
-
-        .admin-panel { max-width: 800px; margin: 0 auto; display: none; }
+        .admin-panel { max-width: 900px; margin: 0 auto; }
 
         .admin-panel h1 { font-size: 24px; color: #c9def5; margin-bottom: 20px; }
 
@@ -136,72 +96,82 @@
         }
 
         .unban-btn:hover { background: #2ecc71; }
+
+        .forbidden { text-align: center; padding: 120px 20px; }
+        .forbidden h1 { font-size: 64px; color: #e74c3c; margin-bottom: 16px; }
+        .forbidden p { font-size: 17px; color: #8aaecf; }
     </style>
 </head>
 <body>
-    <div class="login-box" id="loginBox">
-        <h1>🔒 管理后台</h1>
-        <input type="password" id="pwd" placeholder="请输入管理员密码" autocomplete="off">
-        <button id="loginBtn">进入</button>
-        <div class="error" id="errorMsg"></div>
-    </div>
-
-    <div class="admin-panel" id="adminPanel">
-        <h1>🛠️ 管理后台</h1>
-
-        <div class="card">
-            <h2>🟢 当前在线（<span id="onlineCount">0</span> 人）</h2>
-            <div class="online-list" id="onlineList">
-                <span class="empty">暂无人在线</span>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>🚫 已封禁（<span id="bannedCount">0</span> 人）</h2>
-            <div id="bannedList">
-                <span class="empty">暂无封禁记录</span>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>📜 所有消息记录</h2>
-            <div id="msgList">
-                <span class="empty">加载中…</span>
-            </div>
-        </div>
-    </div>
+    <div id="root"></div>
 
     <script>
-        const ADMIN_PASSWORD = "hgyyds123";
-
         const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
 
         const { createClient } = supabase;
-        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true }
+        });
 
-        const loginBox = document.getElementById("loginBox");
-        const adminPanel = document.getElementById("adminPanel");
-        const pwdInput = document.getElementById("pwd");
-        const loginBtn = document.getElementById("loginBtn");
-        const errorMsg = document.getElementById("errorMsg");
+        const root = document.getElementById("root");
 
-        function login() {
-            if (pwdInput.value === ADMIN_PASSWORD) {
-                loginBox.style.display = "none";
-                adminPanel.style.display = "block";
-                initAdmin();
-            } else {
-                errorMsg.textContent = "密码错误";
-                pwdInput.value = "";
-                pwdInput.focus();
+        async function init() {
+            // 检查登录状态
+            const { data: { session } } = await db.auth.getSession();
+            if (!session || !session.user) {
+                window.location.href = "/talkroom/login/";
+                return;
             }
+
+            // 检查是不是管理员
+            const { data: profile } = await db
+                .from("profiles")
+                .select("username, is_admin")
+                .eq("id", session.user.id)
+                .maybeSingle();
+
+            if (!profile || !profile.is_admin) {
+                root.innerHTML = `
+                    <div class="forbidden">
+                        <h1>403</h1>
+                        <p>你没有权限访问管理后台</p>
+                    </div>
+                `;
+                return;
+            }
+
+            renderPanel(profile.username);
         }
 
-        loginBtn.addEventListener("click", login);
-        pwdInput.addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+        function renderPanel(adminName) {
+            root.innerHTML = `
+                <div class="admin-panel">
+                    <h1>🛠️ 管理后台</h1>
 
-        function initAdmin() {
+                    <div class="card">
+                        <h2>🟢 当前在线（<span id="onlineCount">0</span> 人）</h2>
+                        <div class="online-list" id="onlineList">
+                            <span class="empty">暂无人在线</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>🚫 已封禁（<span id="bannedCount">0</span> 人）</h2>
+                        <div id="bannedList">
+                            <span class="empty">暂无封禁记录</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>📜 所有消息记录</h2>
+                        <div id="msgList">
+                            <span class="empty">加载中…</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
             loadAllMessages();
             loadBanned();
 
@@ -215,7 +185,7 @@
             presenceChannel
                 .on("presence", { event: "sync" }, () => {
                     const state = presenceChannel.presenceState();
-                    const names = Object.values(state).flat().map(p => p.nickname);
+                    const names = Object.values(state).flat().map(p => p.username);
                     renderOnline(names);
                 })
                 .subscribe();
@@ -243,23 +213,25 @@
             data.forEach(row => appendMessage(row, list));
         }
 
+        function buildMsgRow(row) {
+            const time = new Date(row.created_at).toLocaleString("zh-CN");
+            const uid = row.user_id || "";
+            const nick = escapeHtml(row.nickname || "匿名");
+            return `
+                <span class="nick">${nick}</span>
+                <span class="content">${escapeHtml(row.content)}</span>
+                <span class="time">${time}</span>
+                ${uid ? `<button class="ban-btn" data-uid="${uid}" data-nick="${nick}">封禁</button>` : ""}
+            `;
+        }
+
         function appendMessage(row, container) {
             const div = document.createElement("div");
             div.className = "msg-row";
-            const time = new Date(row.created_at).toLocaleString("zh-CN");
-            const uid = row.user_id || "";
-            div.innerHTML = `
-                <span class="nick">${escapeHtml(row.nickname || "匿名")}</span>
-                <span class="content">${escapeHtml(row.content)}</span>
-                <span class="time">${time}</span>
-                ${uid ? `<button class="ban-btn" data-uid="${uid}" data-nick="${escapeHtml(row.nickname || "")}">封禁</button>` : ""}
-            `;
+            div.innerHTML = buildMsgRow(row);
             container.appendChild(div);
-
             const btn = div.querySelector(".ban-btn");
-            if (btn) {
-                btn.addEventListener("click", () => banUser(btn));
-            }
+            if (btn) btn.addEventListener("click", () => banUser(btn));
         }
 
         function prependMessage(row) {
@@ -267,20 +239,10 @@
             if (list.querySelector(".empty")) list.innerHTML = "";
             const div = document.createElement("div");
             div.className = "msg-row";
-            const time = new Date(row.created_at).toLocaleString("zh-CN");
-            const uid = row.user_id || "";
-            div.innerHTML = `
-                <span class="nick">${escapeHtml(row.nickname || "匿名")}</span>
-                <span class="content">${escapeHtml(row.content)}</span>
-                <span class="time">${time}</span>
-                ${uid ? `<button class="ban-btn" data-uid="${uid}" data-nick="${escapeHtml(row.nickname || "")}">封禁</button>` : ""}
-            `;
+            div.innerHTML = buildMsgRow(row);
             list.insertBefore(div, list.firstChild);
-
             const btn = div.querySelector(".ban-btn");
-            if (btn) {
-                btn.addEventListener("click", () => banUser(btn));
-            }
+            if (btn) btn.addEventListener("click", () => banUser(btn));
         }
 
         async function banUser(btn) {
@@ -322,7 +284,7 @@
                 const div = document.createElement("div");
                 div.className = "banned-item";
                 div.innerHTML = `
-                    <span>${escapeHtml(row.nickname || "未知")}（${String(row.user_id).slice(0, 8)}…）</span>
+                    <span>${escapeHtml(row.nickname || "未知")}</span>
                     <button class="unban-btn" data-uid="${row.user_id}">解封</button>
                 `;
                 list.appendChild(div);
@@ -353,6 +315,8 @@
                 .replaceAll('"', "&quot;")
                 .replaceAll("'", "&#39;");
         }
+
+        init();
     </script>
 </body>
 </html>
