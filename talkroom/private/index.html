@@ -174,7 +174,7 @@
 
     <script>
         const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTAxNDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -213,6 +213,18 @@
             myUsername = profile ? profile.username : "我";
 
             statusTip.textContent = `你是 ${myUsername}`;
+
+            // 恢复上次的会话
+            const savedConvId = sessionStorage.getItem("private_conv_id");
+            const savedOtherName = sessionStorage.getItem("private_other_name");
+            const savedOtherId = sessionStorage.getItem("private_other_id");
+
+            if (savedConvId && savedOtherName && savedOtherId) {
+                currentConversationId = savedConvId;
+                otherUsername = savedOtherName;
+                otherUserId = savedOtherId;
+                openChat();
+            }
         }
 
         searchBtn.addEventListener("click", startPrivateChat);
@@ -299,6 +311,11 @@
             chatHeader.textContent = `与 ${otherUsername} 的私聊`;
             statusTip.textContent = "";
             messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>已连接</div>';
+
+            // 存起来，刷新后能恢复
+            sessionStorage.setItem("private_conv_id", currentConversationId);
+            sessionStorage.setItem("private_other_name", otherUsername);
+            sessionStorage.setItem("private_other_id", otherUserId);
 
             loadHistory();
             subscribeMessages();
