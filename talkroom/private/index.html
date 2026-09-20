@@ -214,7 +214,6 @@
 
             statusTip.textContent = `你是 ${myUsername}`;
 
-            // 恢复上次的会话
             const savedConvId = sessionStorage.getItem("private_conv_id");
             const savedOtherName = sessionStorage.getItem("private_other_name");
             const savedOtherId = sessionStorage.getItem("private_other_id");
@@ -243,7 +242,6 @@
 
             statusTip.textContent = "查找用户…";
 
-            // 查对方
             const { data: targetProfile } = await db
                 .from("profiles")
                 .select("id, username")
@@ -260,7 +258,6 @@
 
             statusTip.textContent = "查找会话…";
 
-            // 找有没有已存在的会话
             const { data: myConvs } = await db
                 .from("conversation_members")
                 .select("conversation_id")
@@ -281,7 +278,6 @@
             if (existingId) {
                 currentConversationId = existingId;
             } else {
-                // 新建会话
                 const { data: newConv, error: convErr } = await db
                     .from("conversations")
                     .insert({ type: "private" })
@@ -296,7 +292,6 @@
 
                 currentConversationId = newConv.id;
 
-                // 加双方为成员
                 await db.from("conversation_members").insert([
                     { conversation_id: currentConversationId, user_id: myUserId },
                     { conversation_id: currentConversationId, user_id: otherUserId }
@@ -312,7 +307,6 @@
             statusTip.textContent = "";
             messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>已连接</div>';
 
-            // 存起来，刷新后能恢复
             sessionStorage.setItem("private_conv_id", currentConversationId);
             sessionStorage.setItem("private_other_name", otherUsername);
             sessionStorage.setItem("private_other_id", otherUserId);
@@ -342,16 +336,15 @@
             scrollToBottom();
         }
 
-        function subscribeMessages() {
-            if (channel) db.removeChannel(channel);
+        async function subscribeMessages() {
+            if (channel) {
+                await db.removeChannel(channel);
+                channel = null;
+            }
 
-            channel = db.channel("private-" + currentConversationId)
-                .on("postgres_changes", {
-                    event: "INSERT",
-                    schema: "public",
-                    table: "messages"
-                }, (payload) => {
-                    // 只处理属于当前会话的消息
+            channel = db.channel("private-" + currentConversationId + "-" + Date.now())
+                .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+                    console.log("私聊收到:", payload.new.conversation_id, "当前:", currentConversationId);
                     if (payload.new.conversation_id !== currentConversationId) return;
 
                     if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
@@ -360,7 +353,9 @@
                     renderMessage(payload.new);
                     scrollToBottom();
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    console.log("私聊订阅状态:", status);
+                });
         }
 
         function renderMessage(row) {
