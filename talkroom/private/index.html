@@ -258,29 +258,21 @@
 
             statusTip.textContent = "查找会话…";
 
-            const { data: myConvs } = await db
-                .from("conversation_members")
-                .select("conversation_id")
-                .eq("user_id", myUserId);
+            // 用两个 user_id 排序后拼成固定 key，双方算出同一个
+            const pairKey = [myUserId, otherUserId].sort().join("_");
 
-            const { data: otherConvs } = await db
-                .from("conversation_members")
-                .select("conversation_id")
-                .eq("user_id", otherUserId);
+            const { data: existing } = await db
+                .from("conversations")
+                .select("id")
+                .eq("pair_key", pairKey)
+                .maybeSingle();
 
-            let existingId = null;
-            if (myConvs && otherConvs) {
-                const mySet = new Set(myConvs.map(c => c.conversation_id));
-                const common = otherConvs.find(c => mySet.has(c.conversation_id));
-                if (common) existingId = common.conversation_id;
-            }
-
-            if (existingId) {
-                currentConversationId = existingId;
+            if (existing) {
+                currentConversationId = existing.id;
             } else {
                 const { data: newConv, error: convErr } = await db
                     .from("conversations")
-                    .insert({ type: "private" })
+                    .insert({ type: "private", pair_key: pairKey })
                     .select()
                     .single();
 
@@ -344,7 +336,6 @@
 
             channel = db.channel("private-" + currentConversationId + "-" + Date.now())
                 .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-                    console.log("私聊收到:", payload.new.conversation_id, "当前:", currentConversationId);
                     if (payload.new.conversation_id !== currentConversationId) return;
 
                     if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
@@ -353,9 +344,7 @@
                     renderMessage(payload.new);
                     scrollToBottom();
                 })
-                .subscribe((status) => {
-                    console.log("私聊订阅状态:", status);
-                });
+                .subscribe();
         }
 
         function renderMessage(row) {
