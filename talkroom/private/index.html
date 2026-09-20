@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>私聊 · 聊天室</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 560px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        h1 { font-size: 20px; color: #333; margin-bottom: 16px; text-align: center; }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .search-row input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .search-row input:focus { border-color: #667eea; }
+
+        .search-row button {
+            background: #667eea;
+            color: #fff;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 50px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .search-row button:hover { background: #5568d3; }
+
+        .status-tip {
+            text-align: center;
+            font-size: 13px;
+            color: #999;
+            min-height: 18px;
+            margin-bottom: 10px;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .chat-area.hidden { display: none; }
+
+        .chat-header {
+            text-align: center;
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            background: #f7f8fc;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg {
+            background: #fff;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            color: #333;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            word-break: break-word;
+        }
+
+        .msg .name {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .input-row { display: flex; gap: 10px; }
+
+        .input-row input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .input-row input:focus { border-color: #667eea; }
+
+        .input-row button {
+            background: #667eea;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .input-row button:hover { background: #5568d3; }
+
+        .back {
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .back a { color: #667eea; text-decoration: none; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>💌 私聊</h1>
+
+        <div class="search-row">
+            <input type="text" id="searchInput" placeholder="输入对方用户名" autocomplete="off">
+            <button id="searchBtn">开始</button>
+        </div>
+
+        <div class="status-tip" id="statusTip"></div>
+
+        <div class="chat-area hidden" id="chatArea">
+            <div class="chat-header" id="chatHeader"></div>
+            <div class="messages" id="messages"></div>
+            <div class="input-row">
+                <input type="text" id="msgInput" placeholder="说点什么…" maxlength="100">
+                <button id="sendBtn">发送</button>
+            </div>
+        </div>
+
+        <div class="back"><a href="/talkroom/">← 返回入口</a></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
+
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true }
+        });
+
+        const searchInput = document.getElementById("searchInput");
+        const searchBtn = document.getElementById("searchBtn");
+        const statusTip = document.getElementById("statusTip");
+        const chatArea = document.getElementById("chatArea");
+        const chatHeader = document.getElementById("chatHeader");
+        const messagesEl = document.getElementById("messages");
+        const msgInput = document.getElementById("msgInput");
+        const sendBtn = document.getElementById("sendBtn");
+
+        let myUserId = null;
+        let myUsername = null;
+        let otherUserId = null;
+        let otherUsername = null;
+        let currentConversationId = null;
+        let channel = null;
+
+        async function init() {
+            const { data: { session } } = await db.auth.getSession();
+            if (!session || !session.user) {
+                window.location.href = "/talkroom/login/";
+                return;
+            }
+            myUserId = session.user.id;
+
+            const { data: profile } = await db
+                .from("profiles")
+                .select("username")
+                .eq("id", myUserId)
+                .maybeSingle();
+            myUsername = profile ? profile.username : "我";
+
+            statusTip.textContent = `你是 ${myUsername}`;
+        }
+
+        searchBtn.addEventListener("click", startPrivateChat);
+        searchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") startPrivateChat();
+        });
+
+        async function startPrivateChat() {
+            const targetName = searchInput.value.trim();
+            if (!targetName) return;
+
+            if (targetName === myUsername) {
+                statusTip.textContent = "不能和自己私聊";
+                return;
+            }
+
+            statusTip.textContent = "查找用户…";
+
+            // 查对方
+            const { data: targetProfile } = await db
+                .from("profiles")
+                .select("id, username")
+                .eq("username", targetName)
+                .maybeSingle();
+
+            if (!targetProfile) {
+                statusTip.textContent = "找不到这个用户";
+                return;
+            }
+
+            otherUserId = targetProfile.id;
+            otherUsername = targetProfile.username;
+
+            statusTip.textContent = "查找会话…";
+
+            // 找有没有已存在的会话（两边都在这条会话里）
+            const { data: myConvs } = await db
+                .from("conversation_members")
+                .select("conversation_id")
+                .eq("user_id", myUserId);
+
+            const { data: otherConvs } = await db
+                .from("conversation_members")
+                .select("conversation_id")
+                .eq("user_id", otherUserId);
+
+            let existingId = null;
+            if (myConvs && otherConvs) {
+                const mySet = new Set(myConvs.map(c => c.conversation_id));
+                const common = otherConvs.find(c => mySet.has(c.conversation_id));
+                if (common) existingId = common.conversation_id;
+            }
+
+            if (existingId) {
+                currentConversationId = existingId;
+            } else {
+                // 新建会话
+                const { data: newConv, error: convErr } = await db
+                    .from("conversations")
+                    .insert({ type: "private" })
+                    .select()
+                    .single();
+
+                if (convErr || !newConv) {
+                    statusTip.textContent = "创建会话失败";
+                    return;
+                }
+
+                currentConversationId = newConv.id;
+
+                // 加双方为成员
+                await db.from("conversation_members").insert([
+                    { conversation_id: currentConversationId, user_id: myUserId },
+                    { conversation_id: currentConversationId, user_id: otherUserId }
+                ]);
+            }
+
+            openChat();
+        }
+
+        function openChat() {
+            chatArea.classList.remove("hidden");
+            chatHeader.textContent = `与 ${otherUsername} 的私聊`;
+            statusTip.textContent = "";
+            messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>已连接</div>';
+
+            loadHistory();
+            subscribeMessages();
+        }
+
+        async function loadHistory() {
+            const { data, error } = await db
+                .from("messages")
+                .select("*")
+                .eq("conversation_id", currentConversationId)
+                .order("created_at", { ascending: true });
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            messagesEl.innerHTML = "";
+            if (data.length === 0) {
+                messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>还没有消息，说第一句吧。</div>';
+            } else {
+                data.forEach(renderMessage);
+            }
+            scrollToBottom();
+        }
+
+        function subscribeMessages() {
+            if (channel) db.removeChannel(channel);
+
+            channel = db.channel("private-" + currentConversationId)
+                .on("postgres_changes", {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "messages",
+                    filter: `conversation_id=eq.${currentConversationId}`
+                }, (payload) => {
+                    if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
+                        messagesEl.innerHTML = "";
+                    }
+                    renderMessage(payload.new);
+                    scrollToBottom();
+                })
+                .subscribe();
+        }
+
+        function renderMessage(row) {
+            const div = document.createElement("div");
+            div.className = "msg";
+            div.innerHTML = `<span class="name">${escapeHtml(row.nickname || "匿名")}</span>${escapeHtml(row.content)}`;
+            messagesEl.appendChild(div);
+        }
+
+        function scrollToBottom() {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        msgInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        async function sendMessage() {
+            const text = msgInput.value.trim();
+            if (!text || !currentConversationId) return;
+
+            msgInput.value = "";
+            const { error } = await db.from("messages").insert({
+                content: text,
+                nickname: myUsername,
+                user_id: myUserId,
+                conversation_id: currentConversationId
+            });
+
+            if (error) {
+                console.error(error);
+                alert("发送失败");
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        init();
+    </script>
+</body>
+</html>
