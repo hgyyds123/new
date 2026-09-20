@@ -305,7 +305,6 @@
             initPresence();
             listenRequests();
 
-            // 恢复上次会话
             const savedConvId = sessionStorage.getItem("private_conv_id");
             const savedOtherName = sessionStorage.getItem("private_other_name");
             const savedOtherId = sessionStorage.getItem("private_other_id");
@@ -346,7 +345,6 @@
         }
 
         function renderOnline(users) {
-            // 去重（同一用户多标签页）
             const seen = new Set();
             const unique = users.filter(u => {
                 if (seen.has(u.id)) return false;
@@ -374,7 +372,6 @@
         async function sendChatRequest(targetId, targetName) {
             statusTip.textContent = `正在向 ${targetName} 发起请求…`;
 
-            // 检查是否已有请求
             const { data: existing } = await db
                 .from("chat_requests")
                 .select("id")
@@ -385,21 +382,52 @@
 
             if (existing) {
                 statusTip.textContent = `已经向 ${targetName} 发过请求了，等待对方回应`;
+                listenRequestStatus(existing.id, targetId, targetName);
                 return;
             }
 
-            const { error } = await db.from("chat_requests").insert({
-                from_user: myUserId,
-                to_user: targetId,
-                status: "pending"
-            });
+            const { data: newReq, error } = await db
+                .from("chat_requests")
+                .insert({
+                    from_user: myUserId,
+                    to_user: targetId,
+                    status: "pending"
+                })
+                .select()
+                .single();
 
             if (error) {
                 console.error(error);
                 statusTip.textContent = "发起请求失败";
             } else {
                 statusTip.textContent = `请求已发送，等待 ${targetName} 同意`;
+                listenRequestStatus(newReq.id, targetId, targetName);
             }
+        }
+
+        // ===== 监听自己发出的请求状态 =====
+        function listenRequestStatus(requestId, targetId, targetName) {
+            const ch = db.channel("req-status-" + requestId)
+                .on("postgres_changes", {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "chat_requests",
+                    filter: `id=eq.${requestId}`
+                }, async (payload) => {
+                    const status = payload.new.status;
+
+                    if (status === "accepted") {
+                        statusTip.textContent = `${targetName} 同意了，正在进入…`;
+                        otherUserId = targetId;
+                        otherUsername = targetName;
+                        await db.removeChannel(ch);
+                        await enterConversation();
+                    } else if (status === "rejected") {
+                        statusTip.textContent = `${targetName} 拒绝了你的请求`;
+                        await db.removeChannel(ch);
+                    }
+                })
+                .subscribe();
         }
 
         // ===== 监听收到的请求 =====
@@ -412,7 +440,6 @@
                     filter: `to_user=eq.${myUserId}`
                 }, (payload) => {
                     const req = payload.new;
-                    // 查发起人用户名
                     db.from("profiles").select("username").eq("id", req.from_user).maybeSingle()
                         .then(({ data }) => {
                             const fromName = data ? data.username : "某人";
@@ -439,7 +466,6 @@
             card.querySelector(".accept-btn").addEventListener("click", async () => {
                 await db.from("chat_requests").update({ status: "accepted" }).eq("id", requestId);
                 card.remove();
-                // 直接进入私聊
                 otherUserId = fromId;
                 otherUsername = fromName;
                 await enterConversation();
