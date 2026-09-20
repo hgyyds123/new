@@ -18,48 +18,67 @@
             padding: 20px;
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.96);
-            border-radius: 20px;
-            padding: 24px;
-            max-width: 560px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        .layout {
             display: flex;
-            flex-direction: column;
+            gap: 16px;
+            max-width: 1000px;
+            width: 100%;
             height: 80vh;
         }
 
-        h1 { font-size: 20px; color: #333; margin-bottom: 16px; text-align: center; }
-
-        .search-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 14px;
+        /* 左侧：在线列表 */
+        .sidebar {
+            width: 200px;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 20px 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+            flex-shrink: 0;
         }
 
-        .search-row input {
-            flex: 1;
-            padding: 12px 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 50px;
-            font-size: 15px;
-            outline: none;
+        .sidebar h2 {
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
         }
 
-        .search-row input:focus { border-color: #667eea; }
-
-        .search-row button {
-            background: #667eea;
-            color: #fff;
-            border: none;
-            padding: 12px 22px;
-            border-radius: 50px;
-            font-size: 15px;
+        .online-user {
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #444;
             cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 6px;
+            word-break: break-word;
         }
 
-        .search-row button:hover { background: #5568d3; }
+        .online-user:hover { background: #f0f2f8; }
+
+        .online-user.me {
+            color: #999;
+            cursor: default;
+            font-style: italic;
+        }
+
+        .online-user.me:hover { background: transparent; }
+
+        /* 中间：聊天 */
+        .card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        h1 { font-size: 20px; color: #333; margin-bottom: 16px; text-align: center; }
 
         .status-tip {
             text-align: center;
@@ -141,35 +160,102 @@
 
         .input-row button:hover { background: #5568d3; }
 
+        /* 右侧：请求提示 */
+        .request-panel {
+            width: 220px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .request-card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .request-card p {
+            font-size: 14px;
+            color: #444;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .request-card .from-name {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .request-actions button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .request-actions button:hover { opacity: 0.85; }
+
+        .accept-btn { background: #667eea; color: #fff; }
+        .reject-btn { background: #f0f2f8; color: #666; }
+
         .back {
             text-align: center;
             margin-top: 12px;
         }
 
         .back a { color: #667eea; text-decoration: none; font-size: 13px; }
+
+        @media (max-width: 900px) {
+            .layout { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; max-height: 200px; }
+            .request-panel { width: 100%; }
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>💌 私聊</h1>
-
-        <div class="search-row">
-            <input type="text" id="searchInput" placeholder="输入对方用户名" autocomplete="off">
-            <button id="searchBtn">开始</button>
+    <div class="layout">
+        <!-- 左侧在线列表 -->
+        <div class="sidebar">
+            <h2>🟢 在线人员</h2>
+            <div id="onlineList"></div>
         </div>
 
-        <div class="status-tip" id="statusTip"></div>
+        <!-- 中间聊天 -->
+        <div class="card">
+            <h1>💌 私聊</h1>
 
-        <div class="chat-area hidden" id="chatArea">
-            <div class="chat-header" id="chatHeader"></div>
-            <div class="messages" id="messages"></div>
-            <div class="input-row">
-                <input type="text" id="msgInput" placeholder="说点什么…" maxlength="100">
-                <button id="sendBtn">发送</button>
+            <div class="status-tip" id="statusTip">加载中…</div>
+
+            <div class="chat-area hidden" id="chatArea">
+                <div class="chat-header" id="chatHeader"></div>
+                <div class="messages" id="messages"></div>
+                <div class="input-row">
+                    <input type="text" id="msgInput" placeholder="说点什么…" maxlength="100">
+                    <button id="sendBtn">发送</button>
+                </div>
             </div>
+
+            <div class="back"><a href="/talkroom/">← 返回入口</a></div>
         </div>
 
-        <div class="back"><a href="/talkroom/">← 返回入口</a></div>
+        <!-- 右侧请求提示 -->
+        <div class="request-panel" id="requestPanel"></div>
     </div>
 
     <script>
@@ -181,9 +267,9 @@
             auth: { persistSession: true, autoRefreshToken: true }
         });
 
-        const searchInput = document.getElementById("searchInput");
-        const searchBtn = document.getElementById("searchBtn");
         const statusTip = document.getElementById("statusTip");
+        const onlineList = document.getElementById("onlineList");
+        const requestPanel = document.getElementById("requestPanel");
         const chatArea = document.getElementById("chatArea");
         const chatHeader = document.getElementById("chatHeader");
         const messagesEl = document.getElementById("messages");
@@ -195,7 +281,9 @@
         let otherUserId = null;
         let otherUsername = null;
         let currentConversationId = null;
-        let channel = null;
+        let msgChannel = null;
+        let presenceChannel = null;
+        let requestChannel = null;
 
         async function init() {
             const { data: { session } } = await db.auth.getSession();
@@ -212,8 +300,12 @@
                 .maybeSingle();
             myUsername = profile ? profile.username : "我";
 
-            statusTip.textContent = `你是 ${myUsername}`;
+            statusTip.textContent = `你是 ${myUsername}，点击左侧名字发起私聊`;
 
+            initPresence();
+            listenRequests();
+
+            // 恢复上次会话
             const savedConvId = sessionStorage.getItem("private_conv_id");
             const savedOtherName = sessionStorage.getItem("private_other_name");
             const savedOtherId = sessionStorage.getItem("private_other_id");
@@ -226,39 +318,141 @@
             }
         }
 
-        searchBtn.addEventListener("click", startPrivateChat);
-        searchInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") startPrivateChat();
-        });
+        // ===== 在线状态 =====
+        function initPresence() {
+            presenceChannel = db.channel("talkroom-presence", {
+                config: { presence: { key: myUserId } }
+            });
 
-        async function startPrivateChat() {
-            const targetName = searchInput.value.trim();
-            if (!targetName) return;
+            presenceChannel
+                .on("presence", { event: "sync" }, () => {
+                    const state = presenceChannel.presenceState();
+                    const users = [];
+                    Object.values(state).flat().forEach(p => {
+                        if (p.user_id && p.user_id !== myUserId) {
+                            users.push({ id: p.user_id, name: p.username });
+                        }
+                    });
+                    renderOnline(users);
+                })
+                .subscribe(async (status) => {
+                    if (status === "SUBSCRIBED") {
+                        await presenceChannel.track({
+                            user_id: myUserId,
+                            username: myUsername
+                        });
+                    }
+                });
+        }
 
-            if (targetName === myUsername) {
-                statusTip.textContent = "不能和自己私聊";
+        function renderOnline(users) {
+            // 去重（同一用户多标签页）
+            const seen = new Set();
+            const unique = users.filter(u => {
+                if (seen.has(u.id)) return false;
+                seen.add(u.id);
+                return true;
+            });
+
+            onlineList.innerHTML = `<div class="online-user me">${escapeHtml(myUsername)}（我）</div>`;
+
+            if (unique.length === 0) {
+                onlineList.innerHTML += '<div style="font-size:13px;color:#bbb;text-align:center;padding:10px;">暂无其他人在线</div>';
                 return;
             }
 
-            statusTip.textContent = "查找用户…";
+            unique.forEach(u => {
+                const div = document.createElement("div");
+                div.className = "online-user";
+                div.textContent = u.name;
+                div.addEventListener("click", () => sendChatRequest(u.id, u.name));
+                onlineList.appendChild(div);
+            });
+        }
 
-            const { data: targetProfile } = await db
-                .from("profiles")
-                .select("id, username")
-                .eq("username", targetName)
+        // ===== 发起私聊请求 =====
+        async function sendChatRequest(targetId, targetName) {
+            statusTip.textContent = `正在向 ${targetName} 发起请求…`;
+
+            // 检查是否已有请求
+            const { data: existing } = await db
+                .from("chat_requests")
+                .select("id")
+                .eq("from_user", myUserId)
+                .eq("to_user", targetId)
+                .eq("status", "pending")
                 .maybeSingle();
 
-            if (!targetProfile) {
-                statusTip.textContent = "找不到这个用户";
+            if (existing) {
+                statusTip.textContent = `已经向 ${targetName} 发过请求了，等待对方回应`;
                 return;
             }
 
-            otherUserId = targetProfile.id;
-            otherUsername = targetProfile.username;
+            const { error } = await db.from("chat_requests").insert({
+                from_user: myUserId,
+                to_user: targetId,
+                status: "pending"
+            });
 
-            statusTip.textContent = "查找会话…";
+            if (error) {
+                console.error(error);
+                statusTip.textContent = "发起请求失败";
+            } else {
+                statusTip.textContent = `请求已发送，等待 ${targetName} 同意`;
+            }
+        }
 
-            // 用两个 user_id 排序后拼成固定 key，双方算出同一个
+        // ===== 监听收到的请求 =====
+        function listenRequests() {
+            requestChannel = db.channel("chat-requests-" + myUserId)
+                .on("postgres_changes", {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "chat_requests",
+                    filter: `to_user=eq.${myUserId}`
+                }, (payload) => {
+                    const req = payload.new;
+                    // 查发起人用户名
+                    db.from("profiles").select("username").eq("id", req.from_user).maybeSingle()
+                        .then(({ data }) => {
+                            const fromName = data ? data.username : "某人";
+                            showRequest(req.id, req.from_user, fromName);
+                        });
+                })
+                .subscribe();
+        }
+
+        function showRequest(requestId, fromId, fromName) {
+            const card = document.createElement("div");
+            card.className = "request-card";
+            card.id = "req-" + requestId;
+            card.innerHTML = `
+                <p><span class="from-name">${escapeHtml(fromName)}</span> 想和你私聊，是否同意？</p>
+                <div class="request-actions">
+                    <button class="accept-btn">同意</button>
+                    <button class="reject-btn">拒绝</button>
+                </div>
+            `;
+
+            requestPanel.appendChild(card);
+
+            card.querySelector(".accept-btn").addEventListener("click", async () => {
+                await db.from("chat_requests").update({ status: "accepted" }).eq("id", requestId);
+                card.remove();
+                // 直接进入私聊
+                otherUserId = fromId;
+                otherUsername = fromName;
+                await enterConversation();
+            });
+
+            card.querySelector(".reject-btn").addEventListener("click", async () => {
+                await db.from("chat_requests").update({ status: "rejected" }).eq("id", requestId);
+                card.remove();
+            });
+        }
+
+        // ===== 进入会话 =====
+        async function enterConversation() {
             const pairKey = [myUserId, otherUserId].sort().join("_");
 
             const { data: existing } = await db
@@ -329,15 +523,14 @@
         }
 
         async function subscribeMessages() {
-            if (channel) {
-                await db.removeChannel(channel);
-                channel = null;
+            if (msgChannel) {
+                await db.removeChannel(msgChannel);
+                msgChannel = null;
             }
 
-            channel = db.channel("private-" + currentConversationId + "-" + Date.now())
+            msgChannel = db.channel("private-" + currentConversationId + "-" + Date.now())
                 .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
                     if (payload.new.conversation_id !== currentConversationId) return;
-
                     if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
                         messagesEl.innerHTML = "";
                     }
