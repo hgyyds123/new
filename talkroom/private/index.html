@@ -248,7 +248,7 @@
 
             statusTip.textContent = "查找会话…";
 
-            // 找有没有已存在的会话（两边都在这条会话里）
+            // 找有没有已存在的会话
             const { data: myConvs } = await db
                 .from("conversation_members")
                 .select("conversation_id")
@@ -277,6 +277,7 @@
                     .single();
 
                 if (convErr || !newConv) {
+                    console.error("创建会话失败:", convErr);
                     statusTip.textContent = "创建会话失败";
                     return;
                 }
@@ -331,9 +332,11 @@
                 .on("postgres_changes", {
                     event: "INSERT",
                     schema: "public",
-                    table: "messages",
-                    filter: `conversation_id=eq.${currentConversationId}`
+                    table: "messages"
                 }, (payload) => {
+                    // 只处理属于当前会话的消息
+                    if (payload.new.conversation_id !== currentConversationId) return;
+
                     if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
                         messagesEl.innerHTML = "";
                     }
