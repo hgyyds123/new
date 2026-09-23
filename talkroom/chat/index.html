@@ -9,6 +9,17 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        .ai-status {
+            text-align: center;
+            font-size: 13px;
+            margin-bottom: 10px;
+            color: #999;
+        }
+        .ai-status.online { color: #27ae60; }
+        .ai-status.offline { color: #e74c3c; }
+        .ai-status.error { color: #e67e22; }
+        .ai-status.unknown { color: #999; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -106,6 +117,7 @@
 <body>
     <div class="card" id="app">
         <h1>💬 聊天室</h1>
+        <div class="ai-status" id="aiStatus">🤖 AI 可用性：检测中…</div>
         <div class="my-nickname">当前账号：<span id="myNickname">…</span></div>
         <div class="online-info">在线：<span id="onlineCount">0</span> 人</div>
         <div class="messages" id="messages">
@@ -135,7 +147,7 @@
         }
 
         const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmenl3b3N3dWVxY3h5b3B1cGpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0Nzg1NjIsImV4cCI6MjEwNTA1NDU2Mn0.WS1bxTcLiq1vZcCmmnGAoTtMJ04vWu0CAsZZLLUtvzU";
+        const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -150,18 +162,57 @@
         let userId = null;
         let username = null;
 
+        // ===== AI 状态检测 =====
+        async function checkAIStatus() {
+            const el = document.getElementById("aiStatus");
+            try {
+                const { data } = await db
+                    .from("ai_status")
+                    .select("*")
+                    .eq("id", 1)
+                    .maybeSingle();
+
+                if (!data || !data.last_heartbeat) {
+                    el.textContent = "🤖 AI 可用性：未知";
+                    el.className = "ai-status unknown";
+                    return;
+                }
+
+                const last = new Date(data.last_heartbeat).getTime();
+                const diff = (Date.now() - last) / 1000;
+
+                if (diff > 30) {
+                    el.textContent = "🤖 AI 可用性：不可用";
+                    el.className = "ai-status offline";
+                } else if (data.error_msg) {
+                    el.textContent = "🤖 AI 可用性：错误";
+                    el.className = "ai-status error";
+                } else if (data.online) {
+                    el.textContent = "🤖 AI 可用性：可用";
+                    el.className = "ai-status online";
+                } else {
+                    el.textContent = "🤖 AI 可用性：未知";
+                    el.className = "ai-status unknown";
+                }
+            } catch (e) {
+                el.textContent = "🤖 AI 可用性：未知";
+                el.className = "ai-status unknown";
+            }
+        }
+
+        checkAIStatus();
+        setInterval(checkAIStatus, 10000);
+
         async function initAuth() {
             const { data: { session } } = await db.auth.getSession();
 
             if (!session || !session.user) {
-                // 没登录，跳登录页
                 window.location.href = "/talkroom/login/";
                 return;
             }
 
             userId = session.user.id;
 
-            // 从 profiles 表拿用户名
             const { data: profile } = await db
                 .from("profiles")
                 .select("username")
@@ -171,7 +222,6 @@
             username = profile ? profile.username : "未知用户";
             document.getElementById("myNickname").textContent = username;
 
-            // 检查是否被封禁
             const { data: banData } = await db
                 .from("banned")
                 .select("user_id")
