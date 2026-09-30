@@ -117,7 +117,6 @@
 <body>
     <div class="card" id="app">
         <h1>💬 聊天室</h1>
-        <div class="ai-status" id="aiStatus">🤖 AI 可用性：检测中…</div>
         <div class="my-nickname">当前账号：<span id="myNickname">…</span></div>
         <div class="online-info">在线：<span id="onlineCount">0</span> 人</div>
         <div class="messages" id="messages">
@@ -161,44 +160,6 @@
 
         let userId = null;
         let username = null;
-
-        // ===== AI 状态检测 =====
-        async function checkAIStatus() {
-            const el = document.getElementById("aiStatus");
-            try {
-                const { data } = await db
-                    .from("ai_status")
-                    .select("*")
-                    .eq("id", 1)
-                    .maybeSingle();
-
-                if (!data || !data.last_heartbeat) {
-                    el.textContent = "🤖 AI 可用性：未知";
-                    el.className = "ai-status unknown";
-                    return;
-                }
-
-                const last = new Date(data.last_heartbeat).getTime();
-                const diff = (Date.now() - last) / 1000;
-
-                if (diff > 30) {
-                    el.textContent = "🤖 AI 可用性：不可用";
-                    el.className = "ai-status offline";
-                } else if (data.error_msg) {
-                    el.textContent = "🤖 AI 可用性：错误";
-                    el.className = "ai-status error";
-                } else if (data.online) {
-                    el.textContent = "🤖 AI 可用性：可用";
-                    el.className = "ai-status online";
-                } else {
-                    el.textContent = "🤖 AI 可用性：未知";
-                    el.className = "ai-status unknown";
-                }
-            } catch (e) {
-                el.textContent = "🤖 AI 可用性：未知";
-                el.className = "ai-status unknown";
-            }
-        }
 
         checkAIStatus();
         setInterval(checkAIStatus, 10000);
