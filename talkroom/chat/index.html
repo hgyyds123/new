@@ -19,16 +19,61 @@
             padding: 20px;
         }
 
+        .layout {
+            display: flex;
+            gap: 16px;
+            max-width: 720px;
+            width: 100%;
+            height: 80vh;
+        }
+
         .card {
+            flex: 1;
             background: rgba(255, 255, 255, 0.96);
             border-radius: 20px;
             padding: 28px 24px;
-            max-width: 560px;
-            width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
-            height: 80vh;
+            min-width: 0;
+        }
+
+        .sidebar {
+            width: 140px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .balance-box {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .balance-box .label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 6px;
+        }
+
+        .balance-box .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #27ae60;
+            word-break: break-all;
+        }
+
+        .balance-box .value.low { color: #e67e22; }
+        .balance-box .value.critical { color: #e74c3c; }
+
+        .balance-box .unit {
+            font-size: 11px;
+            color: #bbb;
+            margin-top: 4px;
         }
 
         h1 { font-size: 22px; color: #333; margin-bottom: 6px; text-align: center; }
@@ -108,21 +153,37 @@
         .forbidden { text-align: center; padding: 80px 20px; }
         .forbidden h1 { font-size: 64px; color: #e74c3c; margin-bottom: 16px; }
         .forbidden p { font-size: 17px; color: #666; }
+
+        @media (max-width: 700px) {
+            .layout { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; flex-direction: row; }
+            .balance-box { flex: 1; }
+        }
     </style>
 </head>
 <body>
-    <div class="card" id="app">
-        <h1>💬 聊天室</h1>
-        <div class="my-nickname">当前账号：<span id="myNickname">…</span></div>
-        <div class="online-info">在线：<span id="onlineCount">0</span> 人</div>
-        <div class="messages" id="messages">
-            <div class="msg"><span class="name">系统</span>正在连接聊天室…</div>
+    <div class="layout">
+        <div class="card" id="app">
+            <h1>💬 聊天室</h1>
+            <div class="my-nickname">当前账号：<span id="myNickname">…</span></div>
+            <div class="online-info">在线：<span id="onlineCount">0</span> 人</div>
+            <div class="messages" id="messages">
+                <div class="msg"><span class="name">系统</span>正在连接聊天室…</div>
+            </div>
+            <div class="input-row">
+                <input type="text" id="msgInput" placeholder="说点什么…" maxlength="100">
+                <button id="sendBtn">发送</button>
+            </div>
+            <div class="status-tip" id="statusTip"></div>
         </div>
-        <div class="input-row">
-            <input type="text" id="msgInput" placeholder="说点什么…" maxlength="100">
-            <button id="sendBtn">发送</button>
+
+        <div class="sidebar">
+            <div class="balance-box">
+                <div class="label">💰 AI 额度</div>
+                <div class="value" id="balanceValue">…</div>
+                <div class="unit">pollen</div>
+            </div>
         </div>
-        <div class="status-tip" id="statusTip"></div>
     </div>
 
     <noscript>
@@ -136,6 +197,7 @@
         const BLOCKED_WORDS = ["广告", "加群", "代练", "傻逼", "操你", "尼玛", "滚"];
         const MAX_MSG_LENGTH = 100;
         const SEND_COOLDOWN = 3000;
+        const WASMER_URL = "https://hgai-61677.wasmer.app";
 
         function containsBlockedWord(text) {
             return BLOCKED_WORDS.some(word => text.includes(word));
@@ -157,6 +219,33 @@
         let userId = null;
         let username = null;
 
+        // ===== AI 额度显示 =====
+        async function checkBalance() {
+            const el = document.getElementById("balanceValue");
+            try {
+                const res = await fetch(WASMER_URL + "/balance");
+                const data = await res.json();
+
+                if (data.balance !== undefined) {
+                    const bal = Number(data.balance);
+                    el.textContent = bal.toFixed(4);
+                    el.className = "value";
+                    if (bal < 0.05) el.className = "value critical";
+                    else if (bal < 0.15) el.className = "value low";
+                } else {
+                    el.textContent = "未知";
+                    el.className = "value";
+                }
+            } catch (e) {
+                el.textContent = "离线";
+                el.className = "value critical";
+            }
+        }
+
+        checkBalance();
+        setInterval(checkBalance, 60000);
+
+        // ===== 认证 =====
         async function initAuth() {
             const { data: { session } } = await db.auth.getSession();
 
@@ -223,7 +312,6 @@
             });
         }
 
-        // ===== 支持图片显示 =====
         function renderMessage(row) {
             const div = document.createElement("div");
             div.className = "msg";
