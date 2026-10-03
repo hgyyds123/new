@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>更新日志 · hgt.l.cd</title>
+    <title>更新日志 · hg1.dpdns.org</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -72,6 +72,13 @@
             font-size: 18px;
         }
 
+        .entry ul li img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: block;
+        }
+
         .back { text-align: center; margin-top: 20px; }
         .back a { color: #667eea; text-decoration: none; font-size: 14px; }
         .back a:hover { text-decoration: underline; }
@@ -82,7 +89,7 @@
 <body>
     <div class="container">
         <h1>📝 更新日志</h1>
-        <p class="subtitle">hgt.l.cd 的变更记录</p>
+        <p class="subtitle">hg1.dpdns.org 的变更记录</p>
         <div id="logContainer">
             <div class="empty">加载中…</div>
         </div>
@@ -131,13 +138,19 @@
                     div.innerHTML = `
                         <div class="date">${escapeHtml(g.date)}</div>
                         <div class="version">${escapeHtml(g.version)}</div>
-                        <ul>${g.items.map(i => `<li>${escapeHtml(i)}</li>`).join("")}</ul>
+                        <ul>${g.items.map(i => renderItem(i)).join("")}</ul>
                     `;
                     container.appendChild(div);
                 });
             } catch (err) {
                 container.innerHTML = '<div class="empty">加载失败：' + escapeHtml(err.message) + '</div>';
             }
+        }
+
+        // 渲染单条：如果含 <img> 就不转义，否则转义
+        function renderItem(item) {
+            const isImage = item.includes('<img ');
+            return `<li>${isImage ? item : escapeHtml(item)}</li>`;
         }
 
         function escapeHtml(str) {
