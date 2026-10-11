@@ -245,12 +245,26 @@
                 return;
             }
 
-            // 没开 2FA，直接进
-            msg.textContent = "登录成功，正在跳转…";
-            msg.className = "msg ok";
-            setTimeout(() => {
-                window.location.href = "/talkroom/";
-            }, 500);
+            // 没开 2FA，显示提示，让用户选择
+msg.innerHTML = `
+    <div style="background:#fff8e1; border:1px solid #f59e0b; border-radius:12px; padding:14px; text-align:left; margin-bottom:10px;">
+        <div style="font-size:13px; color:#92400e; line-height:1.6; margin-bottom:10px;">
+            💡 建议开启两步验证（2FA），让账号更安全。现在去开启吗？
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button id="goMfaBtn" style="flex:1; padding:8px; background:#f59e0b; color:#fff; border:none; border-radius:20px; font-size:13px; cursor:pointer;">去开启</button>
+            <button id="skipMfaBtn" style="flex:1; padding:8px; background:#f0f2f8; color:#666; border:none; border-radius:20px; font-size:13px; cursor:pointer;">下次再说</button>
+        </div>
+    </div>
+`;
+
+document.getElementById("goMfaBtn").addEventListener("click", () => {
+    window.location.href = "/account/";
+});
+
+document.getElementById("skipMfaBtn").addEventListener("click", () => {
+    window.location.href = "/talkroom/";
+});
         }
 
         async function doTotpStage() {
