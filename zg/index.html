@@ -26,7 +26,11 @@
 <body>
     <div id="game-container">
         <!-- 引入你自托管的 Ruffle 脚本，data-public-path 确保它准确找到同目录的 .wasm 文件 -->
-        <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+        <!-- 把 ruffle.js 前面加上 ./ -->
+        <script src="./ruffle.js" data-public-path="./"></script>
+
+        <!-- 游戏文件也加上 ./ -->
+        <ruffle-player src="./中国行政区狙击游戏.swf" width="800" height="600"></ruffle-player>
         
         <!-- 播放器标签，请把 src 里的名字换成你实际的 .swf 文件名 -->
         <ruffle-player src="spt.swf" width="800" height="600"></ruffle-player>
