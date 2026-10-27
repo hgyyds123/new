@@ -4,16 +4,30 @@
     <meta charset="UTF-8">
     <title>我的 Flash 游戏</title>
     <style>
-        body { margin: 0; padding: 0; background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        /* 简单粗暴，直接让 body 居中 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        /* 强制规定播放器的宽高，杜绝 0x0 的情况 */
+        ruffle-player {
+            width: 800px !important;
+            height: 600px !important;
+            max-width: 100%;
+            max-height: 100%;
+        }
     </style>
 </head>
 <body>
-
-    <!-- 1. 引入官方同款 CDN 脚本 -->
+    <!-- 使用官方最新 CDN -->
     <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
     
-    <!-- 2. 播放器。注意 src 必须完全等于你仓库里的文件名（区分大小写） -->
-    <ruffle-player src="zg.swf" width="800" height="600"></ruffle-player>
-
+    <!-- 记得确保游戏文件叫 game.swf，并且和这个 html 在同一个文件夹 -->
+    <ruffle-player src="./game.swf"></ruffle-player>
 </body>
 </html>
