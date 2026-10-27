@@ -2,38 +2,18 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的 Flash 游戏</title>
     <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden; /* 防止出现多余的滚动条 */
-        }
-        #game-container {
-            max-width: 100%;
-            max-height: 100%;
-            display: flex;
-            justify-content: center;
-        }
+        body { margin: 0; padding: 0; background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <!-- 引入你自托管的 Ruffle 脚本，data-public-path 确保它准确找到同目录的 .wasm 文件 -->
-        <!-- 把 ruffle.js 前面加上 ./ -->
-        <script src="./ruffle.js" data-public-path="./"></script>
 
-        <!-- 游戏文件也加上 ./ -->
-        <ruffle-player src="./中国行政区狙击游戏.swf" width="800" height="600"></ruffle-player>
-        
-        <!-- 播放器标签，请把 src 里的名字换成你实际的 .swf 文件名 -->
-        <ruffle-player src="spt.swf" width="800" height="600"></ruffle-player>
-    </div>
+    <!-- 1. 引入官方同款 CDN 脚本 -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+    
+    <!-- 2. 播放器。注意 src 必须完全等于你仓库里的文件名（区分大小写） -->
+    <ruffle-player src="你的游戏文件名.swf" width="800" height="600"></ruffle-player>
+
 </body>
 </html>
