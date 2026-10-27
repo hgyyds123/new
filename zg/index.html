@@ -2,32 +2,17 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>hgFlash 游戏</title>
+    <title>我的 Flash 游戏</title>
     <style>
-        /* 简单粗暴，直接让 body 居中 */
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        /* 强制规定播放器的宽高，杜绝 0x0 的情况 */
-        ruffle-player {
-            width: 800px !important;
-            height: 600px !important;
-            max-width: 100%;
-            max-height: 100%;
-        }
+        body { margin: 0; padding: 0; background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        ruffle-player { width: 800px !important; height: 600px !important; }
     </style>
 </head>
 <body>
-    <!-- 使用官方最新 CDN -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+    <!-- 关键点：data-public-path="." 强制 Ruffle 在当前目录下寻找配套的 .wasm 和 core.ruffle.js 文件 -->
+    <script src="./ruffle.js" data-public-path="."></script>
     
-    <!-- 记得确保游戏文件叫 game.swf，并且和这个 html 在同一个文件夹 -->
+    <!-- 你的游戏文件 -->
     <ruffle-player src="./zg.swf"></ruffle-player>
 </body>
 </html>
