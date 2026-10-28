@@ -27,14 +27,15 @@
         window.RufflePlayer = window.RufflePlayer || {};
         
         window.RufflePlayer.config = {
-            logLevel: "info", 
-            // 完全去掉 fontSources
-            // 告诉游戏：不管你找什么中文字体，都用系统自带的
+            logLevel: "info",
+            // 指向你新上传的思源黑体
+            fontSources: ["./NotoSansSC.ttf"],
             defaultFonts: {
-                sans: ["Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "PingFang SC", "sans-serif"],
+                // 把游戏可能请求的中英文字体全映射过去
+                sans: ["Noto Sans SC", "Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "PingFang SC", "sans-serif"],
                 serif: ["SimSun", "宋体", "serif"],
                 typewriter: ["Courier New", "monospace"],
-                "device": ["Microsoft YaHei", "微软雅黑", "sans-serif"]
+                "device": ["Noto Sans SC", "Microsoft YaHei"]
             }
         };
 
