@@ -16,8 +16,12 @@
         window.RufflePlayer = window.RufflePlayer || {};
         window.RufflePlayer.config = {
             logLevel: "info",
-            // 关键：把执行超时限制从默认值调大，给游戏充足的初始化时间
-            maxExecutionDuration: 180 // 单位是秒，先给足 3 分钟
+            // 强制使用低画质渲染，这能极大减少复杂地图带来的性能消耗
+            quality: "low",
+            // 忽略老游戏的兼容性警告，强行跑
+            ignoreUnsupported: true,
+            // 把执行时间上限拉满
+            maxExecutionDuration: 300
         };
     </script>
     <script src="./ruffle.js"></script>
