@@ -26,10 +26,12 @@
         window.RufflePlayer = window.RufflePlayer || {};
         window.RufflePlayer.config = {
             logLevel: "info",
-            // 加载你上传的本地思源黑体
-            fontSources: ["./NotoSansSC.ttf"],
+            // 【关键修改】使用国内静态资源库 (Staticfile) 提供的精简版中文字体
+            // 这是一个纯前端用的 woff2 格式精简中文字体，国内访问极快，体积小，绝不卡死
+            fontSources: ["https://cdn.staticfile.net/fontsource-lite/5.0.20/noto-sans-sc@400/noto-sans-sc-chinese-simplified-400-normal.woff2"],
+            
             defaultFonts: {
-                sans: ["Noto Sans SC", "Source Han Sans CN", "Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "sans-serif"],
+                sans: ["Noto Sans SC", "Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "sans-serif"],
                 serif: ["SimSun", "宋体", "serif"],
                 typewriter: ["Courier New", "monospace"],
                 "device": ["Noto Sans SC", "Microsoft YaHei"]
