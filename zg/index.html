@@ -5,14 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的游戏 - zg</title>
     <style>
-        /* 【关键修改 1】用浏览器原生的方式加载这个 ttf 文件 */
-        @font-face {
-            font-family: 'MyCustomFont';
-            src: url('./msyh.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-
         body {
             margin: 0; padding: 0;
             background-color: #2c3e50;
@@ -35,15 +27,14 @@
         window.RufflePlayer = window.RufflePlayer || {};
         
         window.RufflePlayer.config = {
-            logLevel: "info",
-            // 【关键修改 2】把文件提供给 Ruffle
-            fontSources: ["./msyh.ttf"],
-            // 【关键修改 3】把游戏里可能请求的字体名，全权交给浏览器处理
+            logLevel: "info", 
+            // 完全去掉 fontSources
+            // 告诉游戏：不管你找什么中文字体，都用系统自带的
             defaultFonts: {
-                sans: ["MyCustomFont", "Microsoft YaHei", "微软雅黑", "sans-serif"],
-                serif: ["MyCustomFont", "SimSun", "宋体", "serif"],
-                typewriter: ["MyCustomFont", "Courier New", "monospace"],
-                device: ["MyCustomFont", "Microsoft YaHei", "微软雅黑"]
+                sans: ["Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "PingFang SC", "sans-serif"],
+                serif: ["SimSun", "宋体", "serif"],
+                typewriter: ["Courier New", "monospace"],
+                "device": ["Microsoft YaHei", "微软雅黑", "sans-serif"]
             }
         };
 
