@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的游戏 - zg</title>
+    <title>zggame</title>
     <style>
         /* 页面基础样式，居中显示 */
         body {
@@ -39,6 +39,21 @@
     <script src="./ruffle.js"></script>
     <script>
         window.RufflePlayer = window.RufflePlayer || {};
+        
+        // ================= 核心字体配置 =================
+        window.RufflePlayer.config = {
+            // 告诉 Ruffle 去哪里找字体文件（同目录下的 msyh.ttf）
+            fontSources: ["./msyh.ttf"],
+            
+            // 告诉 Ruffle，当游戏里请求以下这些字体时，统统使用加载的 msyh.ttf 来显示
+            defaultFonts: {
+                sans: ["Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "sans-serif"],
+                serif: ["SimSun", "宋体", "serif"],
+                typewriter: ["Courier New", "monospace"]
+            }
+        };
+        // ================================================
+
         window.addEventListener("DOMContentLoaded", () => {
             const ruffle = window.RufflePlayer.newest();
             const player = ruffle.createPlayer();
