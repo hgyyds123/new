@@ -5,49 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的游戏 - zg</title>
     <style>
-        /* 页面基础样式，居中显示 */
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #2c3e50; /* 深色背景显得高级 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden; /* 防止出现不必要的滚动条 */
+            margin: 0; padding: 0;
+            background-color: #2c3e50;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow: hidden;
         }
-        /* 游戏容器 */
         #game-container {
-            width: 100%;
-            height: 100vh;
-            max-width: 1024px; /* 你可以根据游戏实际宽度修改 */
-            max-height: 768px; /* 你可以根据游戏实际高度修改 */
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            width: 100%; height: 100vh;
+            max-width: 1024px; max-height: 768px;
         }
-        /* 让 Ruffle 播放器填满容器 */
-        ruffle-player {
-            width: 100%;
-            height: 100%;
-        }
+        ruffle-player { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
     <div id="game-container"></div>
 
-    <!-- 引入同目录下的 ruffle.js -->
+    <!-- 引入本地的 ruffle.js（请确保路径正确） -->
     <script src="./ruffle.js"></script>
     <script>
         window.RufflePlayer = window.RufflePlayer || {};
+        
+        window.RufflePlayer.config = {
+            // 加载字体文件
+            fontSources: ["./msyh.ttf"],
+            // 覆盖 Flash 常用的默认字体族
+            defaultFonts: {
+                sans: ["Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "sans-serif"],
+                serif: ["SimSun", "宋体", "serif"],
+                typewriter: ["Courier New", "monospace"],
+                // 增加一个专门的映射，确保万无一失
+                "device": ["Microsoft YaHei", "微软雅黑"]
+            }
+        };
+
         window.addEventListener("DOMContentLoaded", () => {
             const ruffle = window.RufflePlayer.newest();
             const player = ruffle.createPlayer();
-            
-            // 把播放器放进页面
-            const container = document.getElementById("game-container");
-            container.appendChild(player);
-            
-            // 加载同目录下的 zg.swf
+            document.getElementById("game-container").appendChild(player);
+            // 加载同级目录下的 swf
             player.ruffle().load("./zg.swf");
         });
     </script>
