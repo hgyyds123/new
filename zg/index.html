@@ -25,20 +25,18 @@
     <script>
         window.RufflePlayer = window.RufflePlayer || {};
         window.RufflePlayer.config = {
-            // 保留 info 方便看日志
             logLevel: "info",
-            // 只用这个国内 CDN 的思源黑体，速度极快！
-            fontSources: ["https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/byted-fonts/1.0.1/SourceHanSansCN-Regular.otf"],
+            // 加载你上传的本地思源黑体
+            fontSources: ["./NotoSansSC.ttf"],
             defaultFonts: {
-                sans: ["Source Han Sans CN", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "sans-serif"],
+                sans: ["Noto Sans SC", "Source Han Sans CN", "Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "sans-serif"],
                 serif: ["SimSun", "宋体", "serif"],
                 typewriter: ["Courier New", "monospace"],
-                "device": ["Source Han Sans CN", "Microsoft YaHei"]
+                "device": ["Noto Sans SC", "Microsoft YaHei"]
             }
         };
     </script>
 
-    <!-- 引入本地 ruffle -->
     <script src="./ruffle.js"></script>
 
     <script>
@@ -46,7 +44,6 @@
             const ruffle = window.RufflePlayer.newest();
             const player = ruffle.createPlayer();
             document.getElementById("game-container").appendChild(player);
-            // 加载游戏
             player.ruffle().load("./zg.swf");
         });
     </script>
