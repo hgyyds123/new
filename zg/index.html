@@ -3,16 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的游戏 - zg</title>
+    <title>game - zg</title>
     <style>
-        /* 让浏览器原生加载这个字体 */
-        @font-face {
-            font-family: 'MyMSYH';
-            src: url('./msyh.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-        
         body {
             margin: 0; padding: 0;
             background-color: #2c3e50;
@@ -35,6 +27,9 @@
         window.RufflePlayer = window.RufflePlayer || {};
         
         window.RufflePlayer.config = {
+            // 【关键点】开启详细日志，看看 Ruffle 在后台干什么
+            logLevel: "info", 
+            
             fontSources: ["./msyh.ttf"],
             defaultFonts: {
                 sans: ["Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "sans-serif"],
