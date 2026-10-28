@@ -2,17 +2,54 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>我的 Flash 游戏</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的游戏 - zg</title>
     <style>
-        body { margin: 0; padding: 0; background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        ruffle-player { width: 800px !important; height: 600px !important; }
+        /* 页面基础样式，居中显示 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2c3e50; /* 深色背景显得高级 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* 防止出现不必要的滚动条 */
+        }
+        /* 游戏容器 */
+        #game-container {
+            width: 100%;
+            height: 100vh;
+            max-width: 1024px; /* 你可以根据游戏实际宽度修改 */
+            max-height: 768px; /* 你可以根据游戏实际高度修改 */
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        /* 让 Ruffle 播放器填满容器 */
+        ruffle-player {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body>
-    <!-- 放弃本地文件，使用官方原生加载，避开你服务器上的未知拦截 -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
-    
-    <!-- 游戏文件 -->
-    <ruffle-player src="./zg.swf"></ruffle-player>
+
+    <div id="game-container"></div>
+
+    <!-- 引入同目录下的 ruffle.js -->
+    <script src="./ruffle.js"></script>
+    <script>
+        window.RufflePlayer = window.RufflePlayer || {};
+        window.addEventListener("DOMContentLoaded", () => {
+            const ruffle = window.RufflePlayer.newest();
+            const player = ruffle.createPlayer();
+            
+            // 把播放器放进页面
+            const container = document.getElementById("game-container");
+            container.appendChild(player);
+            
+            // 加载同目录下的 zg.swf
+            player.ruffle().load("./zg.swf");
+        });
+    </script>
 </body>
 </html>
