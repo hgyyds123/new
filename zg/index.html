@@ -22,23 +22,26 @@
 
     <div id="game-container"></div>
 
-    <script src="./ruffle.js"></script>
     <script>
         window.RufflePlayer = window.RufflePlayer || {};
-        
         window.RufflePlayer.config = {
             logLevel: "info",
-            // 指向你新上传的思源黑体
-            fontSources: ["./NotoSansSC.ttf"],
+            // 【核心修改】直接告诉 Ruffle 去加载这个稳定的网络字体
+            // 这是字节跳动 Static CDN 提供的思源黑体，国内访问极快
+            fontSources: ["https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/byted-fonts/1.0.1/SourceHanSansCN-Regular.otf"],
+            
             defaultFonts: {
-                // 把游戏可能请求的中英文字体全映射过去
-                sans: ["Noto Sans SC", "Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "PingFang SC", "sans-serif"],
+                sans: ["Source Han Sans CN", "Noto Sans SC", "Microsoft YaHei", "微软雅黑", "SimHei", "黑体", "sans-serif"],
                 serif: ["SimSun", "宋体", "serif"],
                 typewriter: ["Courier New", "monospace"],
-                "device": ["Noto Sans SC", "Microsoft YaHei"]
+                "device": ["Source Han Sans CN", "Microsoft YaHei"]
             }
         };
+    </script>
 
+    <script src="./ruffle.js"></script>
+
+    <script>
         window.addEventListener("DOMContentLoaded", () => {
             const ruffle = window.RufflePlayer.newest();
             const player = ruffle.createPlayer();
