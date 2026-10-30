@@ -73,11 +73,14 @@
     <script>
         // ================= 配置区 =================
         
-        // 1. 你的游戏列表（以后加新游戏，直接往下加一行就行了）
+        // 1. 你的文件列表（排在前面的先显示）
         const gameFiles = [
-            { name: '中国行政区狙击游戏', title: '中国行政区狙击游戏', size: '156 KB' },
-            { name: 'pt', title: '中国地形区拼图', size: '248 KB' }
-            // { name: 'other-game', title: '其他游戏', size: '1.5 MB' }
+            // ⚠️ 把这里换成你真实的 EXE 文件名（不要带 .exe 后缀），它就会变成蓝色按钮置顶
+            { name: 'player', title: 'flash应用（必装）', size: '8.91 MB', type: 'exe' },
+            
+            // SWF 游戏列表
+            { name: 'zg', title: '中国行政区狙击游戏', size: '156 KB', type: 'swf' },
+            { name: 'pt', title: '中国地形区拼图', size: '248 KB', type: 'swf' }
         ]; 
 
         // 2. 下载站的基础路径（指向你搞定的 dl 域名）
@@ -102,8 +105,23 @@
             gamesToRender.forEach(game => {
                 const item = document.createElement('div');
                 item.className = 'game-item';
-                const fileUrl = `${downloadBasePath}/${game.name}.swf`;
                 
+                // 自动拼接后缀
+                const fileUrl = `${downloadBasePath}/${game.name}.${game.type}`;
+                
+                // 判断类型：EXE 变蓝，SWF 白底+游玩
+                let downloadBtnClass = 'btn-secondary'; 
+                let playButton = '';
+
+                if (game.type === 'exe') {
+                    downloadBtnClass = 'btn-primary'; 
+                } else {
+                    playButton = `
+                        <a href="${playUrl}" target="_blank" class="btn btn-primary">
+                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> 前往游玩
+                        </a>`;
+                }
+
                 item.innerHTML = `
                     <div class="game-info">
                         <div class="game-icon">
@@ -111,16 +129,15 @@
                         </div>
                         <div>
                             <div class="game-name">${game.title}</div>
-                            <div class="game-meta">${game.size} · SWF 格式</div>
+                            <div class="game-meta">${game.size} · ${game.type.toUpperCase()} 格式</div>
                         </div>
                     </div>
                     <div class="btn-group">
-                        <a href="${fileUrl}" download class="btn btn-secondary">
-                            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> 下载
+                        <a href="${fileUrl}" download class="btn ${downloadBtnClass}">
+                            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> 
+                            下载 ${game.type.toUpperCase()}
                         </a>
-                        <a href="${playUrl}" target="_blank" class="btn btn-primary">
-                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> 前往游玩
-                        </a>
+                        ${playButton}
                     </div>
                 `;
                 listContainer.appendChild(item);
