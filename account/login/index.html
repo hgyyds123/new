@@ -15,13 +15,13 @@
     <style>
         /* ================= 1. 浅色模式（默认） ================= */
         :root {
-            --bg-color: #F0F4F9;          /* 浅灰底色 */
-            --card-bg: #FFFFFF;           /* 纯白卡片 */
-            --text-main: #1F1F1F;         /* 主文字 */
-            --text-sub: #444746;          /* 副文字 */
-            --outline: #747775;           /* 边框 */
-            --primary: #0b57d0;           /* 主题蓝 */
-            --on-primary: #FFFFFF;        /* 蓝底白字 */
+            --bg-color: #F0F4F9;          
+            --card-bg: #FFFFFF;           
+            --text-main: #1F1F1F;         
+            --text-sub: #444746;          
+            --outline: #747775;           
+            --primary: #0b57d0;           
+            --on-primary: #FFFFFF;        
             --primary-hover: #0842a0;
             --error: #B3261E;
             --focus-border: #0b57d0;
@@ -30,13 +30,13 @@
         /* ================= 2. 深色模式（跟随系统） ================= */
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #131314;          /* 纯黑背景 */
-                --card-bg: #1E1F20;           /* 深灰卡片 */
-                --text-main: #E3E3E3;         /* 浅白文字 */
-                --text-sub: #C4C7C5;          /* 灰白文字 */
-                --outline: #8E918F;           /* 深灰边框 */
-                --primary: #A8C7FA;           /* 浅蓝主题色 */
-                --on-primary: #062E6F;        /* 浅蓝底深蓝字 */
+                --bg-color: #131314;          
+                --card-bg: #1E1F20;           
+                --text-main: #E3E3E3;         
+                --text-sub: #C4C7C5;          
+                --outline: #8E918F;           
+                --primary: #A8C7FA;           
+                --on-primary: #062E6F;        
                 --primary-hover: #D3E3FD;
                 --error: #F2B8B5;
                 --focus-border: #A8C7FA;
@@ -275,8 +275,29 @@
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true }
+            auth: { 
+                persistSession: true, // 强制保存 session 到 localStorage
+                autoRefreshToken: true, // 自动在后台刷新 token
+                detectSessionInUrl: true,
+                storage: window.localStorage // 显式指定用 localStorage
+            }
         });
+
+        // ================= 核心逻辑：智能读取回调地址 =================
+        // 从 URL 中获取 redirect 参数，比如 /account/login/?redirect=/community/
+        const urlParams = new URLSearchParams(window.location.search);
+        // 如果获取不到，默认去 /talkroom/
+        const REDIRECT_URL = urlParams.get('redirect') || "/talkroom/"; 
+
+        // 进门检查：如果发现本地已经有登录状态，直接去目标地址，不用输密码
+        async function checkAlreadyLoggedIn() {
+            const { data: { session } } = await db.auth.getSession();
+            if (session && session.user) {
+                window.location.href = REDIRECT_URL;
+            }
+        }
+        checkAlreadyLoggedIn();
+        // ==============================================================
 
         const usernameInput = document.getElementById("username");
         const passwordInput = document.getElementById("password");
@@ -379,9 +400,10 @@
                 return;
             }
 
+            // 登录成功，跳回来源页
             msg.textContent = "登录成功，正在跳转...";
             msg.style.color = "var(--primary)";
-            setTimeout(() => window.location.href = "/talkroom/", 500);
+            setTimeout(() => window.location.href = REDIRECT_URL, 500);
         }
 
         async function doTotpStage() {
@@ -426,9 +448,10 @@
                 return;
             }
 
+            // 登录成功，跳回来源页
             msg.textContent = "验证通过，正在跳转...";
             msg.style.color = "var(--primary)";
-            setTimeout(() => window.location.href = "/talkroom/", 500);
+            setTimeout(() => window.location.href = REDIRECT_URL, 500);
         }
 
         async function doRegister() {
@@ -458,9 +481,10 @@
                 await db.from("profiles").insert({ id: data.user.id, username: username });
             }
 
+            // 注册成功，跳回来源页
             msg.textContent = "注册成功，正在跳转...";
             msg.style.color = "var(--primary)";
-            setTimeout(() => window.location.href = "/talkroom/", 500);
+            setTimeout(() => window.location.href = REDIRECT_URL, 500);
         }
 
         [usernameInput, passwordInput, totpInput].forEach(input => {
