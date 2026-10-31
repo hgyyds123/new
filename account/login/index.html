@@ -3,109 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 · hg1.dpdns.org</title>
+    <title>登录 · hg 账号</title>
+    
+    <!-- 字体与图标 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    <style>
+        /* ================= 1. 浅色模式（默认） ================= */
+        :root {
+            --bg-color: #F0F4F9;          /* 浅灰底色 */
+            --card-bg: #FFFFFF;           /* 纯白卡片 */
+            --text-main: #1F1F1F;         /* 主文字 */
+            --text-sub: #444746;          /* 副文字 */
+            --outline: #747775;           /* 边框 */
+            --primary: #0b57d0;           /* 主题蓝 */
+            --on-primary: #FFFFFF;        /* 蓝底白字 */
+            --primary-hover: #0842a0;
+            --error: #B3261E;
+            --focus-border: #0b57d0;
+        }
+
+        /* ================= 2. 深色模式（跟随系统） ================= */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #131314;          /* 纯黑背景 */
+                --card-bg: #1E1F20;           /* 深灰卡片 */
+                --text-main: #E3E3E3;         /* 浅白文字 */
+                --text-sub: #C4C7C5;          /* 灰白文字 */
+                --outline: #8E918F;           /* 深灰边框 */
+                --primary: #A8C7FA;           /* 浅蓝主题色 */
+                --on-primary: #062E6F;        /* 浅蓝底深蓝字 */
+                --primary-hover: #D3E3FD;
+                --error: #F2B8B5;
+                --focus-border: #A8C7FA;
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.96);
-            border-radius: 20px;
-            padding: 40px 36px;
-            max-width: 400px;
+        a { text-decoration: none; color: var(--primary); font-weight: 500; font-size: 14px;}
+        a:hover { text-decoration: underline; }
+        button { font-family: inherit; border: none; background: none; cursor: pointer; }
+
+        /* ================= 登录主卡片 ================= */
+        .login-card {
+            background-color: var(--card-bg);
+            border-radius: 28px;
+            display: flex;
+            flex-direction: row;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1040px;
+            min-height: 400px;
+            padding: 48px 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: background-color 0.3s;
         }
 
-        h1 { font-size: 24px; color: #333; text-align: center; margin-bottom: 8px; }
-        .sub { text-align: center; font-size: 13px; color: #999; margin-bottom: 28px; }
+        /* 左侧文案区 */
+        .left-panel {
+            flex: 1;
+            padding-right: 48px;
+            display: flex;
+            flex-direction: column;
+        }
 
-        input {
-            width: 100%;
-            padding: 13px 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 50px;
-            font-size: 15px;
+        .brand-logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .headline { 
+            font-size: 44px; 
+            font-weight: 400; 
+            line-height: 52px; 
+            margin-bottom: 16px; 
+            letter-spacing: -0.5px;
+        }
+        .sub { font-size: 16px; color: var(--text-main); }
+
+        /* 右侧表单区 */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* ================= 输入框 ================= */
+        .input-group { position: relative; margin-bottom: 12px; }
+
+        .input-group input {
+            width: 100%; height: 56px; padding: 0 16px;
+            background: transparent;
+            border: 1px solid var(--outline);
+            border-radius: 4px;
+            font-size: 16px;
+            color: var(--text-main);
             outline: none;
-            margin-bottom: 14px;
-            transition: border-color 0.25s;
+            transition: border-color 0.2s, border-width 0.2s;
         }
 
-        input:focus { border-color: #667eea; }
-
-        #totpInput {
-            text-align: center;
-            letter-spacing: 6px;
-            font-size: 18px;
+        .input-group input:focus {
+            border: 2px solid var(--focus-border);
+            padding: 0 15px;
         }
 
-        .btn {
+        .input-group label {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            background-color: var(--card-bg);
+            padding: 0 4px; color: var(--text-sub);
+            font-size: 16px; pointer-events: none; transition: 0.2s ease all;
+        }
+
+        /* 动态标签上浮 */
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label {
+            top: 0; font-size: 12px;
+            color: var(--focus-border); font-weight: 500;
+        }
+
+        #totpInput { text-align: center; letter-spacing: 8px; font-size: 20px; font-weight: 500; }
+
+        .forgot-link { margin-bottom: 32px; display: inline-block; }
+
+        /* 访客提示 */
+        .guest-hint {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.5;
+            margin-bottom: 48px;
+        }
+
+        /* ================= 底部按钮区 ================= */
+        .actions-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .btn-text {
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: 9999px;
+            transition: background-color 0.2s;
+        }
+        .btn-text:hover { background-color: rgba(128, 128, 128, 0.1); }
+
+        /* 药丸形主按钮 */
+        .btn-filled {
+            background-color: var(--primary);
+            color: var(--on-primary);
+            height: 40px;
+            padding: 0 24px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn-filled:hover { background-color: var(--primary-hover); }
+
+        .msg { font-size: 14px; min-height: 20px; margin-bottom: 16px; color: var(--error); }
+        
+        /* 底部页脚 */
+        .page-footer {
             width: 100%;
-            padding: 13px;
-            background: #667eea;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            font-size: 15px;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-bottom: 12px;
+            max-width: 1040px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: var(--text-sub);
         }
+        
+        .footer-right { display: flex; gap: 24px; }
 
-        .btn:hover { background: #5568d3; }
-
-        .btn.secondary {
-            background: #f0f2f8;
-            color: #666;
+        /* ================= 手机端适配 ================= */
+        @media (max-width: 768px) {
+            .login-card {
+                flex-direction: column;
+                padding: 24px;
+                border-radius: 0;
+                max-width: 450px;
+                background-color: transparent;
+                box-shadow: none;
+            }
+            .left-panel { padding-right: 0; margin-bottom: 32px; align-items: center; text-align: center;}
+            .headline { font-size: 32px; line-height: 40px; }
+            .actions-row { flex-direction: row-reverse; }
         }
-
-        .switch {
-            text-align: center;
-            font-size: 13px;
-            color: #888;
-        }
-
-        .switch a { color: #667eea; cursor: pointer; text-decoration: none; }
-        .switch a:hover { text-decoration: underline; }
-
-        .msg {
-            text-align: center;
-            font-size: 13px;
-            min-height: 18px;
-            margin-bottom: 12px;
-        }
-
-        .msg.error { color: #e74c3c; }
-        .msg.ok { color: #27ae60; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1 id="title">登录</h1>
-        <p class="sub" id="subtitle">输入用户名和密码</p>
 
-        <input type="text" id="username" placeholder="用户名" autocomplete="off">
-        <input type="password" id="password" placeholder="密码" autocomplete="off">
-        <input type="text" id="totpInput" placeholder="000000" maxlength="6" autocomplete="off" style="display:none;">
+    <div class="login-card">
+        
+        <div class="left-panel">
+            <div class="brand-logo">hg</div>
+            <h1 class="headline" id="title">登录</h1>
+            <p class="sub" id="subtitle">使用您的 hg 账号</p>
+        </div>
 
-        <div class="msg" id="msg"></div>
+        <div class="right-panel">
+            
+            <div id="inputFields">
+                <div class="input-group">
+                    <input type="text" id="username" placeholder=" " autocomplete="off">
+                    <label>用户名</label>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder=" " autocomplete="off">
+                    <label>密码</label>
+                </div>
+                <div class="input-group" id="totpField" style="display:none;">
+                    <input type="text" id="totpInput" placeholder=" " maxlength="6" autocomplete="off">
+                    <label>6 位动态码</label>
+                </div>
+                <a class="forgot-link" href="#">忘记了密码？</a>
+            </div>
 
-        <button class="btn" id="submitBtn">登录</button>
-        <button class="btn secondary" id="backBtn" style="display:none;">返回上一步</button>
+            <div class="msg" id="msg"></div>
 
-        <div class="switch" id="switchRow">
-            <span id="switchText">还没有账号？</span>
-            <a id="switchBtn">注册</a>
+            <div class="guest-hint" id="guestHint">
+                您使用的不是自己的电脑？请使用无痕模式登录。
+            </div>
+
+            <div class="actions-row" id="actionsRow">
+                <button class="btn-text" id="switchBtn">创建账号</button>
+                <button class="btn-filled" id="submitBtn">下一步</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <div>简体中文 ▼</div>
+        <div class="footer-right">
+            <a href="#">帮助</a>
+            <a href="#">隐私权</a>
+            <a href="#">条款</a>
         </div>
     </div>
 
@@ -122,56 +281,46 @@
         const usernameInput = document.getElementById("username");
         const passwordInput = document.getElementById("password");
         const totpInput = document.getElementById("totpInput");
+        const totpField = document.getElementById("totpField");
         const submitBtn = document.getElementById("submitBtn");
-        const backBtn = document.getElementById("backBtn");
         const msg = document.getElementById("msg");
         const title = document.getElementById("title");
         const subtitle = document.getElementById("subtitle");
-        const switchText = document.getElementById("switchText");
         const switchBtn = document.getElementById("switchBtn");
-        const switchRow = document.getElementById("switchRow");
+        const inputFields = document.getElementById("inputFields");
+        const guestHint = document.getElementById("guestHint");
 
-        // 登录阶段：password 或 totp
-        let stage = "password";
-        // 临时保存，用于 totp 阶段重新登录
+        let stage = "password"; 
+        let isLogin = true;
         let tempUsername = "";
         let tempPassword = "";
         let tempSecret = "";
 
-        function setMode(login) {
+        switchBtn.addEventListener("click", () => {
+            isLogin = !isLogin;
             stage = "password";
-            if (login) {
+            if (isLogin) {
                 title.textContent = "登录";
-                subtitle.textContent = "输入用户名和密码";
-                submitBtn.textContent = "登录";
-                switchText.textContent = "还没有账号？";
-                switchBtn.textContent = "注册";
-                switchRow.style.display = "block";
+                subtitle.textContent = "使用您的 hg 账号";
+                submitBtn.textContent = "下一步";
+                switchBtn.textContent = "创建账号";
+                guestHint.style.display = "block";
             } else {
-                title.textContent = "注册新账号";
-                subtitle.textContent = "选一个用户名和密码";
+                title.textContent = "创建账号";
+                subtitle.textContent = "加入 hg";
                 submitBtn.textContent = "注册";
-                switchText.textContent = "已有账号？";
-                switchBtn.textContent = "登录";
-                switchRow.style.display = "block";
+                switchBtn.textContent = "去登录";
+                guestHint.style.display = "none";
             }
-            usernameInput.style.display = "block";
-            passwordInput.style.display = "block";
-            totpInput.style.display = "none";
-            backBtn.style.display = "none";
+            inputFields.style.display = "block";
             usernameInput.disabled = false;
             passwordInput.disabled = false;
+            totpField.style.display = "none";
             msg.textContent = "";
-            msg.className = "msg";
-        }
-
-        switchBtn.addEventListener("click", () => {
-            const isCurrentlyLogin = title.textContent === "登录";
-            setMode(!isCurrentlyLogin);
         });
 
         submitBtn.addEventListener("click", async () => {
-            if (title.textContent === "注册新账号") {
+            if (!isLogin) {
                 await doRegister();
             } else if (stage === "password") {
                 await doPasswordStage();
@@ -185,42 +334,30 @@
             const password = passwordInput.value;
 
             if (!username || !password) {
-                msg.textContent = "用户名和密码都不能为空";
-                msg.className = "msg error";
+                msg.textContent = "请填写完整的用户名和密码";
                 return;
             }
 
             const fakeEmail = `${username}@hgt.l.cd`;
+            submitBtn.textContent = "验证中...";
+            submitBtn.disabled = true;
 
-            const { data, error } = await db.auth.signInWithPassword({
-                email: fakeEmail,
-                password: password
-            });
+            const { data, error } = await db.auth.signInWithPassword({ email: fakeEmail, password: password });
+
+            submitBtn.textContent = "下一步";
+            submitBtn.disabled = false;
 
             if (error) {
                 msg.textContent = "用户名或密码错误";
-                msg.className = "msg error";
                 return;
             }
 
-            // 检查是否开了 2FA
-            const { data: profile } = await db
-                .from("profiles")
-                .select("totp_enabled")
-                .eq("id", data.user.id)
-                .maybeSingle();
+            const { data: profile } = await db.from("profiles").select("totp_enabled").eq("id", data.user.id).maybeSingle();
 
             if (profile && profile.totp_enabled) {
-                // 开了 2FA：登出，进入动态码阶段
-                const { data: mfa } = await db
-                    .from("user_mfa")
-                    .select("secret")
-                    .eq("user_id", data.user.id)
-                    .maybeSingle();
-
+                const { data: mfa } = await db.from("user_mfa").select("secret").eq("user_id", data.user.id).maybeSingle();
                 if (!mfa) {
-                    msg.textContent = "2FA 数据异常，请联系管理员";
-                    msg.className = "msg error";
+                    msg.textContent = "2FA 数据异常";
                     await db.auth.signOut();
                     return;
                 }
@@ -228,54 +365,35 @@
                 tempUsername = username;
                 tempPassword = password;
                 tempSecret = mfa.secret;
-
                 await db.auth.signOut();
 
                 stage = "totp";
                 usernameInput.disabled = true;
                 passwordInput.disabled = true;
-                totpInput.style.display = "block";
+                totpField.style.display = "block";
                 totpInput.value = "";
                 totpInput.focus();
-                submitBtn.textContent = "验证并登录";
-                backBtn.style.display = "block";
-                subtitle.textContent = "请输入验证器 App 上的 6 位动态码";
+                submitBtn.textContent = "验证";
+                subtitle.textContent = "输入动态码";
                 msg.textContent = "";
-                msg.className = "msg";
                 return;
             }
 
-            // 没开 2FA，显示提示，让用户选择
-msg.innerHTML = `
-    <div style="background:#fff8e1; border:1px solid #f59e0b; border-radius:12px; padding:14px; text-align:left; margin-bottom:10px;">
-        <div style="font-size:13px; color:#92400e; line-height:1.6; margin-bottom:10px;">
-            💡 建议开启两步验证（2FA），让账号更安全。现在去开启吗？
-        </div>
-        <div style="display:flex; gap:8px;">
-            <button id="goMfaBtn" style="flex:1; padding:8px; background:#f59e0b; color:#fff; border:none; border-radius:20px; font-size:13px; cursor:pointer;">去开启</button>
-            <button id="skipMfaBtn" style="flex:1; padding:8px; background:#f0f2f8; color:#666; border:none; border-radius:20px; font-size:13px; cursor:pointer;">下次再说</button>
-        </div>
-    </div>
-`;
-
-document.getElementById("goMfaBtn").addEventListener("click", () => {
-    window.location.href = "/account/";
-});
-
-document.getElementById("skipMfaBtn").addEventListener("click", () => {
-    window.location.href = "/talkroom/";
-});
+            msg.textContent = "登录成功，正在跳转...";
+            msg.style.color = "var(--primary)";
+            setTimeout(() => window.location.href = "/talkroom/", 500);
         }
 
         async function doTotpStage() {
             const code = totpInput.value.trim();
             if (code.length !== 6) {
                 msg.textContent = "请输入 6 位动态码";
-                msg.className = "msg error";
                 return;
             }
 
-            // 验证动态码
+            submitBtn.textContent = "验证中...";
+            submitBtn.disabled = true;
+
             try {
                 const res = await fetch(WASMER_URL + "/mfa/verify", {
                     method: "POST",
@@ -283,35 +401,34 @@ document.getElementById("skipMfaBtn").addEventListener("click", () => {
                     body: JSON.stringify({ secret: tempSecret, token: code })
                 });
                 const result = await res.json();
-
                 if (!result.success) {
-                    msg.textContent = "动态码错误或已过期";
-                    msg.className = "msg error";
+                    msg.textContent = "动态码错误";
+                    submitBtn.textContent = "验证";
+                    submitBtn.disabled = false;
                     return;
                 }
             } catch (e) {
-                msg.textContent = "验证失败：" + e.message;
-                msg.className = "msg error";
+                msg.textContent = "网络请求失败";
+                submitBtn.textContent = "验证";
+                submitBtn.disabled = false;
                 return;
             }
 
-            // 动态码正确，重新登录
             const { error } = await db.auth.signInWithPassword({
                 email: `${tempUsername}@hgt.l.cd`,
                 password: tempPassword
             });
 
             if (error) {
-                msg.textContent = "登录失败，请重试";
-                msg.className = "msg error";
+                msg.textContent = "登录失败";
+                submitBtn.textContent = "验证";
+                submitBtn.disabled = false;
                 return;
             }
 
-            msg.textContent = "登录成功，正在跳转…";
-            msg.className = "msg ok";
-            setTimeout(() => {
-                window.location.href = "/talkroom/";
-            }, 500);
+            msg.textContent = "验证通过，正在跳转...";
+            msg.style.color = "var(--primary)";
+            setTimeout(() => window.location.href = "/talkroom/", 500);
         }
 
         async function doRegister() {
@@ -319,77 +436,37 @@ document.getElementById("skipMfaBtn").addEventListener("click", () => {
             const password = passwordInput.value;
 
             if (!username || !password) {
-                msg.textContent = "用户名和密码都不能为空";
-                msg.className = "msg error";
-                return;
-            }
-
-            if (username.length > 20) {
-                msg.textContent = "用户名最多 20 个字";
-                msg.className = "msg error";
-                return;
-            }
-
-            if (password.length < 6) {
-                msg.textContent = "密码至少 6 位";
-                msg.className = "msg error";
+                msg.textContent = "请填写完整的用户名和密码";
                 return;
             }
 
             const fakeEmail = `${username}@hgt.l.cd`;
+            submitBtn.textContent = "注册中...";
+            submitBtn.disabled = true;
 
-            const { data, error } = await db.auth.signUp({
-                email: fakeEmail,
-                password: password
-            });
+            const { data, error } = await db.auth.signUp({ email: fakeEmail, password: password });
+            
+            submitBtn.textContent = "注册";
+            submitBtn.disabled = false;
 
             if (error) {
-                if (error.message.includes("already")) {
-                    msg.textContent = "这个用户名已经被注册了";
-                } else {
-                    msg.textContent = "注册失败：" + error.message;
-                }
-                msg.className = "msg error";
+                msg.textContent = error.message.includes("already") ? "用户名已被占用" : "注册失败";
                 return;
             }
 
             if (data.user) {
-                const { error: profileError } = await db.from("profiles").insert({
-                    id: data.user.id,
-                    username: username
-                });
-                if (profileError) {
-                    console.error("存用户名失败:", profileError);
-                }
+                await db.from("profiles").insert({ id: data.user.id, username: username });
             }
 
-            msg.textContent = "注册成功，正在跳转…";
-            msg.className = "msg ok";
-            setTimeout(() => {
-                window.location.href = "/talkroom/";
-            }, 500);
+            msg.textContent = "注册成功，正在跳转...";
+            msg.style.color = "var(--primary)";
+            setTimeout(() => window.location.href = "/talkroom/", 500);
         }
 
-        backBtn.addEventListener("click", async () => {
-            // 回到密码阶段
-            await db.auth.signOut();
-            stage = "password";
-            usernameInput.disabled = false;
-            passwordInput.disabled = false;
-            totpInput.style.display = "none";
-            totpInput.value = "";
-            submitBtn.textContent = "登录";
-            backBtn.style.display = "none";
-            subtitle.textContent = "输入用户名和密码";
-            msg.textContent = "";
-            msg.className = "msg";
-        });
-
-        passwordInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") submitBtn.click();
-        });
-        totpInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") submitBtn.click();
+        [usernameInput, passwordInput, totpInput].forEach(input => {
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") submitBtn.click();
+            });
         });
     </script>
 </body>
