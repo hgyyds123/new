@@ -3,203 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hg1.dpdns.org · 首页</title>
+    <title>hg · 首页</title>
     
     <!-- 字体与图标 -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* ================= 1. Material 3 颜色令牌 ================= */
+        /* ================= 1. 浅色模式 ================= */
         :root {
-            --md-sys-color-primary: #0b57d0;
-            --md-sys-color-on-primary: #ffffff;
-            --md-sys-color-primary-container: #d3e3fd;
-            --md-sys-color-on-primary-container: #041e49;
+            --bg-color: #F8F9FA;
+            --surface: #FFFFFF;
+            --surface-variant: #F0F4F9;
+            --text-main: #1F1F1F;
+            --text-sub: #444746;
+            --outline-variant: #C4C7C5;
             
-            --md-sys-color-secondary-container: #e8f0fe;
-            --md-sys-color-on-secondary-container: #1f1f1f;
+            --primary: #0b57d0;
+            --on-primary: #FFFFFF;
+            --primary-hover: #0842a0;
             
-            --md-sys-color-surface: #F8F9FA; /* 替代纯白，使用带有一点点灰度的 surface */
-            --md-sys-color-surface-container: #ffffff;
-            --md-sys-color-on-surface: #1f1f1f; /* 替代纯黑 */
-            --md-sys-color-surface-variant: #e0e3e1;
-            --md-sys-color-on-surface-variant: #444746;
-            --md-sys-color-outline: #747775;
-            --md-sys-color-outline-variant: #c4c7c5;
-            
-            --font-sans: 'Roboto', 'Noto Sans SC', sans-serif;
+            --primary-container: #d3e3fd;
+            --on-primary-container: #041e49;
+        }
+
+        /* ================= 2. 深色模式 ================= */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #131314;
+                --surface: #1E1F20;
+                --surface-variant: #282A2C;
+                --text-main: #E3E3E3;
+                --text-sub: #C4C7C5;
+                --outline-variant: #444746;
+                
+                --primary: #A8C7FA;
+                --on-primary: #062E6F;
+                --primary-hover: #D3E3FD;
+                
+                --primary-container: #0842A0;
+                --on-primary-container: #D3E3FD;
+            }
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
-            background-color: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
-            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
             line-height: 1.5;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         a { text-decoration: none; color: inherit; }
         button { font-family: inherit; border: none; background: none; cursor: pointer; }
 
-        /* ================= 2. 动效与波纹 (Ripple) ================= */
+        /* Ripple 动效 */
         .m3-ripple { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; }
         .ripple-circle {
-            position: absolute; border-radius: 50%; background-color: rgba(0, 0, 0, 0.12);
+            position: absolute; border-radius: 50%; background-color: rgba(128, 128, 128, 0.2);
             transform: scale(0); animation: ripple-anim 0.3s cubic-bezier(0.2, 0, 0, 1); pointer-events: none;
         }
         @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
 
-        /* ================= 3. 顶部/底部导航 ================= */
+        /* ================= 顶部导航栏 ================= */
         .top-app-bar {
-            height: 64px; background-color: var(--md-sys-color-surface);
+            height: 64px; background-color: var(--bg-color);
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 24px; position: sticky; top: 0; z-index: 100;
-            /* 移动端隐藏，改用底部导航 */
         }
-        .top-app-bar .title { font-size: 22px; font-weight: 400; color: var(--md-sys-color-on-surface); }
+        .brand { font-size: 22px; font-weight: 500; color: var(--text-main); letter-spacing: -0.5px;}
+        .nav-actions { display: flex; gap: 12px; align-items: center; }
         
-        .nav-actions { display: flex; gap: 16px; }
         .icon-btn {
-            width: 48px; height: 48px; border-radius: 50%;
-            color: var(--md-sys-color-on-surface-variant);
-            transition: background-color 0.2s;
+            width: 40px; height: 40px; border-radius: 50%;
+            color: var(--text-sub); transition: background-color 0.2s;
         }
-        .icon-btn:hover { background-color: rgba(68, 71, 70, 0.08); }
+        .icon-btn:hover { background-color: var(--surface-variant); }
 
-        .bottom-nav {
-            display: none; /* 桌面端隐藏 */
-            height: 80px; background-color: var(--md-sys-color-surface-container);
-            position: fixed; bottom: 0; width: 100%; z-index: 100;
-            justify-content: space-around; align-items: center;
-            border-top: 1px solid var(--md-sys-color-outline-variant);
+        .avatar-small {
+            width: 32px; height: 32px; border-radius: 50%;
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            display: none; 
+            align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 500;
+            transition: transform 0.2s;
         }
-        .bottom-nav-item {
-            display: flex; flex-direction: column; align-items: center; gap: 4px;
-            color: var(--md-sys-color-on-surface-variant);
-            font-size: 12px; font-weight: 500;
-            width: 64px; height: 48px; border-radius: 16px;
-            transition: background-color 0.2s;
-        }
-        .bottom-nav-item.active { color: var(--md-sys-color-on-surface); }
-        .bottom-nav-item.active .nav-icon-wrapper {
-            background-color: var(--md-sys-color-secondary-container);
-            border-radius: 16px; padding: 4px 20px;
-        }
-        .bottom-nav-item .material-symbols-outlined { font-size: 24px; }
+        .avatar-small:hover { transform: scale(1.05); }
 
-        /* ================= 4. 布局与排版 ================= */
-        .container { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 48px 24px; }
-        @media (max-width: 600px) { .container { padding: 24px 16px 120px; /* 留出底部导航空间 */ } }
+        /* ================= 主体排版 ================= */
+        .container { flex: 1; width: 100%; max-width: 840px; margin: 0 auto; padding: 64px 24px; }
+        @media (max-width: 600px) { .container { padding: 32px 16px; } }
 
         .display-large {
             font-size: 57px; font-weight: 400; line-height: 64px; letter-spacing: -0.25px; margin-bottom: 24px;
         }
-        @media (max-width: 600px) { .display-large { font-size: 36px; line-height: 44px; } }
+        @media (max-width: 600px) { .display-large { font-size: 40px; line-height: 48px; } }
 
         .body-large {
             font-size: 18px; font-weight: 400; line-height: 28px;
-            color: var(--md-sys-color-on-surface-variant); margin-bottom: 48px; max-width: 800px;
+            color: var(--text-sub); margin-bottom: 48px; max-width: 600px;
         }
 
-        .section-title {
-            font-size: 24px; font-weight: 400; margin-bottom: 24px;
-            color: var(--md-sys-color-on-surface);
-        }
-
-        /* ================= 5. 组件：搜索框 ================= */
+        /* ================= 搜索框 (更像 Google 搜索) ================= */
         .search-bar {
-            background-color: var(--md-sys-color-surface-container);
-            height: 56px; border-radius: 9999px; /* Pill */
+            background-color: var(--surface);
+            height: 56px; border-radius: 9999px;
             display: flex; align-items: center; padding: 0 24px;
-            margin-bottom: 48px; max-width: 640px;
-            box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 1px 3px 1px rgba(0,0,0,.08); /* Level 1 */
-            transition: box-shadow 0.2s;
+            margin-bottom: 64px; max-width: 640px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 4px 8px rgba(0,0,0,.05);
+            transition: box-shadow 0.2s, background-color 0.3s, border-color 0.2s;
+            border: 1px solid transparent;
         }
-        .search-bar:focus-within { box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 2px 6px 2px rgba(0,0,0,.1); /* Level 2 */ }
-        .search-bar .material-symbols-outlined { color: var(--md-sys-color-on-surface-variant); margin-right: 16px; }
+        .search-bar:hover {
+            box-shadow: 0 1px 5px rgba(0,0,0,.15), 0 4px 12px rgba(0,0,0,.1);
+        }
+        .search-bar:focus-within { 
+            box-shadow: 0 1px 6px rgba(32,33,36,.28); 
+            border-color: var(--outline-variant);
+        }
+        .search-bar .material-symbols-outlined { color: var(--text-sub); margin-right: 16px; }
         .search-bar input {
             flex: 1; background: transparent; border: none; outline: none;
-            font-size: 16px; color: var(--md-sys-color-on-surface);
+            font-size: 16px; color: var(--text-main);
         }
-        .search-bar input::placeholder { color: var(--md-sys-color-on-surface-variant); }
+        .search-bar input::placeholder { color: var(--text-sub); }
 
-        /* ================= 6. 组件：卡片与按钮 ================= */
+        /* ================= 卡片网格 ================= */
+        .section-title {
+            font-size: 22px; font-weight: 400; margin-bottom: 24px; color: var(--text-main);
+        }
+
         .card-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;
         }
 
         .card {
-            background-color: var(--md-sys-color-surface-container);
-            border-radius: 12px; padding: 24px;
-            box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 1px 3px 1px rgba(0,0,0,.08); /* Level 1 */
+            background-color: var(--surface);
+            border-radius: 16px; padding: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 1px 3px 1px rgba(0,0,0,.08);
             display: flex; flex-direction: column;
-            transition: box-shadow 0.2s, transform 0.2s;
+            transition: box-shadow 0.2s, background-color 0.3s;
             cursor: pointer;
         }
-        .card:hover { box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 2px 6px 2px rgba(0,0,0,.1); /* Level 2 */ }
+        .card:hover { box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 2px 6px 2px rgba(0,0,0,.1); }
 
         .card-icon {
             width: 48px; height: 48px; border-radius: 12px;
-            background-color: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
             display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
         }
         .card-icon .material-symbols-outlined { font-size: 24px; }
 
-        .title-medium { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
-        .body-medium { font-size: 14px; font-weight: 400; color: var(--md-sys-color-on-surface-variant); flex: 1; margin-bottom: 24px;}
+        .title-medium { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+        .body-medium { font-size: 14px; font-weight: 400; color: var(--text-sub); flex: 1; margin-bottom: 24px;}
 
-        /* Filled Button (主按钮) */
         .btn-filled {
-            background-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            background-color: var(--primary);
+            color: var(--on-primary);
             height: 40px; padding: 0 24px; border-radius: 9999px;
             font-size: 14px; font-weight: 500;
             display: inline-flex; align-items: center; justify-content: center;
+            width: fit-content;
+            transition: background-color 0.2s, box-shadow 0.2s;
         }
-        .btn-filled:hover { background-color: #0842a0; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
-
-        /* 网站迁移提示（采用 Outlined Card 风格融入） */
-        .notice-card {
-            background-color: var(--md-sys-color-secondary-container);
-            color: var(--md-sys-color-on-secondary-container);
-            border-radius: 12px; padding: 16px 24px; margin-bottom: 48px;
-            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
-        }
-
-        /* 响应式：手机端切换导航 */
-        @media (max-width: 840px) {
-            .top-app-bar { display: none; }
-            .bottom-nav { display: flex; }
+        .btn-filled:hover { 
+            background-color: var(--primary-hover); 
+            box-shadow: 0 1px 2px rgba(0,0,0,.15); 
         }
     </style>
 </head>
 <body>
 
-    <!-- 顶部应用栏 (桌面端) -->
+    <!-- 顶部应用栏 -->
     <header class="top-app-bar">
-        <div class="title">hg1.dpdns.org</div>
+        <a href="/" class="brand">hg</a>
         <div class="nav-actions">
-            <a href="https://developers.hg1.dpdns.org" class="icon-btn m3-ripple">
+            <a href="https://developers.hg1.dpdns.org" class="icon-btn m3-ripple" title="开发者中心">
                 <span class="material-symbols-outlined">code</span>
             </a>
-            <a href="/account/login/" class="icon-btn m3-ripple">
-                <span class="material-symbols-outlined">account_circle</span>
-            </a>
+            <a href="/account/login/" class="btn-filled m3-ripple" id="loginBtn" style="display: none;">登录</a>
+            <a href="/account/" class="avatar-small m3-ripple" id="userAvatar">?</a>
         </div>
     </header>
 
-    <!-- 主内容区 -->
     <main class="container">
         
-        <!-- 排版：Display Large 与 Body Large -->
         <h1 class="display-large">你好，世界。</h1>
         <p class="body-large">这是我的个人平台，集成了实时聊天、社区分享与复古游戏。你要干些什么？</p>
 
@@ -209,25 +207,17 @@
             <input type="text" placeholder="搜索网站内容...">
         </div>
 
-        <!-- 迁移提示 -->
-        <div class="notice-card">
-            <span class="body-medium" style="color: inherit; margin: 0;">网站已迁移至全新的、更安全的域名上线。</span>
-            <a href="https://hg1.dpdns.org" class="btn-filled m3-ripple" style="background: var(--md-sys-color-primary); color: #fff;">前往主站</a>
-        </div>
-
-        <!-- 产品功能矩阵 (卡片列表) -->
+        <!-- 功能矩阵 -->
         <h2 class="section-title">核心功能</h2>
         <div class="card-grid">
             
-            <!-- 聊天室 -->
             <a href="/talkroom/" class="card m3-ripple">
                 <div class="card-icon"><span class="material-symbols-outlined">forum</span></div>
                 <div class="title-medium">Talkroom 聊天室</div>
                 <div class="body-medium">基于 Supabase 实时通信。支持公聊、私聊、在线状态与 AI 助手。</div>
-                <div class="btn-filled">进入聊天室</div>
+                <div class="btn-filled">进入大厅</div>
             </a>
 
-            <!-- 社区 -->
             <a href="/community/" class="card m3-ripple">
                 <div class="card-icon"><span class="material-symbols-outlined">groups</span></div>
                 <div class="title-medium">Community 社区</div>
@@ -235,7 +225,6 @@
                 <div class="btn-filled">逛逛社区</div>
             </a>
 
-            <!-- 游戏中心 -->
             <a href="/gs/" class="card m3-ripple">
                 <div class="card-icon"><span class="material-symbols-outlined">sports_esports</span></div>
                 <div class="title-medium">GS 游戏与工具</div>
@@ -243,7 +232,6 @@
                 <div class="btn-filled">前往游戏中心</div>
             </a>
 
-            <!-- 心理关怀 -->
             <a href="/care/" class="card m3-ripple">
                 <div class="card-icon"><span class="material-symbols-outlined">psychology</span></div>
                 <div class="title-medium">心理关怀</div>
@@ -251,7 +239,6 @@
                 <div class="btn-filled">进入关怀页</div>
             </a>
             
-            <!-- 开发者中心 -->
             <a href="https://developers.hg1.dpdns.org" class="card m3-ripple">
                 <div class="card-icon"><span class="material-symbols-outlined">code</span></div>
                 <div class="title-medium">Developer 开发者</div>
@@ -259,7 +246,6 @@
                 <div class="btn-filled">开发者门户</div>
             </a>
 
-            <!-- 账号管理 -->
             <a href="/account/" class="card m3-ripple">
                 <div class="card-icon"><span class="material-symbols-outlined">admin_panel_settings</span></div>
                 <div class="title-medium">Account 安全设置</div>
@@ -270,28 +256,8 @@
         </div>
     </main>
 
-    <!-- 底部导航栏 (移动端) -->
-    <nav class="bottom-nav">
-        <a href="/" class="bottom-nav-item active">
-            <div class="nav-icon-wrapper"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span></div>
-            <span>首页</span>
-        </a>
-        <a href="/talkroom/" class="bottom-nav-item">
-            <div class="nav-icon-wrapper"><span class="material-symbols-outlined">forum</span></div>
-            <span>聊天</span>
-        </a>
-        <a href="/community/" class="bottom-nav-item">
-            <div class="nav-icon-wrapper"><span class="material-symbols-outlined">groups</span></div>
-            <span>社区</span>
-        </a>
-        <a href="/account/" class="bottom-nav-item">
-            <div class="nav-icon-wrapper"><span class="material-symbols-outlined">account_circle</span></div>
-            <span>我的</span>
-        </a>
-    </nav>
-
-    <!-- Ripple 波纹脚本 -->
     <script>
+        // 波纹动效
         document.addEventListener('click', function(e) {
             const target = e.target.closest('.m3-ripple');
             if (!target) return;
@@ -304,13 +270,44 @@
             circle.style.width = circle.style.height = size + 'px';
             circle.style.left = (x - size / 2) + 'px';
             circle.style.top = (y - size / 2) + 'px';
-            // 如果点击的是深色填充按钮，波纹改成白色半透明
-            if (target.classList.contains('btn-filled') || target.classList.contains('nav-icon-wrapper')) {
+            if (target.classList.contains('btn-filled') || target.classList.contains('avatar-small')) {
                 circle.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
             }
             target.appendChild(circle);
             setTimeout(() => circle.remove(), 300);
         });
+
+        // 动态渲染头部登录状态
+        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
+        
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
+        });
+
+        async function checkLoginStatus() {
+            const { data: { session } } = await db.auth.getSession();
+            const loginBtn = document.getElementById("loginBtn");
+            const userAvatar = document.getElementById("userAvatar");
+
+            if (session && session.user) {
+                loginBtn.style.display = "none";
+                userAvatar.style.display = "inline-flex";
+                
+                const { data: profile } = await db.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
+                if (profile && profile.username) {
+                    userAvatar.textContent = profile.username.charAt(0).toUpperCase();
+                } else {
+                    userAvatar.textContent = "U";
+                }
+            } else {
+                loginBtn.style.display = "inline-flex";
+                userAvatar.style.display = "none";
+            }
+        }
+
+        checkLoginStatus();
     </script>
 </body>
 </html>
