@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 · hg 账号</title>
     
-    <!-- 字体与图标 -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,214 +13,41 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* ================= 1. 浅色模式（默认） ================= */
-        :root {
-            --bg-color: #F0F4F9;          
-            --card-bg: #FFFFFF;           
-            --text-main: #1F1F1F;         
-            --text-sub: #444746;          
-            --outline: #747775;           
-            --primary: #0b57d0;           
-            --on-primary: #FFFFFF;        
-            --primary-hover: #0842a0;
-            --error: #B3261E;
-            --focus-border: #0b57d0;
-        }
-
-        /* ================= 2. 深色模式（跟随系统） ================= */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #131314;          
-                --card-bg: #1E1F20;           
-                --text-main: #E3E3E3;         
-                --text-sub: #C4C7C5;          
-                --outline: #8E918F;           
-                --primary: #A8C7FA;           
-                --on-primary: #062E6F;        
-                --primary-hover: #D3E3FD;
-                --error: #F2B8B5;
-                --focus-border: #A8C7FA;
-            }
-        }
-
+        :root { --bg-color: #F0F4F9; --card-bg: #FFFFFF; --text-main: #1F1F1F; --text-sub: #444746; --outline: #747775; --primary: #0b57d0; --on-primary: #FFFFFF; --primary-hover: #0842a0; --error: #B3261E; --focus-border: #0b57d0; }
+        @media (prefers-color-scheme: dark) { :root { --bg-color: #131314; --card-bg: #1E1F20; --text-main: #E3E3E3; --text-sub: #C4C7C5; --outline: #8E918F; --primary: #A8C7FA; --on-primary: #062E6F; --primary-hover: #D3E3FD; --error: #F2B8B5; --focus-border: #A8C7FA; } }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        a { text-decoration: none; color: var(--primary); font-weight: 500; font-size: 14px;}
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Roboto', 'Noto Sans SC', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; transition: background-color 0.3s, color 0.3s; }
+        a { text-decoration: none; color: var(--primary); font-weight: 500; font-size: 14px; }
         a:hover { text-decoration: underline; }
         button { font-family: inherit; border: none; background: none; cursor: pointer; }
-
-        /* ================= 登录主卡片 ================= */
-        .login-card {
-            background-color: var(--card-bg);
-            border-radius: 28px;
-            display: flex;
-            flex-direction: row;
-            width: 100%;
-            max-width: 1040px;
-            min-height: 400px;
-            padding: 48px 40px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            transition: background-color 0.3s;
-        }
-
-        /* 左侧文案区 */
-        .left-panel {
-            flex: 1;
-            padding-right: 48px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .brand-logo {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-main);
-            margin-bottom: 16px;
-            letter-spacing: -1px;
-        }
-
-        .headline { 
-            font-size: 44px; 
-            font-weight: 400; 
-            line-height: 52px; 
-            margin-bottom: 16px; 
-            letter-spacing: -0.5px;
-        }
+        .login-card { background-color: var(--card-bg); border-radius: 28px; display: flex; flex-direction: row; width: 100%; max-width: 1040px; min-height: 400px; padding: 48px 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: background-color 0.3s; }
+        .left-panel { flex: 1; padding-right: 48px; display: flex; flex-direction: column; }
+        .brand-logo { font-size: 28px; font-weight: 700; color: var(--text-main); margin-bottom: 16px; letter-spacing: -1px; }
+        .headline { font-size: 44px; font-weight: 400; line-height: 52px; margin-bottom: 16px; letter-spacing: -0.5px; }
         .sub { font-size: 16px; color: var(--text-main); }
-
-        /* 右侧表单区 */
-        .right-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        /* ================= 输入框 ================= */
+        .right-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
         .input-group { position: relative; margin-bottom: 12px; }
-
-        .input-group input {
-            width: 100%; height: 56px; padding: 0 16px;
-            background: transparent;
-            border: 1px solid var(--outline);
-            border-radius: 4px;
-            font-size: 16px;
-            color: var(--text-main);
-            outline: none;
-            transition: border-color 0.2s, border-width 0.2s;
-        }
-
-        .input-group input:focus {
-            border: 2px solid var(--focus-border);
-            padding: 0 15px;
-        }
-
-        .input-group label {
-            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-            background-color: var(--card-bg);
-            padding: 0 4px; color: var(--text-sub);
-            font-size: 16px; pointer-events: none; transition: 0.2s ease all;
-        }
-
-        /* 动态标签上浮 */
-        .input-group input:focus ~ label,
-        .input-group input:not(:placeholder-shown) ~ label {
-            top: 0; font-size: 12px;
-            color: var(--focus-border); font-weight: 500;
-        }
-
+        .input-group input { width: 100%; height: 56px; padding: 0 16px; background: transparent; border: 1px solid var(--outline); border-radius: 4px; font-size: 16px; color: var(--text-main); outline: none; transition: border-color 0.2s, border-width 0.2s; }
+        .input-group input:focus { border: 2px solid var(--focus-border); padding: 0 15px; }
+        .input-group label { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); background-color: var(--card-bg); padding: 0 4px; color: var(--text-sub); font-size: 16px; pointer-events: none; transition: 0.2s ease all; }
+        .input-group input:focus ~ label, .input-group input:not(:placeholder-shown) ~ label { top: 0; font-size: 12px; color: var(--focus-border); font-weight: 500; }
         #totpInput { text-align: center; letter-spacing: 8px; font-size: 20px; font-weight: 500; }
-
         .forgot-link { margin-bottom: 32px; display: inline-block; }
-
-        /* 访客提示 */
-        .guest-hint {
-            font-size: 14px;
-            color: var(--text-sub);
-            line-height: 1.5;
-            margin-bottom: 48px;
-        }
-
-        /* ================= 底部按钮区 ================= */
-        .actions-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: auto;
-        }
-
-        .btn-text {
-            color: var(--primary);
-            font-size: 14px;
-            font-weight: 500;
-            padding: 10px 16px;
-            border-radius: 9999px;
-            transition: background-color 0.2s;
-        }
+        .guest-hint { font-size: 14px; color: var(--text-sub); line-height: 1.5; margin-bottom: 48px; }
+        .actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        .btn-text { color: var(--primary); font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 9999px; transition: background-color 0.2s; }
         .btn-text:hover { background-color: rgba(128, 128, 128, 0.1); }
-
-        /* 药丸形主按钮 */
-        .btn-filled {
-            background-color: var(--primary);
-            color: var(--on-primary);
-            height: 40px;
-            padding: 0 24px;
-            border-radius: 9999px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
+        .btn-filled { background-color: var(--primary); color: var(--on-primary); height: 40px; padding: 0 24px; border-radius: 9999px; font-size: 14px; font-weight: 500; transition: background-color 0.2s; }
         .btn-filled:hover { background-color: var(--primary-hover); }
-
         .msg { font-size: 14px; min-height: 20px; margin-bottom: 16px; color: var(--error); }
-        
-        /* 底部页脚 */
-        .page-footer {
-            width: 100%;
-            max-width: 1040px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 24px;
-            font-size: 12px;
-            color: var(--text-sub);
-        }
-        
+        .page-footer { width: 100%; max-width: 1040px; display: flex; justify-content: space-between; align-items: center; margin-top: 24px; font-size: 12px; color: var(--text-sub); }
         .footer-right { display: flex; gap: 24px; }
-
-        /* ================= 手机端适配 ================= */
-        @media (max-width: 768px) {
-            .login-card {
-                flex-direction: column;
-                padding: 24px;
-                border-radius: 0;
-                max-width: 450px;
-                background-color: transparent;
-                box-shadow: none;
-            }
-            .left-panel { padding-right: 0; margin-bottom: 32px; align-items: center; text-align: center;}
-            .headline { font-size: 32px; line-height: 40px; }
-            .actions-row { flex-direction: row-reverse; }
-        }
+        @media (max-width: 768px) { .login-card { flex-direction: column; padding: 24px; border-radius: 0; max-width: 450px; background-color: transparent; box-shadow: none; } .left-panel { padding-right: 0; margin-bottom: 32px; align-items: center; text-align: center; } .headline { font-size: 32px; line-height: 40px; } .actions-row { flex-direction: row-reverse; } }
     </style>
 </head>
 <body>
 
     <div class="login-card">
-        
         <div class="left-panel">
             <div class="brand-logo">hg</div>
             <h1 class="headline" id="title">登录</h1>
@@ -229,7 +55,6 @@
         </div>
 
         <div class="right-panel">
-            
             <div id="inputFields">
                 <div class="input-group">
                     <input type="text" id="username" placeholder=" " autocomplete="off">
@@ -247,42 +72,28 @@
             </div>
 
             <div class="msg" id="msg"></div>
-
-            <div class="guest-hint" id="guestHint">
-                您使用的不是自己的电脑？请使用无痕模式登录。
-            </div>
+            <div class="guest-hint" id="guestHint">您使用的不是自己的电脑？请使用无痕模式登录。</div>
 
             <div class="actions-row" id="actionsRow">
                 <button class="btn-text" id="switchBtn">创建账号</button>
                 <button class="btn-filled" id="submitBtn">下一步</button>
             </div>
-
         </div>
     </div>
 
     <div class="page-footer">
         <div>简体中文 ▼</div>
-        <div class="footer-right">
-            <a href="#">帮助</a>
-            <a href="#">隐私权</a>
-            <a href="#">条款</a>
-        </div>
+        <div class="footer-right"><a href="#">帮助</a><a href="#">隐私权</a><a href="#">条款</a></div>
     </div>
 
     <script>
-        // 1. 安全读取配置文件，避免重复定义
         const SUPABASE_URL = CONFIG.SUPABASE_URL;
         const SUPABASE_KEY = CONFIG.SUPABASE_KEY;
         const WASMER_URL = CONFIG.WASMER_URL;
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { 
-                persistSession: true, 
-                autoRefreshToken: true, 
-                detectSessionInUrl: true,
-                storage: window.localStorage 
-            }
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -290,7 +101,8 @@
 
         async function checkAlreadyLoggedIn() {
             const { data: { session } } = await db.auth.getSession();
-            if (session && session.user) {
+            // 增加 sessionStorage 的双重判断，防止死循环
+            if (session && session.user || sessionStorage.getItem("hg_logged_in") === "true") {
                 window.location.href = REDIRECT_URL;
             }
         }
@@ -338,35 +150,24 @@
         });
 
         submitBtn.addEventListener("click", async () => {
-            if (!isLogin) {
-                await doRegister();
-            } else if (stage === "password") {
-                await doPasswordStage();
-            } else {
-                await doTotpStage();
-            }
+            if (!isLogin) await doRegister();
+            else if (stage === "password") await doPasswordStage();
+            else await doTotpStage();
         });
 
         async function doPasswordStage() {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-
-            if (!username || !password) {
-                msg.textContent = "请填写完整的用户名和密码";
-                return;
-            }
-
-            const fakeEmail = `${username}@hgt.l.cd`;
+            if (!username || !password) { msg.textContent = "请填写完整的用户名和密码"; return; }
+            
             submitBtn.textContent = "验证中...";
             submitBtn.disabled = true;
-
-            const { data, error } = await db.auth.signInWithPassword({ email: fakeEmail, password: password });
-
-            submitBtn.textContent = "下一步";
-            submitBtn.disabled = false;
-
+            const { data, error } = await db.auth.signInWithPassword({ email: `${username}@hgt.l.cd`, password: password });
+            
             if (error) {
                 msg.textContent = "用户名或密码错误";
+                submitBtn.textContent = "下一步";
+                submitBtn.disabled = false;
                 return;
             }
 
@@ -374,17 +175,11 @@
 
             if (profile && profile.totp_enabled) {
                 const { data: mfa } = await db.from("user_mfa").select("secret").eq("user_id", data.user.id).maybeSingle();
-                if (!mfa) {
-                    msg.textContent = "2FA 数据异常";
-                    await db.auth.signOut();
-                    return;
-                }
-
+                if (!mfa) { msg.textContent = "2FA 数据异常"; await db.auth.signOut(); return; }
                 tempUsername = username;
                 tempPassword = password;
                 tempSecret = mfa.secret;
                 await db.auth.signOut();
-
                 stage = "totp";
                 usernameInput.disabled = true;
                 passwordInput.disabled = true;
@@ -392,11 +187,17 @@
                 totpInput.value = "";
                 totpInput.focus();
                 submitBtn.textContent = "验证";
+                submitBtn.disabled = false;
                 subtitle.textContent = "输入动态码";
                 msg.textContent = "";
                 return;
             }
 
+            // 登录成功，双重保存状态
+            sessionStorage.setItem("hg_logged_in", "true");
+            sessionStorage.setItem("hg_user_id", data.user.id);
+            sessionStorage.setItem("hg_username", username);
+            
             msg.textContent = "登录成功，正在跳转...";
             msg.style.color = "var(--primary)";
             setTimeout(() => window.location.href = REDIRECT_URL, 500);
@@ -404,11 +205,7 @@
 
         async function doTotpStage() {
             const code = totpInput.value.trim();
-            if (code.length !== 6) {
-                msg.textContent = "请输入 6 位动态码";
-                return;
-            }
-
+            if (code.length !== 6) { msg.textContent = "请输入 6 位动态码"; return; }
             submitBtn.textContent = "验证中...";
             submitBtn.disabled = true;
 
@@ -432,17 +229,18 @@
                 return;
             }
 
-            const { error } = await db.auth.signInWithPassword({
-                email: `${tempUsername}@hgt.l.cd`,
-                password: tempPassword
-            });
-
+            const { data, error } = await db.auth.signInWithPassword({ email: `${tempUsername}@hgt.l.cd`, password: tempPassword });
             if (error) {
                 msg.textContent = "登录失败";
                 submitBtn.textContent = "验证";
                 submitBtn.disabled = false;
                 return;
             }
+
+            // 2FA 验证成功，双重保存状态
+            sessionStorage.setItem("hg_logged_in", "true");
+            sessionStorage.setItem("hg_user_id", data.user.id);
+            sessionStorage.setItem("hg_username", tempUsername);
 
             msg.textContent = "验证通过，正在跳转...";
             msg.style.color = "var(--primary)";
@@ -452,23 +250,16 @@
         async function doRegister() {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-
-            if (!username || !password) {
-                msg.textContent = "请填写完整的用户名和密码";
-                return;
-            }
-
-            const fakeEmail = `${username}@hgt.l.cd`;
+            if (!username || !password) { msg.textContent = "请填写完整的用户名和密码"; return; }
+            
             submitBtn.textContent = "注册中...";
             submitBtn.disabled = true;
-
-            const { data, error } = await db.auth.signUp({ email: fakeEmail, password: password });
+            const { data, error } = await db.auth.signUp({ email: `${username}@hgt.l.cd`, password: password });
             
-            submitBtn.textContent = "注册";
-            submitBtn.disabled = false;
-
             if (error) {
                 msg.textContent = error.message.includes("already") ? "用户名已被占用" : "注册失败";
+                submitBtn.textContent = "注册";
+                submitBtn.disabled = false;
                 return;
             }
 
@@ -476,15 +267,18 @@
                 await db.from("profiles").insert({ id: data.user.id, username: username });
             }
 
+            // 注册即登录，保存状态
+            sessionStorage.setItem("hg_logged_in", "true");
+            sessionStorage.setItem("hg_user_id", data.user.id);
+            sessionStorage.setItem("hg_username", username);
+
             msg.textContent = "注册成功，正在跳转...";
             msg.style.color = "var(--primary)";
             setTimeout(() => window.location.href = REDIRECT_URL, 500);
         }
 
         [usernameInput, passwordInput, totpInput].forEach(input => {
-            input.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") submitBtn.click();
-            });
+            input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitBtn.click(); });
         });
     </script>
 </body>
