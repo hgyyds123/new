@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 · hg 账号</title>
@@ -269,8 +270,9 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
-        const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
+        const SUPABASE_URL = CONFIG.SUPABASE_URL;
+        const SUPABASE_KEY = CONFIG.SUPABASE_KEY;
+        const WASMER_URL = CONFIG.WASMER_URL;
         const WASMER_URL = "https://hgai-61677.wasmer.app";
 
         const { createClient } = supabase;
