@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 · hgt.l.cd</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #1a2533 0%, #23303f 100%);
+            min-height: 100vh;
+            padding: 24px;
+            color: #e3edf5;
+        }
+
+        .admin-panel { max-width: 900px; margin: 0 auto; }
+
+        .admin-panel h1 { font-size: 24px; color: #c9def5; margin-bottom: 20px; }
+
+        .card {
+            background: #23303f;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            border: 1px solid #3c4d62;
+        }
+
+        .card h2 { font-size: 16px; color: #9bb4d0; margin-bottom: 14px; }
+
+        .online-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .online-tag {
+            background: #2b405a;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #b4d2f0;
+            border: 1px solid #4f6b89;
+        }
+
+        .tab-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid #3c4d62;
+            background: #1a2533;
+            color: #9bb4d0;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: #fff;
+            border-color: #667eea;
+        }
+
+        .tab-btn:hover:not(.active) { border-color: #5f81a3; }
+
+        .msg-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #2f4055;
+            font-size: 14px;
+        }
+
+        .msg-row:last-child { border-bottom: none; }
+
+        .msg-row .conv {
+            color: #9a7fd0;
+            font-weight: 600;
+            font-size: 12px;
+            min-width: 110px;
+            flex-shrink: 0;
+        }
+
+        .msg-row .nick { color: #7bb3e6; font-weight: 600; min-width: 70px; flex-shrink: 0; }
+        .msg-row .content { color: #c2d7ed; flex: 1; word-break: break-word; }
+        .msg-row .time { color: #6a8099; font-size: 12px; flex-shrink: 0; }
+
+        .ban-btn {
+            background: #c0392b;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .ban-btn:hover { background: #e74c3c; }
+        .ban-btn:disabled { background: #555; cursor: default; }
+
+        .empty { color: #6a8099; font-size: 14px; text-align: center; padding: 20px; }
+
+        .banned-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2f4055;
+            font-size: 13px;
+            color: #c2d7ed;
+        }
+
+        .banned-item:last-child { border-bottom: none; }
+
+        .unban-btn {
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .unban-btn:hover { background: #2ecc71; }
+
+        .forbidden { text-align: center; padding: 120px 20px; }
+        .forbidden h1 { font-size: 64px; color: #e74c3c; margin-bottom: 16px; }
+        .forbidden p { font-size: 17px; color: #8aaecf; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
+
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true }
+        });
+
+        const root = document.getElementById("root");
+
+        // 缓存用户名和会话成员，避免重复查询
+        const profileCache = {};
+        const convMembersCache = {};
+
+        async function init() {
+            const { data: { session } } = await db.auth.getSession();
+            if (!session || !session.user) {
+                window.location.href = "/talkroom/login/";
+                return;
+            }
+
+            const { data: profile } = await db
+                .from("profiles")
+                .select("username, is_admin")
+                .eq("id", session.user.id)
+                .maybeSingle();
+
+            if (!profile || !profile.is_admin) {
+                root.innerHTML = `
+                    <div class="forbidden">
+                        <h1>403</h1>
+                        <p>你没有权限访问管理后台</p>
+                    </div>
+                `;
+                return;
+            }
+
+            renderPanel();
+        }
+
+        function renderPanel() {
+            root.innerHTML = `
+                <div class="admin-panel">
+                    <h1>🛠️ 管理后台</h1>
+
+                    <div class="card">
+                        <h2>🟢 当前在线（<span id="onlineCount">0</span> 人）</h2>
+                        <div class="online-list" id="onlineList">
+                            <span class="empty">暂无人在线</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>🚫 已封禁（<span id="bannedCount">0</span> 人）</h2>
+                        <div id="bannedList">
+                            <span class="empty">暂无封禁记录</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>📜 消息记录</h2>
+                        <div class="tab-row">
+                            <button class="tab-btn active" data-tab="public">公共聊天</button>
+                            <button class="tab-btn" data-tab="private">私聊</button>
+                        </div>
+                        <div id="msgList">
+                            <span class="empty">加载中…</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 标签切换
+            let currentTab = "public";
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    currentTab = btn.dataset.tab;
+                    loadMessages(currentTab);
+                });
+            });
+
+            loadMessages("public");
+            loadBanned();
+
+            // 实时监听新消息
+            db.channel("admin-messages")
+                .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, async (payload) => {
+                    const row = payload.new;
+                    const isPrivate = !!row.conversation_id;
+                    if ((currentTab === "public" && !isPrivate) || (currentTab === "private" && isPrivate)) {
+                        await prependMessage(row);
+                    }
+                })
+                .subscribe();
+
+            // 在线状态
+            const presenceChannel = db.channel("talkroom-presence");
+            presenceChannel
+                .on("presence", { event: "sync" }, () => {
+                    const state = presenceChannel.presenceState();
+                    const names = Object.values(state).flat().map(p => p.username);
+                    renderOnline(names);
+                })
+                .subscribe();
+        }
+
+        // ===== 加载消息（按 tab 过滤） =====
+        async function loadMessages(tab) {
+            const list = document.getElementById("msgList");
+            list.innerHTML = '<span class="empty">加载中…</span>';
+
+            let query = db.from("messages").select("*").order("created_at", { ascending: false }).limit(200);
+
+            if (tab === "public") {
+                query = query.is("conversation_id", null);
+            } else {
+                query = query.not("conversation_id", "is", null);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                list.innerHTML = '<span class="empty">加载失败</span>';
+                return;
+            }
+
+            if (data.length === 0) {
+                list.innerHTML = '<span class="empty">暂无消息</span>';
+                return;
+            }
+
+            list.innerHTML = "";
+            for (const row of data) {
+                await appendMessage(row, list);
+            }
+        }
+
+        // ===== 查询用户名 =====
+        async function getUsername(userId) {
+            if (!userId) return "未知";
+            if (profileCache[userId]) return profileCache[userId];
+
+            const { data } = await db
+                .from("profiles")
+                .select("username")
+                .eq("id", userId)
+                .maybeSingle();
+
+            const name = data ? data.username : "未知";
+            profileCache[userId] = name;
+            return name;
+        }
+
+        // ===== 查询会话成员（谁和谁） =====
+        async function getConvMembers(convId) {
+            if (convMembersCache[convId]) return convMembersCache[convId];
+
+            const { data } = await db
+                .from("conversation_members")
+                .select("user_id")
+                .eq("conversation_id", convId);
+
+            if (!data || data.length === 0) {
+                convMembersCache[convId] = "空会话";
+                return "空会话";
+            }
+
+            const names = [];
+            for (const m of data) {
+                names.push(await getUsername(m.user_id));
+            }
+
+            const result = names.join(" ↔ ");
+            convMembersCache[convId] = result;
+            return result;
+        }
+
+        // ===== 构建消息行 =====
+        async function buildMsgRow(row) {
+            const time = new Date(row.created_at).toLocaleString("zh-CN");
+            const uid = row.user_id || "";
+            const nick = escapeHtml(row.nickname || "匿名");
+            const content = escapeHtml(row.content);
+
+            let convLabel = "";
+            if (row.conversation_id) {
+                const members = await getConvMembers(row.conversation_id);
+                convLabel = `<span class="conv">[${escapeHtml(members)}]</span>`;
+            }
+
+            return `
+                ${convLabel}
+                <span class="nick">${nick}</span>
+                <span class="content">${content}</span>
+                <span class="time">${time}</span>
+                ${uid ? `<button class="ban-btn" data-uid="${uid}" data-nick="${nick}">封禁</button>` : ""}
+            `;
+        }
+
+        async function appendMessage(row, container) {
+            const div = document.createElement("div");
+            div.className = "msg-row";
+            div.innerHTML = await buildMsgRow(row);
+            container.appendChild(div);
+            const btn = div.querySelector(".ban-btn");
+            if (btn) btn.addEventListener("click", () => banUser(btn));
+        }
+
+        async function prependMessage(row) {
+            const list = document.getElementById("msgList");
+            if (list.querySelector(".empty")) list.innerHTML = "";
+            const div = document.createElement("div");
+            div.className = "msg-row";
+            div.innerHTML = await buildMsgRow(row);
+            list.insertBefore(div, list.firstChild);
+            const btn = div.querySelector(".ban-btn");
+            if (btn) btn.addEventListener("click", () => banUser(btn));
+        }
+
+        // ===== 封禁 =====
+        async function banUser(btn) {
+            const uid = btn.dataset.uid;
+            const nick = btn.dataset.nick;
+            if (!confirm(`确定要封禁「${nick}」吗？`)) return;
+
+            const { error } = await db.from("banned").insert({
+                user_id: uid,
+                nickname: nick,
+                reason: "管理员封禁"
+            });
+
+            if (error) {
+                alert("封禁失败：" + error.message);
+            } else {
+                btn.textContent = "已封禁";
+                btn.disabled = true;
+                loadBanned();
+            }
+        }
+
+        async function loadBanned() {
+            const { data, error } = await db
+                .from("banned")
+                .select("*")
+                .order("banned_at", { ascending: false });
+
+            const list = document.getElementById("bannedList");
+            if (error || !data || data.length === 0) {
+                list.innerHTML = '<span class="empty">暂无封禁记录</span>';
+                document.getElementById("bannedCount").textContent = "0";
+                return;
+            }
+
+            document.getElementById("bannedCount").textContent = data.length;
+            list.innerHTML = "";
+            data.forEach(row => {
+                const div = document.createElement("div");
+                div.className = "banned-item";
+                div.innerHTML = `
+                    <span>${escapeHtml(row.nickname || "未知")}</span>
+                    <button class="unban-btn" data-uid="${row.user_id}">解封</button>
+                `;
+                list.appendChild(div);
+                div.querySelector(".unban-btn").addEventListener("click", async () => {
+                    if (!confirm("确定要解封吗？")) return;
+                    const { error } = await db.from("banned").delete().eq("user_id", row.user_id);
+                    if (error) alert("解封失败：" + error.message);
+                    else loadBanned();
+                });
+            });
+        }
+
+        function renderOnline(names) {
+            document.getElementById("onlineCount").textContent = names.length;
+            const list = document.getElementById("onlineList");
+            if (names.length === 0) {
+                list.innerHTML = '<span class="empty">暂无人在线</span>';
+            } else {
+                list.innerHTML = names.map(n => `<span class="online-tag">${escapeHtml(n)}</span>`).join("");
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻 · hg1.dpdns.org</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 640px;
+            width: 100%;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            font-size: 26px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .news-item {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .news-item .date {
+            font-size: 13px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .news-item .title {
+            font-size: 18px;
+            color: #333;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .news-item .content {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.9;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .empty {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            color: #999;
+            font-size: 15px;
+        }
+
+        .back {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .back a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .back a:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📰 新闻</h1>
+            <p>hg1.dpdns.org 的最新动态</p>
+        </div>
+
+        <div id="newsList">
+            <div class="empty">加载中…</div>
+        </div>
+
+        <div class="back">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        async function loadNews() {
+            const list = document.getElementById("newsList");
+            try {
+                const res = await fetch("./news.txt?t=" + Date.now());
+                if (!res.ok) throw new Error("找不到 news.txt");
+                const text = await res.text();
+
+                // 按 --- 分割成多条新闻
+                const blocks = text.split(/\n---+\n/).map(b => b.trim()).filter(b => b);
+
+                if (blocks.length === 0) {
+                    list.innerHTML = '<div class="empty">暂无新闻</div>';
+                    return;
+                }
+
+                const items = [];
+                blocks.forEach(block => {
+                    // 忽略 # 开头的注释行
+                    const lines = block.split("\n").filter(l => !l.trim().startsWith("#"));
+                    if (lines.length === 0) return;
+
+                    // 第一行是 日期|标题
+                    const firstLine = lines[0].trim();
+                    const parts = firstLine.split("|");
+                    if (parts.length < 2) return;
+
+                    const date = parts[0].trim();
+                    const title = parts[1].trim();
+                    // 剩下的所有行是正文
+                    const content = lines.slice(1).join("\n").trim();
+
+                    items.push({ date, title, content });
+                });
+
+                if (items.length === 0) {
+                    list.innerHTML = '<div class="empty">暂无新闻</div>';
+                    return;
+                }
+
+                // 倒序显示，最新的在最上面
+                items.reverse();
+
+                list.innerHTML = "";
+                items.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "news-item";
+                    div.innerHTML = `
+                        <div class="date">${escapeHtml(item.date)}</div>
+                        <div class="title">${escapeHtml(item.title)}</div>
+                        <div class="content">${escapeHtml(item.content)}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                list.innerHTML = '<div class="empty">加载失败：' + escapeHtml(err.message) + '</div>';
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        loadNews();
+    </script>
+</body>
+</html>

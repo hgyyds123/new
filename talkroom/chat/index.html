@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天室 · hg1.dpdns.org</title>
+    <script src="/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .layout {
+            display: flex;
+            gap: 16px;
+            max-width: 720px;
+            width: 100%;
+            height: 80vh;
+        }
+
+        .card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 28px 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .sidebar {
+            width: 140px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .balance-box {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .balance-box .label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 6px;
+        }
+
+        .balance-box .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #27ae60;
+            word-break: break-all;
+        }
+
+        .balance-box .value.low { color: #e67e22; }
+        .balance-box .value.critical { color: #e74c3c; }
+
+        .balance-box .unit {
+            font-size: 11px;
+            color: #bbb;
+            margin-top: 4px;
+        }
+
+        h1 { font-size: 22px; color: #333; margin-bottom: 6px; text-align: center; }
+
+        .my-nickname { text-align: center; font-size: 13px; color: #888; margin-bottom: 6px; }
+        .my-nickname span { color: #667eea; font-weight: 600; }
+
+        .online-info { text-align: center; font-size: 12px; color: #aaa; margin-bottom: 14px; }
+        .online-info span { color: #667eea; font-weight: 600; }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            background: #f7f8fc;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg {
+            background: #fff;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            color: #333;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            word-break: break-word;
+        }
+
+        .msg .name {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .msg img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 6px;
+            display: block;
+        }
+
+        .input-row { display: flex; gap: 10px; }
+
+        .input-row input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.25s;
+        }
+
+        .input-row input:focus { border-color: #667eea; }
+
+        .input-row button {
+            background: #667eea;
+            color: #fff;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .input-row button:hover { background: #5568d3; }
+
+        .status-tip { text-align: center; font-size: 12px; color: #aaa; margin-top: 10px; min-height: 16px; }
+
+        .forbidden { text-align: center; padding: 80px 20px; }
+        .forbidden h1 { font-size: 64px; color: #e74c3c; margin-bottom: 16px; }
+        .forbidden p { font-size: 17px; color: #666; }
+
+        @media (max-width: 700px) {
+            .layout { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; flex-direction: row; }
+            .balance-box { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="card" id="app">
+            <h1>💬 聊天室</h1>
+            <div class="my-nickname">当前账号：<span id="myNickname">…</span></div>
+            <div class="online-info">在线：<span id="onlineCount">0</span> 人</div>
+            <div class="messages" id="messages">
+                <div class="msg"><span class="name">系统</span>正在连接聊天室…</div>
+            </div>
+            <div class="input-row">
+                <input type="text" id="msgInput" placeholder="说点什么…" maxlength="100">
+                <button id="sendBtn">发送</button>
+            </div>
+            <div class="status-tip" id="statusTip"></div>
+        </div>
+
+        <div class="sidebar">
+            <div class="balance-box">
+                <div class="label">💰 AI 额度</div>
+                <div class="value" id="balanceValue">…</div>
+                <div class="unit">pollen</div>
+            </div>
+        </div>
+    </div>
+
+    <noscript>
+        <div class="forbidden">
+            <h1>403</h1>
+            <p>请启用 JavaScript 才能进入聊天室</p>
+        </div>
+    </noscript>
+
+    <script>
+        const BLOCKED_WORDS = ["广告", "加群", "代练", "傻逼", "操你", "尼玛", "滚"];
+        const MAX_MSG_LENGTH = 100;
+        const SEND_COOLDOWN = 3000;
+        const WASMER_URL = "https://hgai-61677.wasmer.app";
+
+        function containsBlockedWord(text) {
+            return BLOCKED_WORDS.some(word => text.includes(word));
+        }
+
+        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
+
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true }
+        });
+
+        const messagesEl = document.getElementById("messages");
+        const msgInput = document.getElementById("msgInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const statusTip = document.getElementById("statusTip");
+
+        let userId = null;
+        let username = null;
+
+        // ===== AI 额度显示 =====
+        async function checkBalance() {
+            const el = document.getElementById("balanceValue");
+            try {
+                const res = await fetch(WASMER_URL + "/balance");
+                const data = await res.json();
+
+                if (data.balance !== undefined) {
+                    const bal = Number(data.balance);
+                    el.textContent = bal.toFixed(4);
+                    el.className = "value";
+                    if (bal < 0.05) el.className = "value critical";
+                    else if (bal < 0.15) el.className = "value low";
+                } else {
+                    el.textContent = "未知";
+                    el.className = "value";
+                }
+            } catch (e) {
+                el.textContent = "离线";
+                el.className = "value critical";
+            }
+        }
+
+        checkBalance();
+        setInterval(checkBalance, 60000);
+
+        // ===== 认证 =====
+        async function initAuth() {
+            const { data: { session } } = await db.auth.getSession();
+
+            if (!session || !session.user) {
+                window.location.href = "/talkroom/login/";
+                return;
+            }
+
+            userId = session.user.id;
+
+            const { data: profile } = await db
+                .from("profiles")
+                .select("username")
+                .eq("id", userId)
+                .maybeSingle();
+
+            username = profile ? profile.username : "未知用户";
+            document.getElementById("myNickname").textContent = username;
+
+            const { data: banData } = await db
+                .from("banned")
+                .select("user_id")
+                .eq("user_id", userId)
+                .maybeSingle();
+
+            if (banData) {
+                document.body.innerHTML = `
+                    <div class="forbidden">
+                        <h1>403</h1>
+                        <p>你已被禁止访问本聊天室</p>
+                    </div>
+                `;
+                return;
+            }
+
+            initChat();
+        }
+
+        function initChat() {
+            messagesEl.innerHTML = '<div class="msg"><span class="name">系统</span>已连接，你只能看到进来之后的消息。</div>';
+            statusTip.textContent = "已连接";
+
+            const channel = db.channel("messages-channel", {
+                config: { presence: { key: userId } }
+            });
+
+            channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+                if (messagesEl.querySelector(".msg .name")?.textContent === "系统") {
+                    messagesEl.innerHTML = "";
+                }
+                renderMessage(payload.new);
+                scrollToBottom();
+            });
+
+            channel.on("presence", { event: "sync" }, () => {
+                const state = channel.presenceState();
+                document.getElementById("onlineCount").textContent = Object.keys(state).length;
+            });
+
+            channel.subscribe(async (status) => {
+                if (status === "SUBSCRIBED") {
+                    await channel.track({ username: username });
+                }
+            });
+        }
+
+        function renderMessage(row) {
+            const div = document.createElement("div");
+            div.className = "msg";
+
+            const content = row.content || "";
+            const isImage = content.startsWith('<img ');
+
+            div.innerHTML = `<span class="name">${escapeHtml(row.nickname || "匿名")}</span>` +
+                (isImage ? content : escapeHtml(content));
+
+            messagesEl.appendChild(div);
+        }
+
+        function scrollToBottom() {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        let lastSendTime = 0;
+
+        async function sendMessage() {
+            const text = msgInput.value.trim();
+            if (!text) return;
+
+            if (text.length > MAX_MSG_LENGTH) {
+                alert("消息太长，最多 " + MAX_MSG_LENGTH + " 字");
+                return;
+            }
+
+            if (containsBlockedWord(text)) {
+                alert("消息包含不允许的内容，请修改后再发送");
+                return;
+            }
+
+            const now = Date.now();
+            if (now - lastSendTime < SEND_COOLDOWN) {
+                alert("发送太快了，请稍等几秒");
+                return;
+            }
+            lastSendTime = now;
+
+            msgInput.value = "";
+            const { error } = await db.from("messages").insert({
+                content: text,
+                nickname: username,
+                user_id: userId
+            });
+
+            if (error) {
+                console.error("发送失败:", error);
+                alert("发送失败，你已被封禁");
+            }
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        msgInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

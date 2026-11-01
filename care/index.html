@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理关怀 · hgt.l.cd</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.8;
+            background: linear-gradient(160deg, #e8f0fe 0%, #f3e8ff 100%);
+            background-size: 100% 200%;
+            animation: breathe 8s ease-in-out infinite;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes breathe {
+            0%   { background-position: 0% 0%; }
+            50%  { background-position: 0% 100%; }
+            100% { background-position: 0% 0%; }
+        }
+
+        /* ===== 飘浮暖语背景 ===== */
+        .floating-words {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;   /* 不挡点击 */
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .word {
+            position: absolute;
+            white-space: nowrap;
+            color: #a8b8d8;              /* 和背景接近的淡蓝灰 */
+            opacity: 0.35;
+            font-weight: 400;
+            will-change: transform;
+            user-select: none;
+        }
+
+        /* 不同方向、不同速度的漂浮 */
+        @keyframes float1 {
+            0%   { transform: translate(0, 0); }
+            100% { transform: translate(60px, -40px); }
+        }
+        @keyframes float2 {
+            0%   { transform: translate(0, 0); }
+            100% { transform: translate(-50px, 50px); }
+        }
+        @keyframes float3 {
+            0%   { transform: translate(0, 0); }
+            100% { transform: translate(40px, 60px); }
+        }
+
+        /* 内容层，盖在飘字上面 */
+        .container {
+            max-width: 560px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 24px;
+            padding: 40px 32px;
+            margin-bottom: 24px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(100, 130, 200, 0.12);
+            backdrop-filter: blur(4px);
+        }
+
+        .welcome h1 {
+            font-size: 24px;
+            color: #4a5a7a;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .welcome p {
+            font-size: 15px;
+            color: #6b7a99;
+            line-height: 2;
+        }
+
+        .resources {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            padding: 36px 32px;
+            box-shadow: 0 10px 40px rgba(100, 130, 200, 0.12);
+            backdrop-filter: blur(4px);
+        }
+
+        .resources h2 {
+            font-size: 18px;
+            color: #4a5a7a;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .resources .note {
+            font-size: 13px;
+            color: #9aabcc;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .hotline {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .hotline-item {
+            background: #f5f8ff;
+            border-radius: 16px;
+            padding: 18px 20px;
+            border-left: 4px solid #a8c8f0;
+        }
+
+        .hotline-item .name {
+            font-size: 15px;
+            color: #4a5a7a;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .hotline-item .number {
+            font-size: 20px;
+            color: #6b8fd4;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: block;
+            text-decoration: none;
+        }
+
+        .hotline-item .number:hover { text-decoration: underline; }
+
+        .hotline-item .desc {
+            font-size: 12px;
+            color: #9aabcc;
+            margin-top: 4px;
+        }
+
+        .hotline-item .link {
+            font-size: 13px;
+            color: #8a9fc0;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 4px;
+            border-bottom: 1px dashed #c8d8f0;
+        }
+
+        .hotline-item .link:hover { color: #6b8fd4; }
+
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: #b0bdd4;
+            margin-top: 32px;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 飘浮暖语背景 -->
+    <div class="floating-words" id="floatingWords"></div>
+
+    <div class="container">
+
+        <div class="welcome">
+            <h1>你在这里是安全的</h1>
+            <p>
+                无论你现在感受到什么，都是真实的，也都值得被认真对待。<br>
+                你不需要一个人扛着。
+            </p>
+        </div>
+
+        <div class="resources">
+            <h2>如果你需要专业帮助</h2>
+            <p class="note">以下热线都是免费的、保密的，随时可以打</p>
+
+            <div class="hotline">
+
+                <div class="hotline-item">
+                    <div class="name">全国心理援助热线</div>
+                    <a class="number" href="tel:12356">12356</a>
+                    <div class="desc">24小时 · 国家卫健委统一热线 · 手机直接拨打即可接通本地</div>
+                </div>
+
+                <div class="hotline-item">
+                    <div class="name">希望24热线（生命教育与危机干预）</div>
+                    <a class="number" href="tel:4001619995">400-161-9995</a>
+                    <div class="desc">24小时 · 按1抗疫专线，按2学生专线，按3抑郁专线，按4生命专线</div>
+                    <a class="link" href="http://www.hope9995.com" target="_blank">www.hope9995.com</a>
+                </div>
+
+                <div class="hotline-item">
+                    <div class="name">北京心理危机研究与干预中心</div>
+                    <a class="number" href="tel:01082951332">010-82951332</a>
+                    <div class="desc">24小时 · 手机用户拨打</div>
+                    <a class="link" href="https://www.crisis.org.cn" target="_blank">www.crisis.org.cn</a>
+                </div>
+
+                <div class="hotline-item">
+                    <div class="name">12355 青少年服务台</div>
+                    <a class="number" href="tel:12355">12355</a>
+                    <div class="desc">共青团 · 免费专业保密 · 心理与法律咨询</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer-note">
+            你不需要变得“更好”才值得被关心。
+        </div>
+
+    </div>
+
+    <script>
+        // ===== 暖语列表（按需增删） =====
+        const quotes = [
+            "你现在的感受是真实的",
+            "你已经撑过很多很难的时刻",
+            "累的时候可以停下来",
+            "你不需要证明什么",
+            "难过不是软弱",
+            "今天只做到呼吸，也很好",
+            "你不是负担",
+            "慢慢来，不用急着好起来",
+            "有人愿意听你说",
+            "你存在本身就已经足够",
+            "你值得被温柔对待",
+            "你不孤单",
+            "可以哭出来",
+            "不用假装没事",
+            "你已经很努力了",
+            "休息不是浪费时间",
+            "你不需要让所有人满意",
+            "你的感受很重要",
+            "今天也可以慢一点",
+            "谢谢你还在坚持"
+        ];
+
+        const container = document.getElementById("floatingWords");
+        const colors = ["#a8b8d8", "#b8c8e0", "#c8b8e0", "#b0c8e8", "#c0c8e0"];
+        const animations = ["float1", "float2", "float3"];
+
+        // 生成 30 条飘浮文字
+        const TOTAL = 30;
+        for (let i = 0; i < TOTAL; i++) {
+            const el = document.createElement("div");
+            el.className = "word";
+            el.textContent = quotes[i % quotes.length];
+
+            // 随机大小
+            const size = 12 + Math.random() * 16;   // 12px ~ 28px
+            el.style.fontSize = size + "px";
+
+            // 随机位置
+            el.style.left = Math.random() * 100 + "%";
+            el.style.top = Math.random() * 100 + "%";
+
+            // 随机颜色
+            el.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+            // 随机透明度
+            el.style.opacity = (0.2 + Math.random() * 0.25).toFixed(2);
+
+            // 随机动画
+            const anim = animations[Math.floor(Math.random() * animations.length)];
+            const duration = 12 + Math.random() * 12;   // 12s ~ 24s
+            el.style.animation = `${anim} ${duration}s ease-in-out infinite alternate`;
+
+            container.appendChild(el);
+        }
+    </script>
+</body>
+</html>

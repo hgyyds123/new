@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hg · 首页</title>
+    
+    <!-- 字体与图标 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* ================= 1. 浅色模式 ================= */
+        :root {
+            --bg-color: #F8F9FA;
+            --surface: #FFFFFF;
+            --surface-variant: #F0F4F9;
+            --text-main: #1F1F1F;
+            --text-sub: #444746;
+            --outline-variant: #C4C7C5;
+            
+            --primary: #0b57d0;
+            --on-primary: #FFFFFF;
+            --primary-hover: #0842a0;
+            
+            --primary-container: #d3e3fd;
+            --on-primary-container: #041e49;
+        }
+
+        /* ================= 2. 深色模式 ================= */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #131314;
+                --surface: #1E1F20;
+                --surface-variant: #282A2C;
+                --text-main: #E3E3E3;
+                --text-sub: #C4C7C5;
+                --outline-variant: #444746;
+                
+                --primary: #A8C7FA;
+                --on-primary: #062E6F;
+                --primary-hover: #D3E3FD;
+                
+                --primary-container: #0842A0;
+                --on-primary-container: #D3E3FD;
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        button { font-family: inherit; border: none; background: none; cursor: pointer; }
+
+        /* Ripple 动效 */
+        .m3-ripple { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; }
+        .ripple-circle {
+            position: absolute; border-radius: 50%; background-color: rgba(128, 128, 128, 0.2);
+            transform: scale(0); animation: ripple-anim 0.3s cubic-bezier(0.2, 0, 0, 1); pointer-events: none;
+        }
+        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+        /* ================= 顶部导航栏 ================= */
+        .top-app-bar {
+            height: 64px; background-color: var(--bg-color);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; position: sticky; top: 0; z-index: 100;
+        }
+        .brand { font-size: 22px; font-weight: 500; color: var(--text-main); letter-spacing: -0.5px;}
+        .nav-actions { display: flex; gap: 12px; align-items: center; }
+        
+        .icon-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            color: var(--text-sub); transition: background-color 0.2s;
+        }
+        .icon-btn:hover { background-color: var(--surface-variant); }
+
+        .avatar-small {
+            width: 32px; height: 32px; border-radius: 50%;
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            display: none; 
+            align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 500;
+            transition: transform 0.2s;
+        }
+        .avatar-small:hover { transform: scale(1.05); }
+
+        /* ================= 主体排版 ================= */
+        .container { flex: 1; width: 100%; max-width: 840px; margin: 0 auto; padding: 64px 24px; }
+        @media (max-width: 600px) { .container { padding: 32px 16px; } }
+
+        .display-large {
+            font-size: 57px; font-weight: 400; line-height: 64px; letter-spacing: -0.25px; margin-bottom: 24px;
+        }
+        @media (max-width: 600px) { .display-large { font-size: 40px; line-height: 48px; } }
+
+        .body-large {
+            font-size: 18px; font-weight: 400; line-height: 28px;
+            color: var(--text-sub); margin-bottom: 48px; max-width: 600px;
+        }
+
+        /* ================= 搜索框 ================= */
+        .search-bar {
+            background-color: var(--surface);
+            height: 56px; border-radius: 9999px;
+            display: flex; align-items: center; padding: 0 24px;
+            margin-bottom: 64px; max-width: 640px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 4px 8px rgba(0,0,0,.05);
+            transition: box-shadow 0.2s, background-color 0.3s, border-color 0.2s;
+            border: 1px solid transparent;
+        }
+        .search-bar:hover {
+            box-shadow: 0 1px 5px rgba(0,0,0,.15), 0 4px 12px rgba(0,0,0,.1);
+        }
+        .search-bar:focus-within { 
+            box-shadow: 0 1px 6px rgba(32,33,36,.28); 
+            border-color: var(--outline-variant);
+        }
+        .search-bar .material-symbols-outlined { color: var(--text-sub); margin-right: 16px; }
+        .search-bar input {
+            flex: 1; background: transparent; border: none; outline: none;
+            font-size: 16px; color: var(--text-main);
+        }
+        .search-bar input::placeholder { color: var(--text-sub); }
+
+        /* ================= 卡片网格 ================= */
+        .section-title {
+            font-size: 22px; font-weight: 400; margin-bottom: 24px; color: var(--text-main);
+        }
+
+        .card-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;
+        }
+
+        .card {
+            background-color: var(--surface);
+            border-radius: 16px; padding: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 1px 3px 1px rgba(0,0,0,.08);
+            display: flex; flex-direction: column;
+            transition: box-shadow 0.2s, background-color 0.3s;
+            cursor: pointer;
+        }
+        .card:hover { box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 2px 6px 2px rgba(0,0,0,.1); }
+
+        .card-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+        }
+        .card-icon .material-symbols-outlined { font-size: 24px; }
+
+        .title-medium { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+        .body-medium { font-size: 14px; font-weight: 400; color: var(--text-sub); flex: 1; margin-bottom: 24px;}
+
+        .btn-filled {
+            background-color: var(--primary);
+            color: var(--on-primary);
+            height: 40px; padding: 0 24px; border-radius: 9999px;
+            font-size: 14px; font-weight: 500;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: fit-content;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .btn-filled:hover { 
+            background-color: var(--primary-hover); 
+            box-shadow: 0 1px 2px rgba(0,0,0,.15); 
+        }
+
+        /* ================= 页面内右下角操作按钮 ================= */
+        .page-action-wrap {
+            display: flex;
+            justify-content: flex-end; /* 靠右 */
+            margin-top: 40px;
+            margin-bottom: 24px;
+        }
+
+        .fab {
+            height: 48px;
+            padding: 0 20px;
+            border-radius: 16px; 
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,.1);
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .fab:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,.15); 
+            transform: translateY(-2px); 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部应用栏 -->
+    <header class="top-app-bar">
+        <a href="/" class="brand">hg</a>
+        <div class="nav-actions">
+            <a href="https://developers.hg1.dpdns.org" class="icon-btn m3-ripple" title="开发者中心">
+                <span class="material-symbols-outlined">code</span>
+            </a>
+            <a href="/account/login/" class="btn-filled m3-ripple" id="loginBtn" style="display: none;">登录</a>
+            <a href="/account/" class="avatar-small m3-ripple" id="userAvatar">?</a>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <h1 class="display-large">你好，世界。</h1>
+        <p class="body-large">这是我的个人平台，集成了实时聊天、社区分享与复古游戏。你要干些什么？</p>
+
+        <!-- 搜索框 -->
+        <div class="search-bar">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" placeholder="搜索网站内容...">
+        </div>
+
+        <!-- 功能矩阵 -->
+        <h2 class="section-title">核心功能</h2>
+        <div class="card-grid">
+            
+            <a href="/talkroom/" class="card m3-ripple">
+                <div class="card-icon"><span class="material-symbols-outlined">forum</span></div>
+                <div class="title-medium">Talkroom 聊天室</div>
+                <div class="body-medium">基于 Supabase 实时通信。支持公聊、私聊、在线状态与 AI 助手。</div>
+                <div class="btn-filled">进入大厅</div>
+            </a>
+
+            <a href="/community/" class="card m3-ripple">
+                <div class="card-icon"><span class="material-symbols-outlined">groups</span></div>
+                <div class="title-medium">Community 社区</div>
+                <div class="body-medium">异步发帖讨论区。支持发布长文、点赞与评论互动。</div>
+                <div class="btn-filled">逛逛社区</div>
+            </a>
+
+            <a href="/gs/" class="card m3-ripple">
+                <div class="card-icon"><span class="material-symbols-outlined">sports_esports</span></div>
+                <div class="title-medium">GS 游戏与工具</div>
+                <div class="body-medium">提供经典 Flash 游戏下载与在线游玩，如行政区狙击、地形拼图。</div>
+                <div class="btn-filled">前往游戏中心</div>
+            </a>
+
+            <a href="/care/" class="card m3-ripple">
+                <div class="card-icon"><span class="material-symbols-outlined">psychology</span></div>
+                <div class="title-medium">心理关怀</div>
+                <div class="body-medium">提供舒缓的呼吸引导动画，以及全国免费心理危机干预热线汇总。</div>
+                <div class="btn-filled">进入关怀页</div>
+            </a>
+            
+            <a href="https://developers.hg1.dpdns.org" class="card m3-ripple">
+                <div class="card-icon"><span class="material-symbols-outlined">code</span></div>
+                <div class="title-medium">Developer 开发者</div>
+                <div class="body-medium">查看平台架构说明、API 接口文档与底层技术支持。</div>
+                <div class="btn-filled">开发者门户</div>
+            </a>
+
+            <a href="/account/" class="card m3-ripple">
+                <div class="card-icon"><span class="material-symbols-outlined">admin_panel_settings</span></div>
+                <div class="title-medium">Account 安全设置</div>
+                <div class="body-medium">管理你的账号信息，开启两步验证 (2FA) 保护数据安全。</div>
+                <div class="btn-filled">账号设置</div>
+            </a>
+
+        </div>
+
+        <!-- 页面内右下角：查看日志 -->
+        <div class="page-action-wrap">
+            <a href="/updates/" class="fab m3-ripple" title="查看更新日志">
+                <span class="material-symbols-outlined">receipt_long</span>
+                更新日志
+            </a>
+        </div>
+
+    </main>
+
+    <script>
+        // 波纹动效
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('.m3-ripple');
+            if (!target) return;
+            const rect = target.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const circle = document.createElement('span');
+            circle.classList.add('ripple-circle');
+            const size = Math.max(rect.width, rect.height);
+            circle.style.width = circle.style.height = size + 'px';
+            circle.style.left = (x - size / 2) + 'px';
+            circle.style.top = (y - size / 2) + 'px';
+            if (target.classList.contains('btn-filled') || target.classList.contains('avatar-small')) {
+                circle.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            }
+            target.appendChild(circle);
+            setTimeout(() => circle.remove(), 300);
+        });
+
+        // 动态渲染头部登录状态
+        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
+        
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
+        });
+
+        async function checkLoginStatus() {
+            const { data: { session } } = await db.auth.getSession();
+            const loginBtn = document.getElementById("loginBtn");
+            const userAvatar = document.getElementById("userAvatar");
+
+            if (session && session.user) {
+                loginBtn.style.display = "none";
+                userAvatar.style.display = "inline-flex";
+                
+                const { data: profile } = await db.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
+                if (profile && profile.username) {
+                    userAvatar.textContent = profile.username.charAt(0).toUpperCase();
+                } else {
+                    userAvatar.textContent = "U";
+                }
+            } else {
+                loginBtn.style.display = "inline-flex";
+                userAvatar.style.display = "none";
+            }
+        }
+
+        checkLoginStatus();
+    </script>
+</body>
+</html>
