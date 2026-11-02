@@ -244,19 +244,22 @@
                 }
             }
 
+            // 拿到当前用户，优先用 SDK 真实 session，没有则用 sessionStorage 缓存
             currentUser = session ? session.user : { id: sessionStorage.getItem("hg_user_id"), email: "local@hgt.l.cd" };
             if (!currentUser.id) {
                 window.location.href = "/account/login/";
                 return;
             }
 
+            // 查数据库拿用户名和 2FA 状态
             const { data: profile } = await db
                 .from("profiles")
                 .select("username, totp_enabled")
                 .eq("id", currentUser.id)
                 .maybeSingle();
 
-            const username = profile ? profile.username : (sessionStorage.getItem("hg_username") || "未知用户");
+            // 双重兜底：数据库查不到就用缓存里的名字
+            const username = profile && profile.username ? profile.username : (sessionStorage.getItem("hg_username") || "未知用户");
             const email = currentUser.email || "无邮箱";
             
             document.getElementById("displayName").textContent = username;
@@ -266,6 +269,7 @@
             document.getElementById("mainAvatar").textContent = initial;
             document.getElementById("topAvatar").textContent = initial;
 
+            // 渲染 2FA 状态
             isMfaEnabled = profile ? profile.totp_enabled : false;
             updateMfaUI();
         }
@@ -376,4 +380,22 @@
                 
                 isMfaEnabled = true;
                 updateMfaUI();
-                document.getElementById("mfa
+                document.getElementById("mfaModal").classList.remove("active");
+                alert("两步验证已成功开启！下次登录需要输入动态码。");
+
+            } catch (e) {
+                msg.textContent = "网络异常，请稍后重试";
+                btn.textContent = "验证并开启";
+                btn.disabled = false;
+            }
+        });
+        
+        // 详情按钮
+        document.getElementById("mfaInfoBtn").addEventListener("click", () => {
+            alert("两步验证 (2FA) 会在您登录时要求额外输入一个动态验证码，极大地提升账号安全。");
+        });
+
+        initAccount();
+    </script>
+</body>
+</html>
