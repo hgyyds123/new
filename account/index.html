@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <script src="/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>hg 账号</title>
@@ -14,64 +15,30 @@
     <style>
         /* ================= 深浅色主题变量 ================= */
         :root {
-            --bg-color: #F8F9FA;
-            --surface: #FFFFFF;
-            --surface-variant: #F0F4F9;
-            --text-main: #1F1F1F;
-            --text-sub: #444746;
-            --outline: #747775;
-            --outline-variant: #C4C7C5;
-            --primary: #0b57d0;
-            --on-primary: #FFFFFF;
-            --primary-hover: #0842a0;
-            --error: #B3261E;
-            
-            /* 侧边栏图标颜色（浅色模式） */
+            --bg-color: #F8F9FA; --surface: #FFFFFF; --surface-variant: #F0F4F9;
+            --text-main: #1F1F1F; --text-sub: #444746; --outline: #747775; --outline-variant: #C4C7C5;
+            --primary: #0b57d0; --on-primary: #FFFFFF; --primary-hover: #0842a0; --error: #B3261E;
             --icon-home-bg: #E8F0FE; --icon-home-fg: #1A73E8;
             --icon-sec-bg: #F3E8FD; --icon-sec-fg: #9334E6;
             --icon-info-bg: #E6F4EA; --icon-info-fg: #188038;
         }
-
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #131314;
-                --surface: #1E1F20;
-                --surface-variant: #282A2C;
-                --text-main: #E3E3E3;
-                --text-sub: #C4C7C5;
-                --outline: #8E918F;
-                --outline-variant: #444746;
-                --primary: #A8C7FA;
-                --on-primary: #062E6F;
-                --primary-hover: #D3E3FD;
-                --error: #F2B8B5;
-                
-                /* 侧边栏图标颜色（深色模式） */
+                --bg-color: #131314; --surface: #1E1F20; --surface-variant: #282A2C;
+                --text-main: #E3E3E3; --text-sub: #C4C7C5; --outline: #8E918F; --outline-variant: #444746;
+                --primary: #A8C7FA; --on-primary: #062E6F; --primary-hover: #D3E3FD; --error: #F2B8B5;
                 --icon-home-bg: #0842A0; --icon-home-fg: #D3E3FD;
                 --icon-sec-bg: #4A148C; --icon-sec-fg: #E8DEF8;
                 --icon-info-bg: #0D652D; --icon-info-fg: #CEEAD6;
             }
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Roboto', 'Noto Sans SC', sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
         a { text-decoration: none; color: inherit; }
         button { font-family: inherit; border: none; background: none; cursor: pointer; }
 
         /* ================= 顶部栏 ================= */
-        .top-bar {
-            height: 64px; display: flex; align-items: center; justify-content: space-between;
-            padding: 0 24px; background-color: var(--surface);
-            position: sticky; top: 0; z-index: 100;
-        }
+        .top-bar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background-color: var(--surface); position: sticky; top: 0; z-index: 100; }
         .top-bar .brand { font-size: 22px; color: var(--text-sub); display: flex; align-items: center;}
         .top-bar .brand strong { color: var(--text-main); margin-right: 6px; font-weight: 500;}
         .top-bar .actions { display: flex; gap: 16px; align-items: center; color: var(--text-sub);}
@@ -79,152 +46,67 @@
         .icon-btn:hover { background-color: var(--surface-variant); }
 
         /* ================= 主布局 ================= */
-        .layout {
-            display: flex;
-            flex: 1;
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        /* ================= 左侧导航栏 ================= */
-        .sidebar {
-            width: 280px;
-            padding: 24px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .nav-item {
-            display: flex; align-items: center; gap: 16px;
-            padding: 8px 16px; border-radius: 9999px;
-            font-size: 14px; font-weight: 500; color: var(--text-sub);
-            cursor: pointer; transition: background 0.2s;
-        }
+        .layout { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+        .sidebar { width: 280px; padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { display: flex; align-items: center; gap: 16px; padding: 8px 16px; border-radius: 9999px; font-size: 14px; font-weight: 500; color: var(--text-sub); cursor: pointer; transition: background 0.2s; }
         .nav-item:hover { background-color: var(--surface-variant); }
         .nav-item.active { background-color: var(--icon-home-bg); color: var(--icon-home-fg); }
-        
-        .nav-icon {
-            width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
-        }
-        
-        /* 针对不同图标赋予不同的颜色 */
+        .nav-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .nav-item:nth-child(1) .nav-icon { background: var(--icon-home-bg); color: var(--icon-home-fg); }
         .nav-item:nth-child(2) .nav-icon { background: var(--icon-sec-bg); color: var(--icon-sec-fg); }
         .nav-item:nth-child(3) .nav-icon { background: var(--icon-info-bg); color: var(--icon-info-fg); }
         .nav-item:not(.active) .nav-icon { opacity: 0.8; }
 
         /* ================= 右侧主内容 ================= */
-        .main-content {
-            flex: 1;
-            padding: 40px 64px;
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* 居中内容 */
-        }
-
-        /* 用户信息展示区 */
-        .profile-header {
-            display: flex; flex-direction: column; align-items: center;
-            margin-bottom: 32px; text-align: center;
-        }
-        .avatar {
-            width: 96px; height: 96px; border-radius: 50%;
-            background-color: #B3261E; /* 如果没有图片，给个默认背景色 */
-            color: white; font-size: 40px; font-weight: 500;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
+        .main-content { flex: 1; padding: 40px 64px; display: flex; flex-direction: column; align-items: center; }
+        .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; text-align: center; }
+        .avatar { width: 96px; height: 96px; border-radius: 50%; background-color: #B3261E; color: white; font-size: 40px; font-weight: 500; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         .profile-name { font-size: 32px; font-weight: 400; margin-bottom: 4px; }
         .profile-email { font-size: 16px; color: var(--text-sub); }
 
-        /* 搜索框 */
-        .search-box {
-            width: 100%; max-width: 720px;
-            background-color: var(--surface-variant);
-            height: 56px; border-radius: 9999px;
-            display: flex; align-items: center; padding: 0 24px;
-            margin-bottom: 24px;
-        }
+        .search-box { width: 100%; max-width: 720px; background-color: var(--surface-variant); height: 56px; border-radius: 9999px; display: flex; align-items: center; padding: 0 24px; margin-bottom: 24px; }
         .search-box span { margin-right: 16px; color: var(--text-sub); }
-        .search-box input {
-            flex: 1; background: transparent; border: none; outline: none;
-            font-size: 16px; color: var(--text-main);
-        }
+        .search-box input { flex: 1; background: transparent; border: none; outline: none; font-size: 16px; color: var(--text-main); }
 
-        /* 标签按钮 (Chips) */
-        .chips-row {
-            display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
-            margin-bottom: 32px;
-        }
-        .chip {
-            background-color: transparent;
-            border: 1px solid var(--outline);
-            color: var(--text-main);
-            padding: 6px 16px; border-radius: 8px;
-            font-size: 14px; font-weight: 500;
-            cursor: pointer; transition: background 0.2s;
-        }
+        .chips-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px; }
+        .chip { background-color: transparent; border: 1px solid var(--outline); color: var(--text-main); padding: 6px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
         .chip:hover { background-color: var(--surface-variant); }
 
-        /* 功能卡片 */
-        .action-card {
-            width: 100%; max-width: 720px;
-            background-color: var(--surface);
-            border-radius: 16px;
-            overflow: hidden;
-            margin-bottom: 24px;
-        }
-        .card-content {
-            display: flex; padding: 24px; gap: 20px; align-items: flex-start;
-        }
-        .card-content .material-symbols-outlined {
-            color: var(--primary); font-size: 28px;
-        }
+        .action-card { width: 100%; max-width: 720px; background-color: var(--surface); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+        .card-content { display: flex; padding: 24px; gap: 20px; align-items: flex-start; }
+        .card-content .material-symbols-outlined { color: var(--primary); font-size: 28px; }
         .card-text { flex: 1; }
         .card-text h3 { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
         .card-text p { font-size: 14px; color: var(--text-sub); line-height: 1.5; }
-        
-        .card-actions {
-            display: flex; justify-content: flex-end; gap: 12px;
-            padding: 0 24px 24px;
-        }
+        .card-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 0 24px 24px; }
         .btn-text { color: var(--text-sub); font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 9999px; }
         .btn-text:hover { background-color: var(--surface-variant); }
-        .btn-filled {
-            background-color: var(--primary); color: var(--on-primary);
-            height: 36px; padding: 0 20px; border-radius: 9999px;
-            font-size: 14px; font-weight: 500;
-        }
+        .btn-filled { background-color: var(--primary); color: var(--on-primary); height: 36px; padding: 0 20px; border-radius: 9999px; font-size: 14px; font-weight: 500; }
         .btn-filled:hover { background-color: var(--primary-hover); }
 
-        /* 展开栏 */
-        .expand-bar {
-            background-color: var(--surface);
-            border-radius: 16px;
-            padding: 20px 24px;
-            display: flex; justify-content: space-between; align-items: center;
-            width: 100%; max-width: 720px;
-            cursor: pointer;
-        }
+        .expand-bar { background-color: var(--surface); border-radius: 16px; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 720px; cursor: pointer; }
         .expand-bar h3 { font-size: 16px; font-weight: 500; }
-        .expand-icon {
-            width: 32px; height: 32px; background-color: var(--surface-variant);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
-        }
+        .expand-icon { width: 32px; height: 32px; background-color: var(--surface-variant); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
-        /* ================= 2FA 设置卡片 (特有) ================= */
-        .mfa-card {
-            border: 1px solid var(--outline-variant);
-            background-color: transparent;
-        }
+        /* ================= 2FA 设置卡片 ================= */
+        .mfa-card { border: 1px solid var(--outline-variant); background-color: transparent; }
         .mfa-card .card-content .material-symbols-outlined { color: var(--text-main); }
 
-        /* 手机端适配 */
+        /* ================= 弹窗 (Dialog) ================= */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--surface); border-radius: 28px; padding: 24px; width: 90%; max-width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .modal h2 { font-size: 24px; margin-bottom: 16px; font-weight: 400; }
+        .modal p { font-size: 14px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.5; }
+        .modal-qr { width: 200px; height: 200px; margin-bottom: 16px; background: #fff; padding: 8px; border-radius: 12px; border: 1px solid var(--outline-variant); display: flex; align-items: center; justify-content: center; }
+        .modal-qr img { width: 100%; height: 100%; object-fit: contain; }
+        .modal-secret { font-family: monospace; font-size: 16px; background: var(--surface-variant); padding: 8px 12px; border-radius: 8px; margin-bottom: 16px; word-break: break-all; user-select: all; }
+        .modal-input-group { width: 100%; margin-bottom: 24px; position: relative; }
+        .modal-input-group input { width: 100%; height: 56px; padding: 0 16px; background: transparent; border: 1px solid var(--outline); border-radius: 4px; font-size: 20px; letter-spacing: 4px; text-align: center; color: var(--text-main); outline: none; }
+        .modal-input-group input:focus { border: 2px solid var(--focus-border); padding: 0 15px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; width: 100%; }
+        .modal-msg { font-size: 14px; color: var(--error); min-height: 20px; margin-bottom: 8px; }
+
         @media (max-width: 900px) {
             .sidebar { display: none; }
             .main-content { padding: 24px 16px; }
@@ -244,42 +126,30 @@
     </header>
 
     <div class="layout">
-        
-        <!-- 左侧导航 -->
         <nav class="sidebar">
             <div class="nav-item active">
-                <div class="nav-icon"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span></div>
-                首页
+                <div class="nav-icon"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span></div>首页
             </div>
             <div class="nav-item">
-                <div class="nav-icon"><span class="material-symbols-outlined">shield</span></div>
-                安全性与登录
+                <div class="nav-icon"><span class="material-symbols-outlined">shield</span></div>安全性与登录
             </div>
             <div class="nav-item">
-                <div class="nav-icon"><span class="material-symbols-outlined">person</span></div>
-                个人信息
+                <div class="nav-icon"><span class="material-symbols-outlined">person</span></div>个人信息
             </div>
         </nav>
 
-        <!-- 主内容区 -->
         <main class="main-content">
-            
             <div class="profile-header">
-                <!-- 大头像 -->
                 <div class="avatar" id="mainAvatar">...</div>
-                <!-- 动态用户名 -->
                 <div class="profile-name" id="displayName">加载中...</div>
-                <!-- 动态邮箱 -->
                 <div class="profile-email" id="displayEmail">...</div>
             </div>
 
-            <!-- 搜索框 -->
             <div class="search-box">
                 <span class="material-symbols-outlined">search</span>
                 <input type="text" placeholder="搜索 hg 账号">
             </div>
 
-            <!-- 快捷标签 -->
             <div class="chips-row">
                 <div class="chip">我的密码</div>
                 <div class="chip">设备</div>
@@ -297,12 +167,11 @@
                     </div>
                 </div>
                 <div class="card-actions">
-                    <button class="btn-text">了解详情</button>
+                    <button class="btn-text" id="mfaInfoBtn">了解详情</button>
                     <button class="btn-filled" id="mfaActionBtn">开启</button>
                 </div>
             </div>
 
-            <!-- 站点导航卡片 -->
             <div class="action-card mfa-card">
                 <div class="card-content">
                     <span class="material-symbols-outlined">dashboard</span>
@@ -317,43 +186,79 @@
                 </div>
             </div>
 
-            <!-- 底部展开栏 -->
             <div class="expand-bar">
                 <h3>展开更多设置</h3>
                 <div class="expand-icon"><span class="material-symbols-outlined">expand_more</span></div>
             </div>
-
         </main>
     </div>
 
+    <!-- 2FA 绑定弹窗 -->
+    <div class="modal-overlay" id="mfaModal">
+        <div class="modal">
+            <h2>绑定两步验证</h2>
+            <p>请使用身份验证器（如 Google Authenticator）扫描下方二维码：</p>
+            <div class="modal-qr" id="qrContainer">
+                <!-- 二维码图片将由 JS 动态插入 -->
+                <span class="material-symbols-outlined" style="font-size: 40px; color: #ccc;">qr_code_scanner</span>
+            </div>
+            <p>或手动输入密钥：</p>
+            <div class="modal-secret" id="mfaSecretText">加载中...</div>
+            
+            <div class="modal-input-group">
+                <input type="text" id="mfaCodeInput" placeholder="输入 6 位动态码" maxlength="6" autocomplete="off">
+            </div>
+            <div class="modal-msg" id="mfaModalMsg"></div>
+            
+            <div class="modal-actions">
+                <button class="btn-text" id="mfaCancelBtn">取消</button>
+                <button class="btn-filled" id="mfaVerifyBtn">验证并开启</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
-        const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
+        const SUPABASE_URL = CONFIG.SUPABASE_URL;
+        const SUPABASE_KEY = CONFIG.SUPABASE_KEY;
+        const WASMER_URL = CONFIG.WASMER_URL;
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: { persistSession: true, autoRefreshToken: true }
         });
 
+        let currentUser = null;
+        let currentSecret = "";
+        let isMfaEnabled = false;
+
         async function initAccount() {
-            // 1. 获取当前登录用户
             const { data: { session } } = await db.auth.getSession();
+            
+            // 核心修复：优先判断 sessionStorage，没有则带 redirect 去登录页
             if (!session || !session.user) {
+                if (sessionStorage.getItem("hg_logged_in") === "true") {
+                    // 虽然 SDK 没拿到 session，但有缓存标记，尝试继续拉取
+                } else {
+                    window.location.href = "/account/login/?redirect=" + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+            }
+
+            currentUser = session ? session.user : { id: sessionStorage.getItem("hg_user_id"), email: "local@hgt.l.cd" };
+            if (!currentUser.id) {
                 window.location.href = "/account/login/";
                 return;
             }
 
-            // 2. 获取用户名
             const { data: profile } = await db
                 .from("profiles")
                 .select("username, totp_enabled")
-                .eq("id", session.user.id)
+                .eq("id", currentUser.id)
                 .maybeSingle();
 
-            const username = profile ? profile.username : "未知用户";
-            const email = session.user.email || "无邮箱";
+            const username = profile ? profile.username : (sessionStorage.getItem("hg_username") || "未知用户");
+            const email = currentUser.email || "无邮箱";
             
-            // 3. 渲染数据
             document.getElementById("displayName").textContent = username;
             document.getElementById("displayEmail").textContent = email;
             
@@ -361,25 +266,120 @@
             document.getElementById("mainAvatar").textContent = initial;
             document.getElementById("topAvatar").textContent = initial;
 
-            // 4. 渲染 2FA 状态
+            isMfaEnabled = profile ? profile.totp_enabled : false;
+            updateMfaUI();
+        }
+
+        function updateMfaUI() {
             const statusText = document.getElementById("mfaStatusText");
             const actionBtn = document.getElementById("mfaActionBtn");
             
-            if (profile && profile.totp_enabled) {
+            if (isMfaEnabled) {
                 statusText.textContent = "两步验证已开启。您的账号受到了动态验证码的保护。";
-                actionBtn.textContent = "管理 2FA";
+                actionBtn.textContent = "关闭 2FA";
                 actionBtn.style.backgroundColor = "var(--surface-variant)";
                 actionBtn.style.color = "var(--text-main)";
             } else {
                 statusText.textContent = "两步验证未开启。建议开启以提升账号安全性。";
                 actionBtn.textContent = "立即开启";
+                actionBtn.style.backgroundColor = "var(--primary)";
+                actionBtn.style.color = "var(--on-primary)";
             }
-
-            // 你原本的点击逻辑可以直接绑在这个按钮上，因为逻辑长，这里为了展示UI先绑一个跳转
-            actionBtn.addEventListener("click", () => {
-                alert("请在此处接入你原本的 2FA 扫码绑定弹窗逻辑。");
-            });
         }
+
+        // 开启/关闭 2FA
+        document.getElementById("mfaActionBtn").addEventListener("click", async () => {
+            if (isMfaEnabled) {
+                if (!confirm("确定要关闭两步验证吗？您的账号安全性将降低。")) return;
+                
+                await db.from("user_mfa").delete().eq("user_id", currentUser.id);
+                await db.from("profiles").update({ totp_enabled: false }).eq("id", currentUser.id);
+                
+                isMfaEnabled = false;
+                updateMfaUI();
+                alert("2FA 已成功关闭。");
+            } else {
+                // 开启流程
+                document.getElementById("mfaModal").classList.add("active");
+                document.getElementById("mfaModalMsg").textContent = "";
+                document.getElementById("mfaSecretText").textContent = "正在获取...";
+                document.getElementById("mfaCodeInput").value = "";
+                document.getElementById("qrContainer").innerHTML = '<span class="material-symbols-outlined" style="font-size: 40px; color: #ccc;">qr_code_scanner</span>';
+
+                try {
+                    const res = await fetch(WASMER_URL + "/mfa/setup", { method: "POST" });
+                    const data = await res.json();
+                    
+                    if (data.secret) {
+                        currentSecret = data.secret;
+                        document.getElementById("mfaSecretText").textContent = currentSecret;
+                        
+                        // 如果有返回 otpauth_url，可以用第三方库生成二维码，这里先留个占位，如果你 Wasmer 返回了直接的 base64 图片，用下面的方式渲染：
+                        if (data.qr_code_url) {
+                            document.getElementById("qrContainer").innerHTML = `<img src="${data.qr_code_url}" alt="QR Code">`;
+                        } else {
+                            // 如果没有返回图片，直接提示用户手动输入密钥
+                            document.getElementById("qrContainer").innerHTML = '<span style="font-size:12px;color:#666">暂无二维码，请复制下方密钥手动添加</span>';
+                        }
+                    } else {
+                        document.getElementById("mfaSecretText").textContent = "获取密钥失败";
+                    }
+                } catch (e) {
+                    document.getElementById("mfaSecretText").textContent = "网络请求失败";
+                }
+            }
+        });
+
+        // 关闭弹窗
+        document.getElementById("mfaCancelBtn").addEventListener("click", () => {
+            document.getElementById("mfaModal").classList.remove("active");
+        });
+
+        // 验证并开启
+        document.getElementById("mfaVerifyBtn").addEventListener("click", async () => {
+            const code = document.getElementById("mfaCodeInput").value.trim();
+            const msg = document.getElementById("mfaModalMsg");
+            if (code.length !== 6) { msg.textContent = "请输入 6 位动态码"; return; }
+            
+            const btn = document.getElementById("mfaVerifyBtn");
+            btn.textContent = "验证中...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(WASMER_URL + "/mfa/verify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ secret: currentSecret, token: code })
+                });
+                const result = await res.json();
+                
+                if (!result.success) {
+                    msg.textContent = "动态码错误，请重试";
+                    btn.textContent = "验证并开启";
+                    btn.disabled = false;
+                    return;
+                }
+
+                // 校验通过，写入数据库
+                await db.from("user_mfa").upsert({ user_id: currentUser.id, secret: currentSecret });
+                await db.from("profiles").update({ totp_enabled: true }).eq("id", currentUser.id);
+                
+                isMfaEnabled = true;
+                updateMfaUI();
+                document.getElementById("mfaModal").classList.remove("active");
+                alert("两步验证已成功开启！下次登录需要输入动态码。");
+
+            } catch (e) {
+                msg.textContent = "网络异常，请稍后重试";
+                btn.textContent = "验证并开启";
+                btn.disabled = false;
+            }
+        });
+        
+        // 详情按钮
+        document.getElementById("mfaInfoBtn").addEventListener("click", () => {
+            alert("两步验证 (2FA) 会在您登录时要求额外输入一个动态验证码，极大地提升账号安全。");
+        });
 
         initAccount();
     </script>
