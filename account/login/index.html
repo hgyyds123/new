@@ -182,7 +182,14 @@
             const { data, error } = await db.auth.signInWithPassword({ email: `${username}@hgt.l.cd`, password: password });
             
             if (error) {
-                resetError("用户名或密码错误");
+                // 判断是不是真正的密码错误，还是网络/代理问题
+                if (error.message.includes("Invalid login credentials") || error.status === 400) {
+                    resetError("用户名或密码错误");
+                } else if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                    resetError("网络连接失败，请检查网络或稍后再试（代理可能超时）");
+                } else {
+                    resetError("登录失败：" + error.message);
+                }
                 submitBtn.textContent = "下一步";
                 return;
             }
@@ -231,14 +238,14 @@
                     return;
                 }
             } catch (e) {
-                resetError("网络请求失败");
+                resetError("网络请求失败，无法连接验证服务器");
                 submitBtn.textContent = "验证";
                 return;
             }
 
             const { data, error } = await db.auth.signInWithPassword({ email: `${tempUsername}@hgt.l.cd`, password: tempPassword });
             if (error) {
-                resetError("登录失败");
+                resetError("登录失败：" + error.message);
                 submitBtn.textContent = "验证";
                 return;
             }
@@ -256,7 +263,13 @@
             const { data, error } = await db.auth.signUp({ email: `${username}@hgt.l.cd`, password: password });
             
             if (error) {
-                resetError(error.message.includes("already") ? "用户名已被占用" : "注册失败");
+                if (error.message.includes("already registered") || error.status === 422) {
+                    resetError("该用户名已被占用，请换一个");
+                } else if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                    resetError("网络异常，无法连接至服务器");
+                } else {
+                    resetError("注册失败：" + error.message);
+                }
                 submitBtn.textContent = "注册";
                 return;
             }
