@@ -101,7 +101,6 @@
 
         async function checkAlreadyLoggedIn() {
             const { data: { session } } = await db.auth.getSession();
-            // 增加 sessionStorage 的双重判断，防止死循环
             if (session && session.user || sessionStorage.getItem("hg_logged_in") === "true") {
                 window.location.href = REDIRECT_URL;
             }
@@ -126,9 +125,28 @@
         let tempPassword = "";
         let tempSecret = "";
 
+        // 统一的成功保存并跳转逻辑
+        function successSaveAndRedirect(userId, username) {
+            sessionStorage.setItem("hg_logged_in", "true");
+            sessionStorage.setItem("hg_user_id", userId);
+            sessionStorage.setItem("hg_username", username);
+            msg.style.color = "var(--primary)";
+            msg.textContent = "登录成功，正在跳转...";
+            setTimeout(() => window.location.href = REDIRECT_URL, 500);
+        }
+
+        // 统一的错误提示恢复逻辑
+        function resetError(msgText) {
+            msg.style.color = "var(--error)";
+            msg.textContent = msgText;
+            submitBtn.disabled = false;
+        }
+
         switchBtn.addEventListener("click", () => {
             isLogin = !isLogin;
             stage = "password";
+            msg.textContent = "";
+            msg.style.color = "var(--error)";
             if (isLogin) {
                 title.textContent = "登录";
                 subtitle.textContent = "使用您的 hg 账号";
@@ -146,7 +164,6 @@
             usernameInput.disabled = false;
             passwordInput.disabled = false;
             totpField.style.display = "none";
-            msg.textContent = "";
         });
 
         submitBtn.addEventListener("click", async () => {
@@ -158,16 +175,15 @@
         async function doPasswordStage() {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-            if (!username || !password) { msg.textContent = "请填写完整的用户名和密码"; return; }
+            if (!username || !password) { resetError("请填写完整的用户名和密码"); return; }
             
             submitBtn.textContent = "验证中...";
             submitBtn.disabled = true;
             const { data, error } = await db.auth.signInWithPassword({ email: `${username}@hgt.l.cd`, password: password });
             
             if (error) {
-                msg.textContent = "用户名或密码错误";
+                resetError("用户名或密码错误");
                 submitBtn.textContent = "下一步";
-                submitBtn.disabled = false;
                 return;
             }
 
@@ -175,7 +191,7 @@
 
             if (profile && profile.totp_enabled) {
                 const { data: mfa } = await db.from("user_mfa").select("secret").eq("user_id", data.user.id).maybeSingle();
-                if (!mfa) { msg.textContent = "2FA 数据异常"; await db.auth.signOut(); return; }
+                if (!mfa) { resetError("2FA 数据异常"); await db.auth.signOut(); return; }
                 tempUsername = username;
                 tempPassword = password;
                 tempSecret = mfa.secret;
@@ -193,19 +209,12 @@
                 return;
             }
 
-            // 登录成功，双重保存状态
-            sessionStorage.setItem("hg_logged_in", "true");
-            sessionStorage.setItem("hg_user_id", data.user.id);
-            sessionStorage.setItem("hg_username", username);
-            
-            msg.textContent = "登录成功，正在跳转...";
-            msg.style.color = "var(--primary)";
-            setTimeout(() => window.location.href = REDIRECT_URL, 500);
+            successSaveAndRedirect(data.user.id, username);
         }
 
         async function doTotpStage() {
             const code = totpInput.value.trim();
-            if (code.length !== 6) { msg.textContent = "请输入 6 位动态码"; return; }
+            if (code.length !== 6) { resetError("请输入 6 位动态码"); return; }
             submitBtn.textContent = "验证中...";
             submitBtn.disabled = true;
 
@@ -217,64 +226,52 @@
                 });
                 const result = await res.json();
                 if (!result.success) {
-                    msg.textContent = "动态码错误";
+                    resetError("动态码错误");
                     submitBtn.textContent = "验证";
-                    submitBtn.disabled = false;
                     return;
                 }
             } catch (e) {
-                msg.textContent = "网络请求失败";
+                resetError("网络请求失败");
                 submitBtn.textContent = "验证";
-                submitBtn.disabled = false;
                 return;
             }
 
             const { data, error } = await db.auth.signInWithPassword({ email: `${tempUsername}@hgt.l.cd`, password: tempPassword });
             if (error) {
-                msg.textContent = "登录失败";
+                resetError("登录失败");
                 submitBtn.textContent = "验证";
-                submitBtn.disabled = false;
                 return;
             }
 
-            // 2FA 验证成功，双重保存状态
-            sessionStorage.setItem("hg_logged_in", "true");
-            sessionStorage.setItem("hg_user_id", data.user.id);
-            sessionStorage.setItem("hg_username", tempUsername);
-
-            msg.textContent = "验证通过，正在跳转...";
-            msg.style.color = "var(--primary)";
-            setTimeout(() => window.location.href = REDIRECT_URL, 500);
+            successSaveAndRedirect(data.user.id, tempUsername);
         }
 
         async function doRegister() {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-            if (!username || !password) { msg.textContent = "请填写完整的用户名和密码"; return; }
+            if (!username || !password) { resetError("请填写完整的用户名和密码"); return; }
             
             submitBtn.textContent = "注册中...";
             submitBtn.disabled = true;
             const { data, error } = await db.auth.signUp({ email: `${username}@hgt.l.cd`, password: password });
             
             if (error) {
-                msg.textContent = error.message.includes("already") ? "用户名已被占用" : "注册失败";
+                resetError(error.message.includes("already") ? "用户名已被占用" : "注册失败");
                 submitBtn.textContent = "注册";
-                submitBtn.disabled = false;
                 return;
             }
 
-            if (data.user) {
-                await db.from("profiles").insert({ id: data.user.id, username: username });
+            // 核心修复：Supabase 遇到已有账号会返回 200 假成功，identities 数组为空
+            if (!data.user || !data.user.identities || data.user.identities.length === 0) {
+                resetError("该用户名已被注册，请换一个或直接登录！");
+                submitBtn.textContent = "注册";
+                return;
             }
 
-            // 注册即登录，保存状态
-            sessionStorage.setItem("hg_logged_in", "true");
-            sessionStorage.setItem("hg_user_id", data.user.id);
-            sessionStorage.setItem("hg_username", username);
+            // 写入 profiles
+            await db.from("profiles").insert({ id: data.user.id, username: username });
 
-            msg.textContent = "注册成功，正在跳转...";
-            msg.style.color = "var(--primary)";
-            setTimeout(() => window.location.href = REDIRECT_URL, 500);
+            successSaveAndRedirect(data.user.id, username);
         }
 
         [usernameInput, passwordInput, totpInput].forEach(input => {
