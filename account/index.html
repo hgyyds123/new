@@ -57,6 +57,11 @@
         .nav-item:nth-child(3) .nav-icon { background: var(--icon-info-bg); color: var(--icon-info-fg); }
         .nav-item:not(.active) .nav-icon { opacity: 0.8; }
 
+        /* 退出登录按钮样式 */
+        .logout-btn { margin-top: auto; color: var(--error); display: flex; align-items: center; gap: 16px; padding: 8px 16px; border-radius: 9999px; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+        .logout-btn:hover { background-color: rgba(179, 38, 30, 0.1); }
+        .logout-btn .nav-icon { background: transparent; color: var(--error); }
+
         /* ================= 右侧主内容 ================= */
         .main-content { flex: 1; padding: 40px 64px; display: flex; flex-direction: column; align-items: center; }
         .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; text-align: center; }
@@ -135,6 +140,12 @@
             </div>
             <div class="nav-item">
                 <div class="nav-icon"><span class="material-symbols-outlined">person</span></div>个人信息
+            </div>
+            
+            <!-- 新增：退出登录按钮 -->
+            <div class="nav-item logout-btn" id="logoutBtn">
+                <div class="nav-icon"><span class="material-symbols-outlined">logout</span></div>
+                退出登录
             </div>
         </nav>
 
@@ -393,6 +404,23 @@
         // 详情按钮
         document.getElementById("mfaInfoBtn").addEventListener("click", () => {
             alert("两步验证 (2FA) 会在您登录时要求额外输入一个动态验证码，极大地提升账号安全。");
+        });
+
+        // 退出登录逻辑
+        document.getElementById("logoutBtn").addEventListener("click", async () => {
+            if (!confirm("确定要退出当前账号吗？")) return;
+            
+            // 1. 退出 Supabase
+            await db.auth.signOut();
+            
+            // 2. 清空所有本地状态
+            sessionStorage.removeItem("hg_logged_in");
+            sessionStorage.removeItem("hg_user_id");
+            sessionStorage.removeItem("hg_username");
+            localStorage.clear(); // 确保 supabase 的 token 被清理
+            
+            // 3. 强制跳转回登录页或首页
+            window.location.href = "/";
         });
 
         initAccount();
