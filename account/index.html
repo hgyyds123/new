@@ -17,7 +17,7 @@
         :root {
             --bg-color: #F8F9FA; --surface: #FFFFFF; --surface-variant: #F0F4F9;
             --text-main: #1F1F1F; --text-sub: #444746; --outline: #747775; --outline-variant: #C4C7C5;
-            --primary: #0b57d0; --on-primary: #FFFFFF; --primary-hover: #0842a0; --error: #B3261E;
+            --primary: #0b57d0; --on-primary: #FFFFFF; --primary-hover: #0842a0; --error: #B3261E; --focus-border: #0b57d0;
             --icon-home-bg: #E8F0FE; --icon-home-fg: #1A73E8;
             --icon-sec-bg: #F3E8FD; --icon-sec-fg: #9334E6;
             --icon-info-bg: #E6F4EA; --icon-info-fg: #188038;
@@ -26,7 +26,7 @@
             :root {
                 --bg-color: #131314; --surface: #1E1F20; --surface-variant: #282A2C;
                 --text-main: #E3E3E3; --text-sub: #C4C7C5; --outline: #8E918F; --outline-variant: #444746;
-                --primary: #A8C7FA; --on-primary: #062E6F; --primary-hover: #D3E3FD; --error: #F2B8B5;
+                --primary: #A8C7FA; --on-primary: #062E6F; --primary-hover: #D3E3FD; --error: #F2B8B5; --focus-border: #A8C7FA;
                 --icon-home-bg: #0842A0; --icon-home-fg: #D3E3FD;
                 --icon-sec-bg: #4A148C; --icon-sec-fg: #E8DEF8;
                 --icon-info-bg: #0D652D; --icon-info-fg: #CEEAD6;
@@ -307,25 +307,35 @@
                 document.getElementById("qrContainer").innerHTML = '<span class="material-symbols-outlined" style="font-size: 40px; color: #ccc;">qr_code_scanner</span>';
 
                 try {
-                    const res = await fetch(WASMER_URL + "/mfa/setup", { method: "POST" });
+                    const res = await fetch(WASMER_URL + "/mfa/setup", { 
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ 
+                            user_id: currentUser.id, 
+                            username: document.getElementById("displayName").textContent 
+                        })
+                    });
+                    
+                    if (!res.ok) throw new Error("Server error");
+                    
                     const data = await res.json();
                     
                     if (data.secret) {
                         currentSecret = data.secret;
                         document.getElementById("mfaSecretText").textContent = currentSecret;
                         
-                        // 如果有返回 otpauth_url，可以用第三方库生成二维码，这里先留个占位，如果你 Wasmer 返回了直接的 base64 图片，用下面的方式渲染：
-                        if (data.qr_code_url) {
-                            document.getElementById("qrContainer").innerHTML = `<img src="${data.qr_code_url}" alt="QR Code">`;
+                        // 渲染 Base64 二维码
+                        if (data.qr_base64) {
+                            document.getElementById("qrContainer").innerHTML = `<img src="data:image/png;base64,${data.qr_base64}" alt="QR Code">`;
                         } else {
-                            // 如果没有返回图片，直接提示用户手动输入密钥
                             document.getElementById("qrContainer").innerHTML = '<span style="font-size:12px;color:#666">暂无二维码，请复制下方密钥手动添加</span>';
                         }
                     } else {
                         document.getElementById("mfaSecretText").textContent = "获取密钥失败";
                     }
                 } catch (e) {
-                    document.getElementById("mfaSecretText").textContent = "网络请求失败";
+                    console.error(e);
+                    document.getElementById("mfaSecretText").textContent = "网络请求失败，请刷新重试";
                 }
             }
         });
@@ -366,22 +376,4 @@
                 
                 isMfaEnabled = true;
                 updateMfaUI();
-                document.getElementById("mfaModal").classList.remove("active");
-                alert("两步验证已成功开启！下次登录需要输入动态码。");
-
-            } catch (e) {
-                msg.textContent = "网络异常，请稍后重试";
-                btn.textContent = "验证并开启";
-                btn.disabled = false;
-            }
-        });
-        
-        // 详情按钮
-        document.getElementById("mfaInfoBtn").addEventListener("click", () => {
-            alert("两步验证 (2FA) 会在您登录时要求额外输入一个动态验证码，极大地提升账号安全。");
-        });
-
-        initAccount();
-    </script>
-</body>
-</html>
+                document.getElementById("mfa
