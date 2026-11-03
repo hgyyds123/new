@@ -54,7 +54,6 @@
         /* ================= 主内容 ================= */
         .main-content { flex: 1; padding: 48px; display: flex; flex-direction: column; }
         
-        /* ================= 手机端适配 ================= */
         @media (max-width: 900px) {
             .sidebar { display: none; }
             .top-search { display: none; }
@@ -220,48 +219,25 @@
 
         let currentUser = null;
         let currentCategory = "闲聊";
-        let currentView = "hub";
 
-        // ================= 终极拦截防线 =================
-        async function init() {
-            // 1. 直接查本地缓存（或者双重缓存）
-            let isLocalLoggedIn = localStorage.getItem("hg_logged_in") === "true" || sessionStorage.getItem("hg_logged_in") === "true";
-            let localUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
-            let localUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username");
+        // 一进来就直接渲染大厅，什么都不拦！
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cat = urlParams.get('cat');
+            if (cat) showList(cat);
 
-            // 2. 只要有标记，直接放行，连网都不连，零延迟
-            if (isLocalLoggedIn && localUserId) {
-                currentUser = { id: localUserId, email: `${localUsername}@hgt.l.cd` };
-                const urlParams = new URLSearchParams(window.location.search);
-                const cat = urlParams.get('cat');
-                if (cat) showList(cat);
-                return;
-            }
-
-            // 3. 本地真没标记，去拿 Supabase Session 兜底
-            let { data: { session } } = await db.auth.getSession();
-            if (session && session.user) {
-                // 补签一下
-                localStorage.setItem("hg_logged_in", "true");
-                localStorage.setItem("hg_user_id", session.user.id);
-                sessionStorage.setItem("hg_logged_in", "true");
-                sessionStorage.setItem("hg_user_id", session.user.id);
-                
-                currentUser = session.user;
-                const urlParams = new URLSearchParams(window.location.search);
-                const cat = urlParams.get('cat');
-                if (cat) showList(cat);
-                return;
-            }
-
-            // 4. 实在没辙，只能踢回登录页
-            const currentPath = window.location.pathname;
-            window.location.href = `/account/login/?redirect=${encodeURIComponent(currentPath)}`;
-        } // <--- 这次闭合得非常完美
+            // 后台偷偷查一下当前有没有登录，给发帖用
+            db.auth.getSession().then(({ data: { session } }) => {
+                if (session && session.user) {
+                    currentUser = session.user;
+                } else if (localStorage.getItem("hg_logged_in") === "true") {
+                    currentUser = { id: localStorage.getItem("hg_user_id"), email: "local@hgt.l.cd" };
+                }
+            });
+        });
 
         // 显示大厅
         function showHub() {
-            currentView = "hub";
             document.getElementById("viewHub").style.display = "block";
             document.getElementById("viewList").style.display = "none";
             window.history.pushState({}, '', window.location.pathname);
@@ -269,7 +245,6 @@
 
         // 显示列表
         function showList(category) {
-            currentView = "list";
             currentCategory = category;
             document.getElementById("viewHub").style.display = "none";
             document.getElementById("viewList").style.display = "block";
@@ -317,13 +292,32 @@
             });
         }
 
-        // 发帖弹窗控制
+        // 发帖弹窗控制（点击时才检查登录）
         const modal = document.getElementById("modalOverlay");
-        document.getElementById("newPostBtn").addEventListener("click", () => {
+        document.getElementById("newPostBtn").addEventListener("click", async () => {
+            // 如果后台还没拿到用户，这里再兜底查一次
+            if (!currentUser) {
+                const { data: { session } } = await db.auth.getSession();
+                if (session && session.user) {
+                    currentUser = session.user;
+                } else if (localStorage.getItem("hg_logged_in") === "true") {
+                    currentUser = { id: localStorage.getItem("hg_user_id"), email: "local@hgt.l.cd" };
+                }
+            }
+
+            // 如果查完真没登录，踢去登录页（带上 redirect 参数，登录完能跳回来）
+            if (!currentUser || !currentUser.id) {
+                alert("发帖需要先登录哦！");
+                window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                return;
+            }
+
+            // 有登录状态，弹出输入框
             document.getElementById("postTitle").value = "";
             document.getElementById("postContent").value = "";
             modal.classList.add("active");
         });
+        
         document.getElementById("cancelPost").addEventListener("click", () => modal.classList.remove("active"));
 
         // 提交发帖
@@ -336,9 +330,8 @@
             btn.textContent = "发布中...";
             btn.disabled = true;
 
-            // 获取用户名（兼容 localStorage 兜底）
             const { data: profile } = await db.from("profiles").select("username").eq("id", currentUser.id).maybeSingle();
-            const uname = profile ? profile.username : (localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "匿名");
+            const uname = profile ? profile.username : (localStorage.getItem("hg_username") || "匿名");
 
             const { error } = await db.from("posts").insert({
                 author_id: currentUser.id,
@@ -362,8 +355,6 @@
         function escapeHtml(str) {
             return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
         }
-
-        init();
     </script>
 </body>
 </html>
