@@ -13,7 +13,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* ================= 深浅色主题变量 ================= */
         :root {
             --bg-color: #F8F9FA; --surface: #FFFFFF; --surface-variant: #F0F4F9;
             --text-main: #1F1F1F; --text-sub: #444746; --outline: #747775; --outline-variant: #C4C7C5;
@@ -37,7 +36,6 @@
         a { text-decoration: none; color: inherit; }
         button { font-family: inherit; border: none; background: none; cursor: pointer; }
 
-        /* ================= 顶部栏 ================= */
         .top-bar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background-color: var(--surface); position: sticky; top: 0; z-index: 100; }
         .top-bar .brand { font-size: 22px; color: var(--text-sub); display: flex; align-items: center;}
         .top-bar .brand strong { color: var(--text-main); margin-right: 6px; font-weight: 500;}
@@ -45,7 +43,6 @@
         .icon-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;}
         .icon-btn:hover { background-color: var(--surface-variant); }
 
-        /* ================= 主布局 ================= */
         .layout { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
         .sidebar { width: 280px; padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; }
         .nav-item { display: flex; align-items: center; gap: 16px; padding: 8px 16px; border-radius: 9999px; font-size: 14px; font-weight: 500; color: var(--text-sub); cursor: pointer; transition: background 0.2s; }
@@ -57,12 +54,10 @@
         .nav-item:nth-child(3) .nav-icon { background: var(--icon-info-bg); color: var(--icon-info-fg); }
         .nav-item:not(.active) .nav-icon { opacity: 0.8; }
 
-        /* 退出登录按钮样式 */
         .logout-btn { margin-top: auto; color: var(--error); display: flex; align-items: center; gap: 16px; padding: 8px 16px; border-radius: 9999px; font-size: 14px; font-weight: 500; transition: background 0.2s; }
         .logout-btn:hover { background-color: rgba(179, 38, 30, 0.1); }
         .logout-btn .nav-icon { background: transparent; color: var(--error); }
 
-        /* ================= 右侧主内容 ================= */
         .main-content { flex: 1; padding: 40px 64px; display: flex; flex-direction: column; align-items: center; }
         .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; text-align: center; }
         .avatar { width: 96px; height: 96px; border-radius: 50%; background-color: #B3261E; color: white; font-size: 40px; font-weight: 500; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
@@ -93,11 +88,9 @@
         .expand-bar h3 { font-size: 16px; font-weight: 500; }
         .expand-icon { width: 32px; height: 32px; background-color: var(--surface-variant); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
-        /* ================= 2FA 设置卡片 ================= */
         .mfa-card { border: 1px solid var(--outline-variant); background-color: transparent; }
         .mfa-card .card-content .material-symbols-outlined { color: var(--text-main); }
 
-        /* ================= 弹窗 (Dialog) ================= */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-overlay.active { display: flex; }
         .modal { background: var(--surface); border-radius: 28px; padding: 24px; width: 90%; max-width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; display: flex; flex-direction: column; align-items: center; }
@@ -141,11 +134,8 @@
             <div class="nav-item">
                 <div class="nav-icon"><span class="material-symbols-outlined">person</span></div>个人信息
             </div>
-            
-            <!-- 新增：退出登录按钮 -->
             <div class="nav-item logout-btn" id="logoutBtn">
-                <div class="nav-icon"><span class="material-symbols-outlined">logout</span></div>
-                退出登录
+                <div class="nav-icon"><span class="material-symbols-outlined">logout</span></div>退出登录
             </div>
         </nav>
 
@@ -168,7 +158,6 @@
                 <div class="chip">活动记录</div>
             </div>
 
-            <!-- 2FA 核心功能卡片 -->
             <div class="action-card">
                 <div class="card-content">
                     <span class="material-symbols-outlined">security</span>
@@ -204,13 +193,11 @@
         </main>
     </div>
 
-    <!-- 2FA 绑定弹窗 -->
     <div class="modal-overlay" id="mfaModal">
         <div class="modal">
             <h2>绑定两步验证</h2>
             <p>请使用身份验证器（如 Google Authenticator）扫描下方二维码：</p>
             <div class="modal-qr" id="qrContainer">
-                <!-- 二维码图片将由 JS 动态插入 -->
                 <span class="material-symbols-outlined" style="font-size: 40px; color: #ccc;">qr_code_scanner</span>
             </div>
             <p>或手动输入密钥：</p>
@@ -245,32 +232,29 @@
         async function initAccount() {
             const { data: { session } } = await db.auth.getSession();
             
-            // 核心修复：优先判断 sessionStorage，没有则带 redirect 去登录页
+            // 【改用 localStorage】
+            const isLocalLoggedIn = localStorage.getItem("hg_logged_in") === "true";
+            
             if (!session || !session.user) {
-                if (sessionStorage.getItem("hg_logged_in") === "true") {
-                    // 虽然 SDK 没拿到 session，但有缓存标记，尝试继续拉取
-                } else {
+                if (!isLocalLoggedIn) {
                     window.location.href = "/account/login/?redirect=" + encodeURIComponent(window.location.pathname);
                     return;
                 }
             }
 
-            // 拿到当前用户，优先用 SDK 真实 session，没有则用 sessionStorage 缓存
-            currentUser = session ? session.user : { id: sessionStorage.getItem("hg_user_id"), email: "local@hgt.l.cd" };
+            currentUser = (session && session.user) ? session.user : { id: localStorage.getItem("hg_user_id"), email: "local@hgt.l.cd" };
             if (!currentUser.id) {
                 window.location.href = "/account/login/";
                 return;
             }
 
-            // 查数据库拿用户名和 2FA 状态
             const { data: profile } = await db
                 .from("profiles")
                 .select("username, totp_enabled")
                 .eq("id", currentUser.id)
                 .maybeSingle();
 
-            // 双重兜底：数据库查不到就用缓存里的名字
-            const username = profile && profile.username ? profile.username : (sessionStorage.getItem("hg_username") || "未知用户");
+            const username = profile && profile.username ? profile.username : (localStorage.getItem("hg_username") || "未知用户");
             const email = currentUser.email || "无邮箱";
             
             document.getElementById("displayName").textContent = username;
@@ -280,7 +264,6 @@
             document.getElementById("mainAvatar").textContent = initial;
             document.getElementById("topAvatar").textContent = initial;
 
-            // 渲染 2FA 状态
             isMfaEnabled = profile ? profile.totp_enabled : false;
             updateMfaUI();
         }
@@ -302,19 +285,15 @@
             }
         }
 
-        // 开启/关闭 2FA
         document.getElementById("mfaActionBtn").addEventListener("click", async () => {
             if (isMfaEnabled) {
                 if (!confirm("确定要关闭两步验证吗？您的账号安全性将降低。")) return;
-                
                 await db.from("user_mfa").delete().eq("user_id", currentUser.id);
                 await db.from("profiles").update({ totp_enabled: false }).eq("id", currentUser.id);
-                
                 isMfaEnabled = false;
                 updateMfaUI();
                 alert("2FA 已成功关闭。");
             } else {
-                // 开启流程
                 document.getElementById("mfaModal").classList.add("active");
                 document.getElementById("mfaModalMsg").textContent = "";
                 document.getElementById("mfaSecretText").textContent = "正在获取...";
@@ -325,21 +304,13 @@
                     const res = await fetch(WASMER_URL + "/mfa/setup", { 
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ 
-                            user_id: currentUser.id, 
-                            username: document.getElementById("displayName").textContent 
-                        })
+                        body: JSON.stringify({ user_id: currentUser.id, username: document.getElementById("displayName").textContent })
                     });
-                    
                     if (!res.ok) throw new Error("Server error");
-                    
                     const data = await res.json();
-                    
                     if (data.secret) {
                         currentSecret = data.secret;
                         document.getElementById("mfaSecretText").textContent = currentSecret;
-                        
-                        // 渲染 Base64 二维码
                         if (data.qr_base64) {
                             document.getElementById("qrContainer").innerHTML = `<img src="data:image/png;base64,${data.qr_base64}" alt="QR Code">`;
                         } else {
@@ -355,12 +326,10 @@
             }
         });
 
-        // 关闭弹窗
         document.getElementById("mfaCancelBtn").addEventListener("click", () => {
             document.getElementById("mfaModal").classList.remove("active");
         });
 
-        // 验证并开启
         document.getElementById("mfaVerifyBtn").addEventListener("click", async () => {
             const code = document.getElementById("mfaCodeInput").value.trim();
             const msg = document.getElementById("mfaModalMsg");
@@ -385,7 +354,6 @@
                     return;
                 }
 
-                // 校验通过，写入数据库
                 await db.from("user_mfa").upsert({ user_id: currentUser.id, secret: currentSecret });
                 await db.from("profiles").update({ totp_enabled: true }).eq("id", currentUser.id);
                 
@@ -393,7 +361,6 @@
                 updateMfaUI();
                 document.getElementById("mfaModal").classList.remove("active");
                 alert("两步验证已成功开启！下次登录需要输入动态码。");
-
             } catch (e) {
                 msg.textContent = "网络异常，请稍后重试";
                 btn.textContent = "验证并开启";
@@ -401,25 +368,23 @@
             }
         });
         
-        // 详情按钮
         document.getElementById("mfaInfoBtn").addEventListener("click", () => {
             alert("两步验证 (2FA) 会在您登录时要求额外输入一个动态验证码，极大地提升账号安全。");
         });
 
-        // 退出登录逻辑
         document.getElementById("logoutBtn").addEventListener("click", async () => {
             if (!confirm("确定要退出当前账号吗？")) return;
             
             // 1. 退出 Supabase
             await db.auth.signOut();
             
-            // 2. 清空所有本地状态
-            sessionStorage.removeItem("hg_logged_in");
-            sessionStorage.removeItem("hg_user_id");
-            sessionStorage.removeItem("hg_username");
-            localStorage.clear(); // 确保 supabase 的 token 被清理
+            // 2. 清空所有本地状态（改用 localStorage）
+            localStorage.removeItem("hg_logged_in");
+            localStorage.removeItem("hg_user_id");
+            localStorage.removeItem("hg_username");
+            localStorage.clear(); // 确保 supabase 的 token 被彻底清理
             
-            // 3. 强制跳转回登录页或首页
+            // 3. 强制跳转回首页
             window.location.href = "/";
         });
 
