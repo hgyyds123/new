@@ -56,9 +56,9 @@
         
         /* ================= 手机端适配 ================= */
         @media (max-width: 900px) {
-            .sidebar { display: none; } /* 隐藏侧边栏 */
-            .top-search { display: none; } /* 隐藏搜索框 */
-            .main-content { padding: 24px 16px; } /* 缩小边距 */
+            .sidebar { display: none; }
+            .top-search { display: none; }
+            .main-content { padding: 24px 16px; }
         }
 
         /* 首页大厅视图 */
@@ -223,47 +223,40 @@
         let currentView = "hub";
 
         async function init() {
-            // 1. 尝试拿真实 Session
-            let { data: { session } } = await db.auth.getSession();
-            
-            // 2. 拿本地缓存标记（改用 localStorage）
+            // 1. 只要本地有登录标记，直接放行，根本不看网络脸色！
             const isLocalLoggedIn = localStorage.getItem("hg_logged_in") === "true";
             const localUserId = localStorage.getItem("hg_user_id");
             const localUsername = localStorage.getItem("hg_username");
 
-            // 3. 【核心缓冲】如果 SDK 没拿到，但本地有标记，强行等 2 秒让网络请求飞一会
-            if ((!session || !session.user) && isLocalLoggedIn) {
-                document.getElementById("viewHub").innerHTML = '<div style="text-align:center; padding:100px; color:var(--text-sub)">正在同步账号信息，请稍候...</div>';
+            if (isLocalLoggedIn && localUserId) {
+                // 直接构造用户对象，不查 Session，防横跳拉满
+                currentUser = { id: localUserId, email: `${localUsername}@hgt.l.cd` };
                 
-                for (let i = 0; i < 4; i++) {
-                    await new Promise(r => setTimeout(r, 500));
-                    const retry = await db.auth.getSession();
-                    if (retry.data.session && retry.data.session.user) {
-                        session = retry.data.session;
-                        window.location.reload(); 
-                        return;
-                    }
+                // 如果 URL 里有参数 ?cat=求助，直接进列表
+                const urlParams = new URLSearchParams(window.location.search);
+                const cat = urlParams.get('cat');
+                if (cat) {
+                    showList(cat);
                 }
+                return; // 直接结束，绝不往下走
             }
 
-            // 4. 双轨判定：等待 2 秒还是没拿到，才踢回登录页
-            if ((!session || !session.user) && !isLocalLoggedIn) {
-                const currentPath = window.location.pathname;
-                window.location.href = `/account/login/?redirect=${encodeURIComponent(currentPath)}`;
+            // 2. 如果连本地标记都没有，才去查真实 Session 兜底
+            let { data: { session } } = await db.auth.getSession();
+            if (session && session.user) {
+                localStorage.setItem("hg_logged_in", "true");
+                localStorage.setItem("hg_user_id", session.user.id);
+                currentUser = session.user;
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const cat = urlParams.get('cat');
+                if (cat) showList(cat);
                 return;
             }
 
-            // 5. 兜底当前用户对象
-            currentUser = (session && session.user) 
-                ? session.user 
-                : { id: localUserId, email: `${localUsername}@hgt.l.cd` };
-
-            // 如果 URL 里有参数 ?cat=求助，直接进列表
-            const urlParams = new URLSearchParams(window.location.search);
-            const cat = urlParams.get('cat');
-            if (cat) {
-                showList(cat);
-            }
+            // 3. 本地没标记，Session 也没拿到，那说明真没登录，踢回登录页
+            const currentPath = window.location.pathname;
+            window.location.href = `/account/login/?redirect=${encodeURIComponent(currentPath)}`;
         }
 
         // 显示大厅
