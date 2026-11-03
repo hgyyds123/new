@@ -271,15 +271,27 @@
         let currentCategory = "闲聊";
         let currentView = "hub"; // "hub" 或 "list"
 
-        // 初始化
+        // 初始化（已修复语法错误，加入防横跳双轨判定）
         async function init() {
+            // 1. 尝试拿真实 Session
             const { data: { session } } = await db.auth.getSession();
-            if (!session || !session.user) {
+            
+            // 2. 拿本地缓存标记
+            const isLocalLoggedIn = sessionStorage.getItem("hg_logged_in") === "true";
+            const localUserId = sessionStorage.getItem("hg_user_id");
+            const localUsername = sessionStorage.getItem("hg_username");
+
+            // 3. 双轨判定：都没有才踢回登录页
+            if ((!session || !session.user) && !isLocalLoggedIn) {
                 const currentPath = window.location.pathname;
                 window.location.href = `/account/login/?redirect=${encodeURIComponent(currentPath)}`;
                 return;
             }
-            currentUser = session.user;
+
+            // 4. 兜底当前用户对象
+            currentUser = (session && session.user) 
+                ? session.user 
+                : { id: localUserId, email: `${localUsername}@hgt.l.cd` };
 
             // 如果 URL 里有参数 ?cat=求助，直接进列表
             const urlParams = new URLSearchParams(window.location.search);
@@ -368,9 +380,9 @@
             btn.textContent = "发布中...";
             btn.disabled = true;
 
-            // 获取用户名
+            // 获取用户名（这里用 currentUser.id，完美兼容双轨机制）
             const { data: profile } = await db.from("profiles").select("username").eq("id", currentUser.id).maybeSingle();
-            const uname = profile ? profile.username : "匿名";
+            const uname = profile ? profile.username : (sessionStorage.getItem("hg_username") || "匿名");
 
             const { error } = await db.from("posts").insert({
                 author_id: currentUser.id,
