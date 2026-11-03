@@ -224,19 +224,12 @@
 
         // ================= 终极拦截防线 =================
         async function init() {
-            // 1. 第一重：查 localStorage
-            let isLocalLoggedIn = localStorage.getItem("hg_logged_in") === "true";
-            let localUserId = localStorage.getItem("hg_user_id");
-            let localUsername = localStorage.getItem("hg_username");
+            // 1. 直接查本地缓存（或者双重缓存）
+            let isLocalLoggedIn = localStorage.getItem("hg_logged_in") === "true" || sessionStorage.getItem("hg_logged_in") === "true";
+            let localUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
+            let localUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username");
 
-            // 2. 第二重：查 sessionStorage（Edge 偶尔会保留）
-            if (!isLocalLoggedIn) {
-                isLocalLoggedIn = sessionStorage.getItem("hg_logged_in") === "true";
-                localUserId = localUserId || sessionStorage.getItem("hg_user_id");
-                localUsername = localUsername || sessionStorage.getItem("hg_username");
-            }
-
-            // 3. 如果本地标记都有，直接放行！
+            // 2. 只要有标记，直接放行，连网都不连，零延迟
             if (isLocalLoggedIn && localUserId) {
                 currentUser = { id: localUserId, email: `${localUsername}@hgt.l.cd` };
                 const urlParams = new URLSearchParams(window.location.search);
@@ -245,11 +238,10 @@
                 return;
             }
 
-            // 4. 第三重：本地啥都没有，去查真实的 Session
+            // 3. 本地真没标记，去拿 Supabase Session 兜底
             let { data: { session } } = await db.auth.getSession();
-            
             if (session && session.user) {
-                // 只要拿到，立刻补签本地标记
+                // 补签一下
                 localStorage.setItem("hg_logged_in", "true");
                 localStorage.setItem("hg_user_id", session.user.id);
                 sessionStorage.setItem("hg_logged_in", "true");
@@ -262,24 +254,7 @@
                 return;
             }
 
-            // 5. 第四重：终极抢救！如果还没拿到，强行死等 1.5 秒去拉取
-            document.getElementById("viewHub").innerHTML = '<div style="text-align:center; padding:100px; color:var(--text-sub)">正在验证身份，请稍候...</div>';
-            
-            for (let i = 0; i < 3; i++) {
-                await new Promise(r => setTimeout(r, 500)); // 等 500ms
-                const retry = await db.auth.getSession();
-                if (retry.data.session && retry.data.session.user) {
-                    // 抓住了！强行写入本地
-                    localStorage.setItem("hg_logged_in", "true");
-                    localStorage.setItem("hg_user_id", retry.data.session.user.id);
-                    sessionStorage.setItem("hg_logged_in", "true");
-                    sessionStorage.setItem("hg_user_id", retry.data.session.user.id);
-                    window.location.reload(); // 刷新页面，满血复活
-                    return;
-                }
-            }
-
-            // 6. 彻底没戏，确认没登录，踢回登录页
+            // 4. 实在没辙，只能踢回登录页
             const currentPath = window.location.pathname;
             window.location.href = `/account/login/?redirect=${encodeURIComponent(currentPath)}`;
         }
