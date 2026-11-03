@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- 把 SDK 的加载留在这里，但不执行初始化 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -200,15 +202,9 @@
         // ================= 数据逻辑 =================
         const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
         const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
-        const { createClient } = supabase;
-        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true }
-        });
 
-        let currentUser = null;
         let currentCategory = "闲聊";
 
-        // 页面加载立刻渲染，无任何拦截！
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const cat = urlParams.get('cat');
@@ -230,58 +226,48 @@
             loadPosts();
         }
 
+        // 查帖子依然用轻量级的 fetch，保证 Edge 秒开
         async function loadPosts() {
             const list = document.getElementById("postList");
             list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">加载中...</div>';
 
-            const { data, error } = await db.from("posts").select("*").eq("category", currentCategory).order("created_at", { ascending: false });
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/posts?category=eq.${encodeURIComponent(currentCategory)}&order=created_at.desc`, {
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                const data = await res.json();
 
-            if (error) {
+                list.innerHTML = "";
+                if (!data || data.length === 0) {
+                    list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">还没有帖子，来发第一帖吧！</div>';
+                    return;
+                }
+
+                data.forEach(post => {
+                    const div = document.createElement("div");
+                    div.className = "post-card m3-ripple";
+                    div.innerHTML = `
+                        <div class="post-meta">
+                            <span style="font-weight:500; color:var(--text-main)">${escapeHtml(post.author_name || '匿名')}</span>
+                            <span>· ${new Date(post.created_at).toLocaleString()}</span>
+                        </div>
+                        <div class="post-title">${escapeHtml(post.title)}</div>
+                        <div class="post-preview">${escapeHtml(post.content)}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (e) {
                 list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--error)">加载失败</div>';
-                return;
             }
-
-            list.innerHTML = "";
-            if (data.length === 0) {
-                list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">还没有帖子，来发第一帖吧！</div>';
-                return;
-            }
-
-            data.forEach(post => {
-                const div = document.createElement("div");
-                div.className = "post-card m3-ripple";
-                div.innerHTML = `
-                    <div class="post-meta">
-                        <span style="font-weight:500; color:var(--text-main)">${escapeHtml(post.author_name || '匿名')}</span>
-                        <span>· ${new Date(post.created_at).toLocaleString()}</span>
-                    </div>
-                    <div class="post-title">${escapeHtml(post.title)}</div>
-                    <div class="post-preview">${escapeHtml(post.content)}</div>
-                `;
-                list.appendChild(div);
-            });
         }
 
-        // ================= 发帖逻辑（唯一需要登录的地方） =================
+        // ================= 发帖逻辑（真正调用官方 SDK） =================
         const modal = document.getElementById("modalOverlay");
         
-        document.getElementById("newPostBtn").addEventListener("click", async () => {
-            // 只有点发帖时，才真刀真枪去拿 Session！
-            const { data: { session } } = await db.auth.getSession();
-            
-            if (!session || !session.user) {
-                alert("发帖需要先登录哦！");
-                // 带上当前路径，登录完直接跳回来
-                const currentUrl = window.location.pathname + window.location.search;
-                window.location.href = `/account/login/?redirect=${encodeURIComponent(currentUrl)}`;
-                return;
-            }
-
-            currentUser = session.user;
-            
-            // 有登录状态，弹出输入框
-            document.getElementById("postTitle").value = "";
-            document.getElementById("postContent").value = "";
+        document.getElementById("newPostBtn").addEventListener("click", () => {
             modal.classList.add("active");
         });
         
@@ -296,26 +282,44 @@
             btn.textContent = "发布中...";
             btn.disabled = true;
 
-            // 从当前真实的 Session 拿名字，绝不信任缓存
-            const { data: profile } = await db.from("profiles").select("username").eq("id", currentUser.id).maybeSingle();
-            const uname = profile ? profile.username : "匿名";
+            try {
+                // 【核心突破】按需实例化官方 SDK！
+                const { createClient } = supabase;
+                const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: { persistSession: true, autoRefreshToken: true }
+                });
 
-            const { error } = await db.from("posts").insert({
-                author_id: currentUser.id,
-                author_name: uname,
-                category: currentCategory,
-                title: title,
-                content: content
-            });
+                // 让官方 SDK 自己去处理存储、解析、自动刷新
+                const { data: { session } } = await db.auth.getSession();
+                
+                if (!session || !session.user) {
+                    alert("登录已过期或未登录，请重新登录！");
+                    window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
+                    return;
+                }
 
-            btn.textContent = "发布";
-            btn.disabled = false;
+                // 获取用户名并插入
+                const { data: profile } = await db.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
+                const uname = profile ? profile.username : "匿名";
 
-            if (error) {
-                alert("发帖失败：" + error.message);
-            } else {
+                const { error } = await db.from("posts").insert({
+                    author_id: session.user.id,
+                    author_name: uname,
+                    category: currentCategory,
+                    title: title,
+                    content: content
+                });
+
+                if (error) throw error;
+
                 modal.classList.remove("active");
                 loadPosts(); 
+
+            } catch (error) {
+                alert("发帖失败：" + error.message);
+            } finally {
+                btn.textContent = "发布";
+                btn.disabled = false;
             }
         });
 
