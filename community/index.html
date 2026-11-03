@@ -257,7 +257,7 @@
             // 4. 实在没辙，只能踢回登录页
             const currentPath = window.location.pathname;
             window.location.href = `/account/login/?redirect=${encodeURIComponent(currentPath)}`;
-        }
+        } // <--- 这次闭合得非常完美
 
         // 显示大厅
         function showHub() {
