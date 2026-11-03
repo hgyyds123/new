@@ -92,17 +92,21 @@
         const WASMER_URL = CONFIG.WASMER_URL;
 
         const { createClient } = supabase;
-        // 【统一使用 localStorage】
+        // 统一 localStorage
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
 
         const urlParams = new URLSearchParams(window.location.search);
-        const REDIRECT_URL = urlParams.get('redirect') || "/talkroom/"; 
+        // 防呆设计：如果 redirect 是登录页，默认回大厅
+        let REDIRECT_URL = urlParams.get('redirect');
+        if (!REDIRECT_URL || REDIRECT_URL.includes('/account/login/')) {
+            REDIRECT_URL = "/talkroom/";
+        }
 
         async function checkAlreadyLoggedIn() {
             const { data: { session } } = await db.auth.getSession();
-            // 【改用 localStorage】
+            // 改用 localStorage
             if (session && session.user || localStorage.getItem("hg_logged_in") === "true") {
                 window.location.href = REDIRECT_URL;
             }
@@ -127,14 +131,20 @@
         let tempPassword = "";
         let tempSecret = "";
 
+        // ================= 终极落盘逻辑 =================
         function successSaveAndRedirect(userId, username) {
-            // 【改用 localStorage 存储】
+            // 1. 狂写三遍，确保存进去
             localStorage.setItem("hg_logged_in", "true");
             localStorage.setItem("hg_user_id", userId);
             localStorage.setItem("hg_username", username);
+            
             msg.style.color = "var(--primary)";
             msg.textContent = "登录成功，正在跳转...";
-            setTimeout(() => window.location.href = REDIRECT_URL, 500);
+            
+            // 2. 延时 800ms，给手机浏览器硬盘落盘的时间
+            setTimeout(() => {
+                window.location.href = REDIRECT_URL;
+            }, 800);
         }
 
         function resetError(msgText) {
@@ -186,7 +196,7 @@
                 if (error.message.includes("Invalid login credentials") || error.status === 400) {
                     resetError("用户名或密码错误");
                 } else if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                    resetError("网络连接失败，请检查网络或稍后再试（代理可能超时）");
+                    resetError("网络连接失败，请检查网络或稍后再试");
                 } else {
                     resetError("登录失败：" + error.message);
                 }
@@ -274,6 +284,7 @@
                 return;
             }
 
+            // 核心修复：防假成功
             if (!data.user || !data.user.identities || data.user.identities.length === 0) {
                 resetError("该用户名已被注册，请换一个或直接登录！");
                 submitBtn.textContent = "注册";
