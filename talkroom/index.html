@@ -114,7 +114,6 @@
     </main>
 
     <script>
-        // 水波纹效果
         document.addEventListener('click', function(e) {
             const target = e.target.closest('.m3-ripple');
             if (!target) return;
@@ -140,8 +139,8 @@
         });
 
         async function loadUserInfo() {
-            // 优先检查手动存的 sessionStorage，防止死循环
-            const isLogged = sessionStorage.getItem("hg_logged_in");
+            // 【改用 localStorage】
+            const isLogged = localStorage.getItem("hg_logged_in");
             if (isLogged !== "true") {
                 const currentPath = window.location.pathname;
                 window.location.href = `/account/login/?redirect=${encodeURIComponent(currentPath)}`;
@@ -149,14 +148,18 @@
             }
 
             const { data: { session } } = await db.auth.getSession();
-            if (!session || !session.user) {
-                sessionStorage.clear(); // 清理无效状态
+            
+            // 兜底处理
+            const userId = (session && session.user) ? session.user.id : localStorage.getItem("hg_user_id");
+            if (!userId) {
+                localStorage.removeItem("hg_logged_in");
                 window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
                 return;
             }
 
-            const { data: profile } = await db.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
-            const name = profile ? profile.username : "未命名用户";
+            const { data: profile } = await db.from("profiles").select("username").eq("id", userId).maybeSingle();
+            const name = profile ? profile.username : (localStorage.getItem("hg_username") || "未命名用户");
+            
             document.getElementById("userNameDisplay").textContent = name;
             if (name && name.length > 0) {
                 document.getElementById("avatarInitial").textContent = name.charAt(0).toUpperCase();
@@ -166,7 +169,11 @@
                 e.preventDefault();
                 if(confirm("确定要退出登录吗？")) {
                     await db.auth.signOut();
-                    sessionStorage.clear();
+                    // 【清空 localStorage】
+                    localStorage.removeItem("hg_logged_in");
+                    localStorage.removeItem("hg_user_id");
+                    localStorage.removeItem("hg_username");
+                    localStorage.clear();
                     window.location.href = "/account/login/";
                 }
             });
