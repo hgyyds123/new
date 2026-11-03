@@ -255,4 +255,67 @@
             }
         }
 
-        //
+        // ================= 发帖逻辑（官方 SDK） =================
+        const modal = document.getElementById("modalOverlay");
+        
+        document.getElementById("newPostBtn").addEventListener("click", () => {
+            modal.classList.add("active");
+        });
+        
+        document.getElementById("cancelPost").addEventListener("click", () => modal.classList.remove("active"));
+
+        document.getElementById("submitPost").addEventListener("click", async () => {
+            const title = document.getElementById("postTitle").value.trim();
+            const content = document.getElementById("postContent").value.trim();
+            if (!title || !content) return alert("请填写完整内容");
+
+            const btn = document.getElementById("submitPost");
+            btn.textContent = "发布中...";
+            btn.disabled = true;
+
+            try {
+                // 实例化 SDK
+                const { createClient } = supabase;
+                const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
+                });
+
+                // 让官方 SDK 自己去读取真实身份
+                const { data: { session } } = await db.auth.getSession();
+                
+                if (!session || !session.user) {
+                    alert("登录已过期或未登录，请重新登录！");
+                    window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
+                    return;
+                }
+
+                const { data: profile } = await db.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
+                const uname = profile ? profile.username : "匿名";
+
+                const { error } = await db.from("posts").insert({
+                    author_id: session.user.id,
+                    author_name: uname,
+                    category: currentCategory,
+                    title: title,
+                    content: content
+                });
+
+                if (error) throw error;
+
+                modal.classList.remove("active");
+                loadPosts(); 
+
+            } catch (error) {
+                alert("发帖失败：" + error.message);
+            } finally {
+                btn.textContent = "发布";
+                btn.disabled = false;
+            }
+        });
+
+        function escapeHtml(str) {
+            return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+        }
+    </script>
+</body>
+</html>
