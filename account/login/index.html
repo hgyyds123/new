@@ -92,39 +92,26 @@
         const WASMER_URL = CONFIG.WASMER_URL;
 
         const { createClient } = supabase;
+        // 官方 SDK 存储
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
 
-        // ================= 终极强权重定向逻辑 =================
         const urlParams = new URLSearchParams(window.location.search);
-        let redirectParam = urlParams.get('redirect');
-        
+        let redirectTarget = urlParams.get('redirect');
         let REDIRECT_URL = "/"; // 默认回主站
 
-        if (redirectParam) {
+        if (redirectTarget) {
             try {
-                // 1. 先解码
-                let decoded = decodeURIComponent(redirectParam);
-                // 2. 清理多余斜杠
-                decoded = decoded.replace(/\/+/g, '/');
-                // 3. 强制加前导斜杠，保证是绝对路径
-                if (!decoded.startsWith('/')) {
-                    decoded = '/' + decoded;
-                }
-                // 4. 只要不是回登录页，就无脑信任！
-                if (!decoded.includes('/account/login/')) {
-                    REDIRECT_URL = decoded;
-                }
-            } catch (e) {
-                console.error("路径解析失败，默认回主站", e);
-            }
+                let decoded = decodeURIComponent(redirectTarget).replace(/\/+/g, '/');
+                if (!decoded.startsWith('/')) decoded = '/' + decoded;
+                if (!decoded.includes('/account/login/')) REDIRECT_URL = decoded;
+            } catch (e) {}
         }
-        // ========================================================
 
         async function checkAlreadyLoggedIn() {
             const { data: { session } } = await db.auth.getSession();
-            if (session && session.user || localStorage.getItem("hg_logged_in") === "true") {
+            if (session && session.user) {
                 window.location.href = REDIRECT_URL;
             }
         }
@@ -148,24 +135,11 @@
         let tempPassword = "";
         let tempSecret = "";
 
-        // ================= 终极落盘逻辑（Edge 兼容加强） =================
+        // ================= 纯靠官方 SDK 落盘 =================
         function successSaveAndRedirect(userId, username) {
-            try {
-                localStorage.setItem("hg_logged_in", "true");
-                localStorage.setItem("hg_user_id", userId);
-                localStorage.setItem("hg_username", username);
-                
-                sessionStorage.setItem("hg_logged_in", "true");
-                sessionStorage.setItem("hg_user_id", userId);
-                sessionStorage.setItem("hg_username", username);
-            } catch (e) {
-                console.error("存储被浏览器拒绝:", e);
-            }
-            
             msg.style.color = "var(--primary)";
             msg.textContent = "登录成功，正在跳转...";
-            
-            setTimeout(() => window.location.href = REDIRECT_URL, 800);
+            setTimeout(() => window.location.href = REDIRECT_URL, 500);
         }
 
         function resetError(msgText) {
