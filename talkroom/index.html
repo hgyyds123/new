@@ -139,26 +139,18 @@
         });
 
         async function loadUserInfo() {
-            // 【改用 localStorage】
-            const isLogged = localStorage.getItem("hg_logged_in");
-            if (isLogged !== "true") {
-                const currentPath = window.location.pathname;
-                window.location.href = `/account/login/?redirect=${encodeURIComponent(currentPath)}`;
-                return;
-            }
-
+            // 【最新逻辑】直接问官方 SDK 拿真实登录状态，不再查本地手写的那个变量
             const { data: { session } } = await db.auth.getSession();
             
-            // 兜底处理
-            const userId = (session && session.user) ? session.user.id : localStorage.getItem("hg_user_id");
-            if (!userId) {
-                localStorage.removeItem("hg_logged_in");
+            if (!session || !session.user) {
                 window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
                 return;
             }
 
-            const { data: profile } = await db.from("profiles").select("username").eq("id", userId).maybeSingle();
-            const name = profile ? profile.username : (localStorage.getItem("hg_username") || "未命名用户");
+            // 如果拿到了 Session，拿它的 ID 去数据库查名字
+            const { data: profile } = await db.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
+            // 如果数据库查不到，至少拿个邮箱前缀兜底
+            const name = profile ? profile.username : (session.user.email.split('@')[0] || "未命名用户");
             
             document.getElementById("userNameDisplay").textContent = name;
             if (name && name.length > 0) {
@@ -169,11 +161,8 @@
                 e.preventDefault();
                 if(confirm("确定要退出登录吗？")) {
                     await db.auth.signOut();
-                    // 【清空 localStorage】
-                    localStorage.removeItem("hg_logged_in");
-                    localStorage.removeItem("hg_user_id");
-                    localStorage.removeItem("hg_username");
-                    localStorage.clear();
+                    localStorage.clear(); // 确保清空所有 SDK 的 token
+                    sessionStorage.clear();
                     window.location.href = "/account/login/";
                 }
             });
