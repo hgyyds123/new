@@ -92,14 +92,13 @@
         const WASMER_URL = CONFIG.WASMER_URL;
 
         const { createClient } = supabase;
-        // 官方 SDK 存储
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
             auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
 
         const urlParams = new URLSearchParams(window.location.search);
         let redirectTarget = urlParams.get('redirect');
-        let REDIRECT_URL = "/"; // 默认回主站
+        let REDIRECT_URL = "/";
 
         if (redirectTarget) {
             try {
@@ -135,25 +134,35 @@
         let tempPassword = "";
         let tempSecret = "";
 
-        // ================= 双存储落盘逻辑（兼容新旧页面） =================
+        // ================= 终极落盘逻辑（加了抓虫弹窗） =================
         function successSaveAndRedirect(userId, username) {
             try {
-                // 写给最新版页面（防 Edge 拦截）
+                // 1. 写给最新版页面
                 localStorage.setItem("hg_logged_in", "true");
                 localStorage.setItem("hg_user_id", userId);
                 localStorage.setItem("hg_username", username);
                 
-                // 写给旧版页面（兼容会话存储）
+                // 2. 写给旧版页面
                 sessionStorage.setItem("hg_logged_in", "true");
                 sessionStorage.setItem("hg_user_id", userId);
                 sessionStorage.setItem("hg_username", username);
+
+                // 【抓虫测试弹窗】强制卡住，看看存进去了没
+                const l = localStorage.getItem("hg_logged_in");
+                const s = sessionStorage.getItem("hg_logged_in");
+                
+                alert(`【登录成功，存储状态校验】\n\nLocal: ${l}\nSession: ${s}\n\n即将跳转到: ${REDIRECT_URL}\n\n请截图记录，点确定后跳转。`);
+
             } catch (e) {
                 console.error("本地存储被浏览器拒绝:", e);
+                alert("存储失败，浏览器可能禁用了本地存储:\n" + e.message);
             }
             
             msg.style.color = "var(--primary)";
             msg.textContent = "登录成功，正在跳转...";
-            setTimeout(() => window.location.href = REDIRECT_URL, 500);
+            
+            // 为了让你看清弹窗，延时调到 2000 毫秒，测完你可以自己改回 300
+            setTimeout(() => window.location.href = REDIRECT_URL, 2000);
         }
 
         function resetError(msgText) {
