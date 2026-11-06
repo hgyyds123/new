@@ -4,176 +4,155 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的消息 · 聊天室</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 30px 20px;
-            display: flex;
-            justify-content: center;
+        :root {
+            --bg-color: #F8F9FA; --surface: #FFFFFF; --surface-variant: #F0F4F9;
+            --text-main: #1F1F1F; --text-sub: #444746; --outline-variant: #C4C7C5;
+            --primary: #0b57d0; --on-primary: #FFFFFF; --primary-container: #d3e3fd;
+            --on-primary-container: #041e49; --error: #B3261E;
         }
-
-        .container {
-            max-width: 640px;
-            width: 100%;
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #131314; --surface: #1E1F20; --surface-variant: #282A2C;
+                --text-main: #E3E3E3; --text-sub: #C4C7C5; --outline-variant: #444746;
+                --primary: #A8C7FA; --on-primary: #062E6F; --primary-container: #0842A0;
+                --on-primary-container: #D3E3FD; --error: #F2B8B5;
+            }
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Roboto', 'Noto Sans SC', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        a { text-decoration: none; color: inherit; }
+        button { font-family: inherit; border: none; background: none; cursor: pointer; }
 
-        .header {
-            background: rgba(255, 255, 255, 0.96);
-            border-radius: 20px;
-            padding: 28px 32px;
-            margin-bottom: 20px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        /* 顶部导航 */
+        .top-bar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background-color: var(--bg-color); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--outline-variant); }
+        .nav-left { display: flex; align-items: center; gap: 16px; }
+        .icon-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; color: var(--text-main); }
+        .icon-btn:hover { background-color: var(--surface-variant); }
+        .brand { font-size: 20px; font-weight: 500; }
+
+        /* 主体内容 */
+        .container { flex: 1; max-width: 800px; margin: 0 auto; width: 100%; padding: 32px 24px; }
+        .header { text-align: center; margin-bottom: 32px; }
+        .header h1 { font-size: 32px; font-weight: 400; margin-bottom: 8px; }
+        .header p { font-size: 15px; color: var(--text-sub); }
+
+        /* 消息列表 */
+        .msg-list { display: flex; flex-direction: column; gap: 12px; }
+        
+        .msg-card { 
+            background-color: var(--surface); border: 1px solid var(--outline-variant); 
+            border-radius: 16px; padding: 16px 20px; 
+            transition: background 0.2s;
         }
+        
+        .msg-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .msg-time { font-size: 13px; color: var(--text-sub); }
+        .msg-badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 500; background-color: var(--surface-variant); color: var(--text-sub); }
+        .msg-badge.private { background-color: var(--primary-container); color: var(--on-primary-container); }
+        
+        .msg-content { font-size: 15px; line-height: 1.6; color: var(--text-main); word-break: break-word; }
+        .msg-content img { max-width: 100%; border-radius: 8px; margin-top: 8px; display: block; }
 
-        .header h1 { font-size: 24px; color: #333; margin-bottom: 6px; }
-        .header p { font-size: 14px; color: #999; }
+        .empty { text-align: center; padding: 64px 20px; color: var(--text-sub); font-size: 15px; background-color: var(--surface); border-radius: 16px; border: 1px dashed var(--outline-variant); }
 
-        .msg-item {
-            background: rgba(255, 255, 255, 0.96);
-            border-radius: 16px;
-            padding: 18px 24px;
-            margin-bottom: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        @media (max-width: 600px) {
+            .container { padding: 24px 16px; }
+            .header h1 { font-size: 26px; }
         }
-
-        .msg-item .time {
-            font-size: 12px;
-            color: #667eea;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .msg-item .content {
-            font-size: 15px;
-            color: #444;
-            line-height: 1.8;
-            word-break: break-word;
-        }
-
-        .msg-item .badge {
-            display: inline-block;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
-            background: #f0f2f8;
-            color: #888;
-        }
-
-        .msg-item .badge.private {
-            background: #e8e0f8;
-            color: #7a5fc0;
-        }
-
-        .empty {
-            background: rgba(255, 255, 255, 0.96);
-            border-radius: 16px;
-            padding: 40px;
-            text-align: center;
-            color: #999;
-            font-size: 15px;
-        }
-
-        .back {
-            text-align: center;
-            margin-top: 24px;
-        }
-
-        .back a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 14px;
-            opacity: 0.85;
-        }
-
-        .back a:hover { opacity: 1; }
-
-        .forbidden { text-align: center; padding: 120px 20px; }
-        .forbidden h1 { font-size: 64px; color: #e74c3c; margin-bottom: 16px; }
-        .forbidden p { font-size: 17px; color: #666; }
     </style>
 </head>
 <body>
-    <div class="container" id="container">
-        <div class="empty">加载中…</div>
-    </div>
+
+    <header class="top-bar">
+        <div class="nav-left">
+            <a href="/talkroom/" class="icon-btn"><span class="material-symbols-outlined">arrow_back</span></a>
+            <div class="brand">我的消息记录</div>
+        </div>
+    </header>
+
+    <main class="container" id="container">
+        <div class="empty">加载中...</div>
+    </main>
 
     <script>
-        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        // 【核心修复】走 Wasmer 代理
+        const SUPABASE_URL = "https://hgai-61677.wasmer.app/proxy";
         const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
 
-        const { createClient } = supabase;
-        const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true }
-        });
-
         async function init() {
-            const { data: { session } } = await db.auth.getSession();
-            if (!session || !session.user) {
-                window.location.href = "/talkroom/login/";
+            // 直接读本地缓存，不查网络，防横跳
+            const myUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
+            const myUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "未知用户";
+
+            if (!myUserId) {
+                window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
                 return;
             }
-
-            const userId = session.user.id;
-
-            // 拿用户名
-            const { data: profile } = await db
-                .from("profiles")
-                .select("username")
-                .eq("id", userId)
-                .maybeSingle();
-
-            const username = profile ? profile.username : "未知用户";
-
-            // 查自己发过的所有消息（公共 + 私聊）
-            const { data, error } = await db
-                .from("messages")
-                .select("*")
-                .eq("user_id", userId)
-                .order("created_at", { ascending: false })
-                .limit(200);
 
             const container = document.getElementById("container");
 
-            if (error) {
-                container.innerHTML = '<div class="empty">加载失败：' + escapeHtml(error.message) + '</div>';
-                return;
-            }
-
-            let html = `
-                <div class="header">
-                    <h1>📝 我的消息</h1>
-                    <p>${escapeHtml(username)} 发过的消息（共 ${data.length} 条）</p>
-                </div>
-            `;
-
-            if (data.length === 0) {
-                html += '<div class="empty">你还没有发过消息</div>';
-            } else {
-                data.forEach(row => {
-                    const time = new Date(row.created_at).toLocaleString("zh-CN");
-                    const isPrivate = !!row.conversation_id;
-                    html += `
-                        <div class="msg-item">
-                            <div class="time">
-                                ${time}
-                                <span class="badge ${isPrivate ? 'private' : ''}">${isPrivate ? '私聊' : '公共'}</span>
-                            </div>
-                            <div class="content">${escapeHtml(row.content)}</div>
-                        </div>
-                    `;
+            try {
+                // 用 fetch 走代理拉取数据
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?user_id=eq.${myUserId}&order=created_at.desc&limit=200`, {
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`
+                    }
                 });
+
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                if (!Array.isArray(data)) throw new Error("返回数据格式错误");
+
+                let html = `
+                    <div class="header">
+                        <h1>我的消息记录</h1>
+                        <p>${escapeHtml(myUsername)} 发过的历史消息（共 ${data.length} 条）</p>
+                    </div>
+                `;
+
+                if (data.length === 0) {
+                    html += '<div class="empty">你还没有发过消息哦~</div>';
+                } else {
+                    html += '<div class="msg-list">';
+                    data.forEach(row => {
+                        const time = new Date(row.created_at).toLocaleString("zh-CN");
+                        const isPrivate = !!row.conversation_id;
+                        
+                        html += `
+                            <div class="msg-card">
+                                <div class="msg-meta">
+                                    <span class="msg-time">${time}</span>
+                                    <span class="msg-badge ${isPrivate ? 'private' : ''}">${isPrivate ? '私聊' : '公共'}</span>
+                                </div>
+                                <div class="msg-content">${formatMessage(row.content)}</div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                container.innerHTML = `<div class="empty">加载失败：${escapeHtml(error.message)}</div>`;
             }
+        }
 
-            html += '<div class="back"><a href="/talkroom/">← 返回入口</a></div>';
-
-            container.innerHTML = html;
+        // 处理图片代理
+        function formatMessage(text) {
+            if (!text) return "";
+            if (text.trim().startsWith('<img src="')) {
+                const safeText = text.replace(/https:\/\/ufzywoswueqcxyopupjq\.supabase\.co/g, 'https://hgai-61677.wasmer.app/proxy');
+                return safeText;
+            }
+            return escapeHtml(text);
         }
 
         function escapeHtml(str) {
