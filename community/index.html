@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <!-- 把 SDK 放在这里，保证发帖时可用 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -255,7 +254,7 @@
             }
         }
 
-        // ================= 发帖逻辑（官方 SDK） =================
+        // ================= 发帖逻辑（弃用官方 SDK，纯原生 Fetch 强行插入） =================
         const modal = document.getElementById("modalOverlay");
         
         document.getElementById("newPostBtn").addEventListener("click", () => {
@@ -273,34 +272,38 @@
             btn.textContent = "发布中...";
             btn.disabled = true;
 
+            // 直接从本地缓存拿，绝不问网络，彻底解决“误报未登录”
+            const localUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
+            const localUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "匿名";
+
+            if (!localUserId) {
+                alert("本地登录状态丢失，请重新登录！");
+                window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
+                return;
+            }
+
             try {
-                // 实例化 SDK
-                const { createClient } = supabase;
-                const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-                    auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
+                    method: "POST",
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    body: JSON.stringify({
+                        author_id: localUserId,
+                        author_name: localUsername,
+                        category: currentCategory,
+                        title: title,
+                        content: content
+                    })
                 });
 
-                // 让官方 SDK 自己去读取真实身份
-                const { data: { session } } = await db.auth.getSession();
-                
-                if (!session || !session.user) {
-                    alert("登录已过期或未登录，请重新登录！");
-                    window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
-                    return;
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(errText);
                 }
-
-                const { data: profile } = await db.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
-                const uname = profile ? profile.username : "匿名";
-
-                const { error } = await db.from("posts").insert({
-                    author_id: session.user.id,
-                    author_name: uname,
-                    category: currentCategory,
-                    title: title,
-                    content: content
-                });
-
-                if (error) throw error;
 
                 modal.classList.remove("active");
                 loadPosts(); 
