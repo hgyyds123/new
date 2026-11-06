@@ -48,7 +48,7 @@
         .input-area input { flex: 1; height: 48px; background-color: var(--surface); border: 1px solid var(--outline-variant); border-radius: 24px; padding: 0 20px; font-size: 15px; color: var(--text-main); outline: none; transition: border-color 0.2s; }
         .input-area input:focus { border-color: var(--primary); }
         .send-btn { width: 48px; height: 48px; border-radius: 50%; background-color: var(--primary); color: var(--on-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.2s; }
-        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; } /* 加了禁用视觉反馈 */
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -72,7 +72,8 @@
     </main>
 
     <script>
-        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        // 【修复】走 Wasmer 代理，绕开国内无法直连 Supabase 的问题
+        const SUPABASE_URL = "https://hgai-61677.wasmer.app/proxy";
         const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
 
         const messagesEl = document.getElementById("messages");
@@ -101,6 +102,7 @@
             isLoading = true;
 
             try {
+                // 查询最新 50 条，倒序拉取
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?conversation_id=is.null&order=created_at.desc&limit=50`, {
                     headers: {
                         "apikey": SUPABASE_KEY,
@@ -111,9 +113,8 @@
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
 
-                // 【修复】先判断是不是数组，再执行反转
                 if (!Array.isArray(data)) throw new Error("返回数据格式错误");
-                data.reverse(); 
+                data.reverse(); // 反转成正序渲染
 
                 if (data.length === 0) {
                     if (messagesEl.innerHTML.includes("正在拉取")) {
@@ -126,15 +127,15 @@
                     messagesEl.innerHTML = "";
                 }
 
-                // 【修复】彻底删掉 lastMsgId 的总闸，直接靠 data-id 逐一判重
                 let hasNewMessage = false;
                 data.forEach(msg => {
-                    if (document.querySelector(`[data-id="${msg.id}"]`)) return; // 已渲染过，跳过
+                    // 彻底删掉总闸，直接靠 data-id 逐一判重
+                    if (document.querySelector(`[data-id="${msg.id}"]`)) return;
 
                     const isMine = msg.user_id === myUserId;
                     const div = document.createElement("div");
                     div.className = `msg-bubble ${isMine ? 'mine' : ''}`;
-                    div.setAttribute("data-id", msg.id); // 存进去是字符串
+                    div.setAttribute("data-id", msg.id);
                     div.innerHTML = `
                         <div class="msg-name">${isMine ? '我' : escapeHtml(msg.nickname || "匿名")}</div>
                         <div class="msg-content">${escapeHtml(msg.content)}</div>
@@ -143,8 +144,10 @@
                     hasNewMessage = true;
                 });
 
-                // 【修复】首次加载或者接近底部，才自动滚屏
+                // 【修复滚动】判断用户当前是不是在底部
                 const isNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 150;
+                
+                // 首次加载，或者有新消息且本来就在底部，才滚屏
                 if (!hasInitialized || (hasNewMessage && isNearBottom)) {
                     scrollToBottom();
                     hasInitialized = true;
@@ -154,7 +157,6 @@
                 console.error("拉取失败:", e);
             } finally {
                 isLoading = false;
-                // 【修复】如果排队了，拉取完立刻执行排队的那次
                 if (pendingLoad) {
                     pendingLoad = false;
                     loadMessages();
@@ -188,9 +190,9 @@
                 if (!res.ok) throw new Error("发送失败");
                 
                 msgInput.value = ""; 
-                msgInput.focus(); // 发送成功后自动聚焦
+                msgInput.focus(); 
                 
-                // 【修复】强制刷新，无视锁，确保自己能立刻看到
+                // 强制刷新，无视锁
                 await loadMessages(true); 
 
             } catch (e) {
@@ -211,10 +213,8 @@
         sendBtn.addEventListener("click", sendMessage);
         msgInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
 
-        // 首次启动
+        // 启动
         loadMessages();
-        
-        // 2秒轮询
         setInterval(() => loadMessages(), 2000);
     </script>
 </body>
