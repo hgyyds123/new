@@ -135,8 +135,22 @@
         let tempPassword = "";
         let tempSecret = "";
 
-        // ================= 纯靠官方 SDK 落盘 =================
+        // ================= 双存储落盘逻辑（兼容新旧页面） =================
         function successSaveAndRedirect(userId, username) {
+            try {
+                // 写给最新版页面（防 Edge 拦截）
+                localStorage.setItem("hg_logged_in", "true");
+                localStorage.setItem("hg_user_id", userId);
+                localStorage.setItem("hg_username", username);
+                
+                // 写给旧版页面（兼容会话存储）
+                sessionStorage.setItem("hg_logged_in", "true");
+                sessionStorage.setItem("hg_user_id", userId);
+                sessionStorage.setItem("hg_username", username);
+            } catch (e) {
+                console.error("本地存储被浏览器拒绝:", e);
+            }
+            
             msg.style.color = "var(--primary)";
             msg.textContent = "登录成功，正在跳转...";
             setTimeout(() => window.location.href = REDIRECT_URL, 500);
