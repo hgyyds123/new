@@ -190,7 +190,8 @@
         });
 
         // ================= 数据逻辑 =================
-        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        // 这里的 URL 改成了你的 Wasmer 代理
+        const SUPABASE_URL = "https://hgai-61677.wasmer.app/proxy"; 
         const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
 
         let currentCategory = "闲聊";
@@ -222,6 +223,7 @@
             list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">加载中...</div>';
 
             try {
+                // 走代理拉取
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/posts?category=eq.${encodeURIComponent(currentCategory)}&order=created_at.desc`, {
                     headers: {
                         "apikey": SUPABASE_KEY,
@@ -254,7 +256,7 @@
             }
         }
 
-        // ================= 发帖逻辑（弃用官方 SDK，纯原生 Fetch 强行插入） =================
+        // ================= 发帖逻辑 =================
         const modal = document.getElementById("modalOverlay");
         
         document.getElementById("newPostBtn").addEventListener("click", () => {
@@ -272,7 +274,6 @@
             btn.textContent = "发布中...";
             btn.disabled = true;
 
-            // 直接从本地缓存拿，绝不问网络，彻底解决“误报未登录”
             const localUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
             const localUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "匿名";
 
@@ -283,6 +284,7 @@
             }
 
             try {
+                // 走代理发帖
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
                     method: "POST",
                     headers: {
