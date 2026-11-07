@@ -1,4 +1,4 @@
-// ================= 主页加载动画逻辑 =================
+// ================ 主页加载动画逻辑 =================
 document.addEventListener('DOMContentLoaded', () => {
     // 动态生成动画 HTML
     const loaderHTML = `
