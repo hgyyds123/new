@@ -1,4 +1,4 @@
-/* ================= hg 主页专属加载动画 ================= */
+/* ================= 极简大厂风加载动画 ================= */
 #hg-loader {
     position: fixed;
     inset: 0;
@@ -8,10 +8,7 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
-}
-@media (prefers-color-scheme: dark) {
-    #hg-loader { background-color: var(--bg-color, #131314); }
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
 }
 
 /* 隐藏状态 */
@@ -21,67 +18,44 @@
 }
 
 .hg-loader-content {
-    text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
 }
 
-/* 核心：巨大且带呼吸霓虹发光的 hg 字 */
-.hg-glow-text {
-    font-size: 96px;
+/* 极简的 hg 字体 */
+.hg-logo {
+    font-size: 64px;
     font-weight: 700;
-    letter-spacing: -4px;
-    color: var(--primary, #0b57d0);
-    animation: hg-breathe 2s infinite ease-in-out;
-}
-@media (prefers-color-scheme: dark) {
-    .hg-glow-text { color: var(--primary, #A8C7FA); }
+    letter-spacing: -2px;
+    color: var(--text-main, #1F1F1F);
+    /* 强制使用系统现代字体 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", "Arial", sans-serif;
 }
 
-/* 底部的加载字幕 */
-.hg-sub-text {
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 4px;
-    color: var(--text-sub, #444746);
-    animation: hg-blink 1.5s infinite;
-}
-@media (prefers-color-scheme: dark) {
-    .hg-sub-text { color: var(--text-sub, #C4C7C5); }
+/* 进度条外框 */
+.hg-progress-track {
+    width: 120px;
+    height: 4px;
+    background-color: var(--surface-variant, #E0E0E0);
+    border-radius: 999px;
+    overflow: hidden;
 }
 
-/* 呼吸发光动画 */
-@keyframes hg-breathe {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 0.8;
-        text-shadow: 0 0 10px rgba(11, 87, 208, 0.2);
-    }
-    50% {
-        transform: scale(1.05);
-        opacity: 1;
-        text-shadow: 0 0 30px rgba(11, 87, 208, 0.8), 0 0 60px rgba(11, 87, 208, 0.4);
-    }
-}
-@media (prefers-color-scheme: dark) {
-    @keyframes hg-breathe {
-        0%, 100% {
-            transform: scale(1);
-            opacity: 0.8;
-            text-shadow: 0 0 10px rgba(168, 199, 250, 0.2);
-        }
-        50% {
-            transform: scale(1.05);
-            opacity: 1;
-            text-shadow: 0 0 30px rgba(168, 199, 250, 0.8), 0 0 60px rgba(168, 199, 250, 0.4);
-        }
-    }
+/* 进度条本体 */
+.hg-progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: var(--primary, #0b57d0);
+    border-radius: 999px;
+    /* 动画在 1.8 秒内平滑加载到 100% */
+    animation: hg-loading 1.8s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
 }
 
-/* 字幕闪烁动画 */
-@keyframes hg-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+@keyframes hg-loading {
+    0% { width: 0%; }
+    30% { width: 40%; }
+    70% { width: 75%; }
+    100% { width: 100%; }
 }
