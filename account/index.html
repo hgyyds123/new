@@ -12,21 +12,21 @@
 body{margin:0;background:var(--bg);color:var(--fg);font-family:Roboto,"Google Sans",Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;align-items:center}
 a{color:inherit;text-decoration:none}
 header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;height:72px;width:100%;max-width:1100px}
-.logo{display:flex;align-items:center;font-size:24px;font-weight:500;gap:8px;color:var(--fg)}
+.logo{display:flex;align-items:center;font-size:24px;font-weight:400;gap:8px}
 .icons{display:flex;align-items:center;gap:16px}
 .icons button{border:0;background:none;padding:8px;border-radius:50%;cursor:pointer;color:var(--fg);display:flex}
 .icons button:hover{background:var(--hover)}
-.icons img.avatar-small{width:32px;height:32px;border-radius:50%;cursor:pointer;object-fit:cover;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-weight:bold}
+.icons .avatar-small{width:32px;height:32px;border-radius:50%;cursor:pointer;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-weight:500}
 
 main{display:flex;width:100%;max-width:1100px;flex:1;padding:0 24px;gap:40px}
 
 /* 侧边栏（宽屏） */
 nav{width:260px;flex-shrink:0;padding-top:16px;display:block}
 nav ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px}
-nav a{display:flex;align-items:center;gap:16px;padding:8px 16px 8px 8px;border-radius:100px;font-size:14px;font-weight:500;color:var(--muted);transition:background .2s;cursor:pointer;}
+nav a{display:flex;align-items:center;gap:16px;padding:8px 16px 8px 8px;border-radius:100px;font-size:14px;font-weight:500;color:var(--muted);transition:background .2s}
 nav a:hover{background:var(--hover)}
 nav a[aria-current="page"]{background:var(--active);color:var(--onactive)}
-nav .icon-wrap{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--card);color:var(--fg)}
+nav .icon-wrap{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 nav .icon-wrap span{font-size:20px;}
 
 /* 右侧内容区 */
@@ -34,11 +34,11 @@ nav .icon-wrap span{font-size:20px;}
 
 /* 宽屏时的简洁视图 */
 .profile-card{background:var(--card);border-radius:16px;padding:32px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;margin-bottom:24px}
-.profile-card .main-avatar{width:100px;height:100px;border-radius:50%;object-fit:cover;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:500;}
+.profile-card .main-avatar{width:100px;height:100px;border-radius:16px;object-fit:cover;position:relative;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:500;}
 .profile-card h1{font-size:28px;font-weight:500;margin:0}
 .profile-card span{font-size:14px;color:var(--muted)}
 .footer-text{font-size:13px;color:var(--muted);line-height:1.6}
-.footer-text a{color:var(--blue);text-decoration:underline; cursor:pointer;}
+.footer-text a{color:var(--blue);text-decoration:underline}
 
 /* 窄屏时的卡片流（隐藏在宽屏下） */
 .mobile-cards{display:none}
@@ -49,7 +49,7 @@ nav .icon-wrap span{font-size:20px;}
 .mobile-cards .group .card:first-child{border-radius:16px 16px 4px 4px}
 .mobile-cards .group .card:last-child{border-radius:4px 4px 16px 16px}
 .mobile-cards .group .card:only-child{border-radius:16px}
-.mobile-cards .card-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg);color:var(--fg)}
+.mobile-cards .card-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .mobile-cards .card-icon span{font-size:24px;}
 .mobile-cards .card-text{display:flex;flex-direction:column;gap:4px}
 .mobile-cards .card-text .title{font-size:16px;font-weight:500;color:var(--fg)}
@@ -65,34 +65,33 @@ nav .icon-wrap span{font-size:20px;}
   .mobile-cards{display:flex;flex-direction:column;gap:8px} /* 显示截图里的卡片流 */
   .footer-text{margin-top:24px;padding:0 16px;text-align:center}
 }
-/* 点击退出等按钮的悬浮样式 */
-.logout-btn { color: var(--muted); }
-.logout-btn:hover { background: var(--hover); color: var(--fg); }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <span>hg 账号</span>
+    <span>账号</span>
   </div>
   <div class="icons">
     <button aria-label="帮助" onclick="window.open('https://support.hg1.dpdns.org', '_blank')"><span class="material-symbols-outlined">help</span></button>
-    <button aria-label="应用"><span class="material-symbols-outlined">apps</span></button>
-    <div class="avatar-small" id="topAvatar">H</div>
+    <button aria-label="hg 应用"><span class="material-symbols-outlined">apps</span></button>
+    <div class="avatar-small" id="topAvatar">...</div>
   </div>
 </header>
 
 <main>
   <nav aria-label="导航菜单">
     <ul>
-      <li><a href="#" aria-current="page"><div class="icon-wrap"><span class="material-symbols-outlined">home</span></div>首页</a></li>
-      <li><a href="#"><div class="icon-wrap" style="color:#9334e6;background:#f3e8fd"><span class="material-symbols-outlined">account_balance_wallet</span></div>我的钱包</a></li>
-      <li><a href="#"><div class="icon-wrap" style="color:#188038;background:#e6f4ea"><span class="material-symbols-outlined">badge</span></div>个人信息</a></li>
-      <li><a href="#"><div class="icon-wrap" style="color:#1a73e8;background:#e8f0fe"><span class="material-symbols-outlined">security</span></div>安全性与登录</a></li>
-      <li><a href="#"><div class="icon-wrap" style="color:#1a73e8;background:#e8f0fe"><span class="material-symbols-outlined">password</span></div>hg 密码</a></li>
-      <li><a href="#"><div class="icon-wrap" style="color:#007b83;background:#e4f7fb"><span class="material-symbols-outlined">extension</span></div>关联的应用</a></li>
-      <li><a href="#"><div class="icon-wrap" style="color:#d93025;background:#fce8e6"><span class="material-symbols-outlined">shield</span></div>数据和隐私设置</a></li>
+      <li><a href="#" aria-current="page"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">home</span></div>首页</a></li>
+      <li><a href="#"><div class="icon-wrap" style="background:#f3e8fd;color:#9334e6"><span class="material-symbols-outlined">account_balance_wallet</span></div>钱包和订阅</a></li>
+      <li><a href="#"><div class="icon-wrap" style="background:#e6f4ea;color:#188038"><span class="material-symbols-outlined">badge</span></div>个人信息</a></li>
+      <li><a href="#"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">security</span></div>安全性与登录</a></li>
+      <li><a href="#"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">password</span></div>hg 密码</a></li>
+      <li><a href="#"><div class="icon-wrap" style="background:#e4f7fb;color:#007b83"><span class="material-symbols-outlined">extension</span></div>关联的应用</a></li>
+      <li><a href="#"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">shield</span></div>数据和隐私设置</a></li>
+      <li><a href="#"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>用户和分享</a></li>
+      <li><a href="#"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">family_restroom</span></div>家人</a></li>
     </ul>
   </nav>
 
@@ -107,44 +106,69 @@ nav .icon-wrap span{font-size:20px;}
     <!-- 窄屏专属：卡片流 -->
     <div class="mobile-cards">
       <div class="card profile-card-mobile" style="padding:24px;margin-bottom:8px">
-        <div class="main-avatar" style="width:64px;height:64px;border-radius:50%;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;" id="mainAvatarMobile">...</div>
+        <div class="main-avatar" style="width:80px;height:80px;border-radius:12px;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:500;" id="mainAvatarMobile">...</div>
         <div class="card-text">
           <h1 style="font-size:24px;font-weight:500;margin:0" id="userNameMobile">加载中...</h1>
           <span style="font-size:14px;color:var(--muted)" id="userEmailMobile">...</span>
         </div>
       </div>
 
+      <a href="#" class="card" style="margin-top:8px">
+        <div class="card-icon" style="background:#f3e8fd;color:#9334e6"><span class="material-symbols-outlined">account_balance_wallet</span></div>
+        <div class="card-text"><div class="title">钱包和订阅</div><div class="desc">支付方式、交易</div></div>
+      </a>
+
+      <a href="#" class="card">
+        <div class="card-icon" style="background:#e6f4ea;color:#188038"><span class="material-symbols-outlined">badge</span></div>
+        <div class="card-text"><div class="title">个人信息</div><div class="desc">姓名、邮箱、电话、地址</div></div>
+      </a>
+
       <div class="group">
         <a href="#" class="card">
-          <div class="card-icon" style="color:#1a73e8;background:#e8f0fe"><span class="material-symbols-outlined">security</span></div>
-          <div class="card-text"><div class="title">安全性与登录</div><div class="desc">近期安全性事件、两步验证</div></div>
+          <div class="card-icon" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">security</span></div>
+          <div class="card-text"><div class="title">安全性与登录</div><div class="desc">近期安全性事件、密码管理工具、安全检查</div></div>
         </a>
         <a href="#" class="card">
-          <div class="card-icon" style="color:#1a73e8;background:#e8f0fe"><span class="material-symbols-outlined">password</span></div>
+          <div class="card-icon" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">password</span></div>
           <div class="card-text"><div class="title">hg 密码</div><div class="desc">上次更改密码的时间</div></div>
+        </a>
+        <a href="#" class="card">
+          <div class="card-icon" style="background:#e4f7fb;color:#007b83"><span class="material-symbols-outlined">extension</span></div>
+          <div class="card-text"><div class="title">关联的应用</div><div class="desc">您关联的应用以及数据共享控制选项</div></div>
         </a>
       </div>
 
       <a href="#" class="card">
-        <div class="card-icon" style="color:#d93025;background:#fce8e6"><span class="material-symbols-outlined">shield</span></div>
-        <div class="card-text"><div class="title">数据和隐私设置</div><div class="desc">历史记录设置、数据删除</div></div>
+        <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">shield</span></div>
+        <div class="card-text"><div class="title">数据和隐私设置</div><div class="desc">历史记录设置、应用和服务、数据删除</div></div>
       </a>
 
-      <!-- 专门加的退出按钮 -->
-      <a href="javascript:void(0)" class="card" id="mobileLogoutBtn" style="margin-top:8px;">
-        <div class="card-icon" style="color:#d93025;background:#fce8e6"><span class="material-symbols-outlined">logout</span></div>
-        <div class="card-text"><div class="title" style="color:#d93025">退出登录</div><div class="desc">安全退出当前账号</div></div>
-      </a>
+      <div class="group">
+        <a href="#" class="card">
+          <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>
+          <div class="card-text"><div class="title">用户和分享</div><div class="desc">通讯录、已屏蔽的用户、位置信息共享、个人资料</div></div>
+        </a>
+        <a href="#" class="card">
+          <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">family_restroom</span></div>
+          <div class="card-text"><div class="title">家人</div><div class="desc">成员、共享、家长控制</div></div>
+        </a>
+        <!-- 手机端退出登录 -->
+        <a href="javascript:void(0)" class="card" id="mobileLogoutBtn" style="margin-top: 8px">
+          <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">logout</span></div>
+          <div class="card-text"><div class="title" style="color:#d93025">退出登录</div><div class="desc">安全退出当前账号</div></div>
+        </a>
+      </div>
     </div>
 
+    <!-- 底部说明 -->
     <div class="footer-text">
-      只有您本人可以查看您的设置。您可能还想查看 hg 帮助中心。hg 会确保您数据的隐私性和安全性。 <a href="https://support.hg1.dpdns.org">了解详情</a>
+      只有您本人可以查看您的设置。您可能还想查看 hg 地图、hg 搜索或您最常使用的其他 hg 服务的设置。hg 会确保您数据的隐私性和安全性。 <a href="https://support.hg1.dpdns.org">了解详情</a>
     </div>
   </div>
 </main>
 
 <script>
-    // 顶部头像和名字的渲染
+    // 拿本地数据
     const myUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
     const myUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "未知用户";
     const myEmail = `${myUsername}@hgt.l.cd`;
@@ -152,9 +176,9 @@ nav .icon-wrap span{font-size:20px;}
     if (!myUserId) {
         window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
     } else {
-        // 渲染数据
         const initial = myUsername.charAt(0).toUpperCase();
         
+        // 渲染名字和头像
         document.getElementById("topAvatar").textContent = initial;
         document.getElementById("mainAvatarDesktop").textContent = initial;
         document.getElementById("mainAvatarMobile").textContent = initial;
@@ -166,18 +190,13 @@ nav .icon-wrap span{font-size:20px;}
         document.getElementById("userEmailMobile").textContent = myEmail;
     }
 
-    // 退出登录逻辑
+    // 退出
     function doLogout() {
         if (!confirm("确定要退出当前账号吗？")) return;
-        localStorage.removeItem("hg_logged_in");
-        localStorage.removeItem("hg_user_id");
-        localStorage.removeItem("hg_username");
+        localStorage.clear();
         sessionStorage.clear();
-        // 如果之前用了 Supabase SDK，这里也会清理掉它的 token
         window.location.href = "/";
     }
-
-    // 绑定移动端退出按钮
     document.getElementById("mobileLogoutBtn").addEventListener("click", doLogout);
 </script>
 </body>
