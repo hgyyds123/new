@@ -6,50 +6,45 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#1f1f1f;--fg:#e3e3e3;--muted:#a8a8a8;--card:#2c2c2c;--hover:#383838;--line:#444;--blue:#a8c7fa;--active:#0842a0;--onactive:#d3e3fd;--search-bg:#303030;--pill-border:#5f6368}
-@media(prefers-color-scheme:light){:root{--bg:#fff;--fg:#1f1f1f;--muted:#444746;--card:#f0f4f9;--hover:#e1e3e1;--line:#dadce0;--blue:#0b57d0;--active:#c2e7ff;--onactive:#001d35;--search-bg:#f0f4f9;--pill-border:#dadce0}}
+/* 完全保留原版样式变量 */
+:root{--bg:#1f1f1f;--fg:#e3e3e3;--muted:#a8a8a8;--card:#2c2c2c;--hover:#383838;--line:#444;--blue:#a8c7fa;--active:#0842a0;--onactive:#d3e3fd}
+@media(prefers-color-scheme:light){:root{--bg:#fff;--fg:#1f1f1f;--muted:#444746;--card:#f0f4f9;--hover:#e1e3e1;--line:#dadce0;--blue:#0b57d0;--active:#c2e7ff;--onactive:#001d35}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:Roboto,"Google Sans",Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;align-items:center}
 a{color:inherit;text-decoration:none}
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;height:72px;width:100%;max-width:1200px}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;height:72px;width:100%;max-width:1100px}
 .logo{display:flex;align-items:center;font-size:24px;font-weight:400;gap:8px}
 .icons{display:flex;align-items:center;gap:16px}
 .icons button{border:0;background:none;padding:8px;border-radius:50%;cursor:pointer;color:var(--fg);display:flex}
 .icons button:hover{background:var(--hover)}
-.icons .avatar-small{width:36px;height:36px;border-radius:50%;cursor:pointer;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:18px}
+/* 头像 */
+.icons .avatar-small{width:32px;height:32px;border-radius:50%;cursor:pointer;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:16px;}
 
-main{display:flex;width:100%;max-width:1200px;flex:1;padding:0 24px;gap:48px}
+main{display:flex;width:100%;max-width:1100px;flex:1;padding:0 24px;gap:40px}
 
 /* 侧边栏（宽屏） */
-nav{width:280px;flex-shrink:0;padding-top:16px;display:block}
-nav ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px}
-nav a{display:flex;align-items:center;gap:16px;padding:8px 24px 8px 8px;border-radius:100px;font-size:14px;font-weight:500;color:var(--muted);transition:background .2s}
+nav{width:260px;flex-shrink:0;padding-top:16px;display:flex;flex-direction:column;}
+nav ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;flex:1;}
+nav a{display:flex;align-items:center;gap:16px;padding:8px 16px 8px 8px;border-radius:100px;font-size:14px;font-weight:500;color:var(--muted);transition:background .2s}
 nav a:hover{background:var(--hover)}
 nav a[aria-current="page"]{background:var(--active);color:var(--onactive)}
 nav .icon-wrap{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 nav .icon-wrap span{font-size:20px;}
+/* 退出登录按钮 */
+.logout-btn{margin-top:auto;margin-bottom:24px;display:flex;align-items:center;gap:16px;padding:8px 16px 8px 8px;border-radius:100px;font-size:14px;font-weight:500;color:var(--muted);transition:background .2s;cursor:pointer;}
+.logout-btn:hover{background:var(--hover);color:var(--fg);}
+.logout-btn .icon-wrap{background:var(--hover);color:var(--fg);}
+.logout-btn .icon-wrap span{font-size:20px;}
 
 /* 右侧内容区 */
-.content{flex:1;display:flex;flex-direction:column;padding:24px 0 80px;gap:24px;max-width: 900px;}
+.content{flex:1;display:flex;flex-direction:column;padding:24px 0 80px;gap:8px}
 
-/* 宽屏时的核心大卡片 */
-.profile-card{background:var(--card);border-radius:28px;padding:64px 32px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;}
-.profile-card .main-avatar{width:120px;height:120px;border-radius:50%;object-fit:cover;position:relative;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:500;cursor:pointer;transition:transform 0.2s;}
-.profile-card .main-avatar:hover{transform:scale(1.05);}
-.profile-card h1{font-size:32px;font-weight:400;margin:0}
-.profile-card span{font-size:16px;color:var(--muted)}
-
-/* 搜索框 */
-.search-box{width:100%;max-width:700px;margin:0 auto;background:var(--search-bg);border-radius:100px;display:flex;align-items:center;padding:0 24px;height:56px;}
-.search-box span{color:var(--muted);margin-right:16px;font-size:24px;}
-.search-box input{background:none;border:none;outline:none;color:var(--fg);font-size:16px;flex:1;}
-
-/* 快捷标签 */
-.pills{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
-.pill{border:1px solid var(--pill-border);border-radius:8px;padding:8px 16px;font-size:14px;font-weight:500;color:var(--fg);cursor:pointer;transition:background 0.2s;}
-.pill:hover{background:var(--hover);}
-
-.footer-text{font-size:14px;color:var(--muted);line-height:1.8;text-align:center;max-width:700px;margin:24px auto 0;}
+/* 宽屏时的简洁视图 */
+.profile-card{background:var(--card);border-radius:16px;padding:32px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;margin-bottom:24px}
+.profile-card .main-avatar{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:500;background:var(--active);color:var(--onactive);}
+.profile-card h1{font-size:28px;font-weight:500;margin:0}
+.profile-card span{font-size:14px;color:var(--muted)}
+.footer-text{font-size:13px;color:var(--muted);line-height:1.6}
 .footer-text a{color:var(--blue);text-decoration:underline}
 
 /* 窄屏时的卡片流（隐藏在宽屏下） */
@@ -71,7 +66,7 @@ nav .icon-wrap span{font-size:20px;}
 @media(max-width:800px){
   main{padding:0 16px;gap:0}
   nav{display:none}
-  .content{padding-top:0;gap:16px;}
+  .content{padding-top:0}
   header{padding:16px}
   .profile-card{display:none}
   .mobile-cards{display:flex;flex-direction:column;gap:8px}
@@ -87,7 +82,7 @@ nav .icon-wrap span{font-size:20px;}
   </div>
   <div class="icons">
     <button aria-label="帮助" onclick="window.open('https://support.hg1.dpdns.org', '_blank')"><span class="material-symbols-outlined">help</span></button>
-    <button aria-label="hg 应用"><span class="material-symbols-outlined">apps</span></button>
+    <button aria-label="应用"><span class="material-symbols-outlined">apps</span></button>
     <div class="avatar-small" id="topAvatar">...</div>
   </div>
 </header>
@@ -96,41 +91,32 @@ nav .icon-wrap span{font-size:20px;}
   <nav aria-label="导航菜单">
     <ul>
       <li><a href="#" aria-current="page"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">home</span></div>首页</a></li>
-      <li><a href="#"><div class="icon-wrap" style="background:#f3e8fd;color:#9334e6"><span class="material-symbols-outlined">account_balance_wallet</span></div>钱包和订阅</a></li>
-      <li><a href="#"><div class="icon-wrap" style="background:#e6f4ea;color:#188038"><span class="material-symbols-outlined">badge</span></div>个人信息</a></li>
-      <li><a href="#"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">security</span></div>安全性与登录</a></li>
-      <li><a href="#"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">password</span></div>hg 密码</a></li>
-      <li><a href="#"><div class="icon-wrap" style="background:#e4f7fb;color:#007b83"><span class="material-symbols-outlined">extension</span></div>关联的应用</a></li>
-      <li><a href="#"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">shield</span></div>数据和隐私设置</a></li>
-      <li><a href="#"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>用户和分享</a></li>
-      <li><a href="#"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">family_restroom</span></div>家人</a></li>
+      <li><a href="/account/wallet/"><div class="icon-wrap" style="background:#f3e8fd;color:#9334e6"><span class="material-symbols-outlined">account_balance_wallet</span></div>钱包和订阅</a></li>
+      <li><a href="/account/info/"><div class="icon-wrap" style="background:#e6f4ea;color:#188038"><span class="material-symbols-outlined">badge</span></div>个人信息</a></li>
+      <li><a href="/account/security/"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">security</span></div>安全性与登录</a></li>
+      <li><a href="/account/password/"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">password</span></div>hg 密码</a></li>
+      <li><a href="/account/apps/"><div class="icon-wrap" style="background:#e4f7fb;color:#007b83"><span class="material-symbols-outlined">extension</span></div>关联的应用</a></li>
+      <li><a href="/account/privacy/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">shield</span></div>数据和隐私设置</a></li>
+      <li><a href="/account/share/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>用户和分享</a></li>
+      <li><a href="/account/family/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">family_restroom</span></div>家人</a></li>
     </ul>
+    
+    <!-- 新增：侧边栏退出登录 -->
+    <div class="logout-btn" id="desktopLogoutBtn">
+      <div class="icon-wrap"><span class="material-symbols-outlined">logout</span></div>退出登录
+    </div>
   </nav>
 
   <div class="content">
-    <!-- 宽屏专属：纯净的大卡片 + 搜索 + 快捷标签 -->
+    <!-- 宽屏专属 -->
     <div class="profile-card">
       <div class="main-avatar" id="mainAvatarDesktop">...</div>
       <h1 id="userNameDesktop">加载中...</h1>
       <span id="userEmailDesktop">...</span>
     </div>
 
-    <!-- 搜索框和标签（宽屏和窄屏都展示，完美还原） -->
-    <div class="search-box">
-      <span class="material-symbols-outlined">search</span>
-      <input type="text" placeholder="搜索 hg 账号">
-    </div>
-    
-    <div class="pills">
-      <div class="pill">我的密码</div>
-      <div class="pill">设备</div>
-      <div class="pill">密码管理工具</div>
-      <div class="pill">我的活动记录</div>
-      <div class="pill">邮箱</div>
-    </div>
-
-    <!-- 窄屏专属：卡片流 -->
-    <div class="mobile-cards" style="margin-top: 16px;">
+    <!-- 窄屏专属 -->
+    <div class="mobile-cards">
       <div class="card profile-card-mobile" style="padding:24px;margin-bottom:8px">
         <div class="main-avatar" style="width:80px;height:80px;border-radius:50%;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:500;" id="mainAvatarMobile">...</div>
         <div class="card-text">
@@ -139,39 +125,46 @@ nav .icon-wrap span{font-size:20px;}
         </div>
       </div>
 
+      <a href="/account/wallet/" class="card" style="margin-top:8px">
+        <div class="card-icon" style="background:#f3e8fd;color:#9334e6"><span class="material-symbols-outlined">account_balance_wallet</span></div>
+        <div class="card-text"><div class="title">钱包和订阅</div><div class="desc">支付方式、交易</div></div>
+      </a>
+      <a href="/account/info/" class="card">
+        <div class="card-icon" style="background:#e6f4ea;color:#188038"><span class="material-symbols-outlined">badge</span></div>
+        <div class="card-text"><div class="title">个人信息</div><div class="desc">姓名、邮箱、电话、地址</div></div>
+      </a>
       <div class="group">
-        <a href="#" class="card">
+        <a href="/account/security/" class="card">
           <div class="card-icon" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">security</span></div>
           <div class="card-text"><div class="title">安全性与登录</div><div class="desc">近期安全性事件、密码管理工具、安全检查</div></div>
         </a>
-        <a href="#" class="card">
+        <a href="/account/password/" class="card">
           <div class="card-icon" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">password</span></div>
-          <div class="card-text"><div class="title">hg 密码</div><div class="desc">上次更改时间：2026年</div></div>
+          <div class="card-text"><div class="title">hg 密码</div><div class="desc">上次更改时间：2023年12月28日</div></div>
         </a>
-        <a href="#" class="card">
+        <a href="/account/apps/" class="card">
           <div class="card-icon" style="background:#e4f7fb;color:#007b83"><span class="material-symbols-outlined">extension</span></div>
           <div class="card-text"><div class="title">关联的应用</div><div class="desc">您关联的应用以及数据共享控制选项</div></div>
         </a>
       </div>
-
-      <a href="#" class="card">
+      <a href="/account/privacy/" class="card">
         <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">shield</span></div>
         <div class="card-text"><div class="title">数据和隐私设置</div><div class="desc">历史记录设置、应用和服务、数据删除</div></div>
       </a>
-
       <div class="group">
-        <a href="#" class="card">
+        <a href="/account/share/" class="card">
           <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>
           <div class="card-text"><div class="title">用户和分享</div><div class="desc">通讯录、已屏蔽的用户、个人资料</div></div>
         </a>
-        <a href="#" class="card">
+        <a href="/account/family/" class="card">
           <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">family_restroom</span></div>
           <div class="card-text"><div class="title">家人</div><div class="desc">成员、共享、家长控制</div></div>
         </a>
-        <a href="javascript:void(0)" class="card" id="mobileLogoutBtn" style="margin-top: 8px">
+        <!-- 手机端退出登录 -->
+        <div class="card" id="mobileLogoutBtn" style="cursor:pointer;">
           <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">logout</span></div>
           <div class="card-text"><div class="title" style="color:#d93025">退出登录</div><div class="desc">安全退出当前账号</div></div>
-        </a>
+        </div>
       </div>
     </div>
 
@@ -182,6 +175,7 @@ nav .icon-wrap span{font-size:20px;}
 </main>
 
 <script>
+    // 动态数据渲染
     const myUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
     const myUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "未知用户";
     const myEmail = `${myUsername}@hgt.l.cd`;
@@ -202,12 +196,18 @@ nav .icon-wrap span{font-size:20px;}
         document.getElementById("userEmailMobile").textContent = myEmail;
     }
 
+    // 退出登录逻辑
     function doLogout() {
         if (!confirm("确定要退出当前账号吗？")) return;
-        localStorage.clear();
+        localStorage.removeItem("hg_logged_in");
+        localStorage.removeItem("hg_user_id");
+        localStorage.removeItem("hg_username");
         sessionStorage.clear();
         window.location.href = "/";
     }
+    
+    // 绑定两边退出按钮
+    document.getElementById("desktopLogoutBtn").addEventListener("click", doLogout);
     document.getElementById("mobileLogoutBtn").addEventListener("click", doLogout);
 </script>
 </body>
