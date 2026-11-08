@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hg 密码 · hg 账号</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* 保持全站统一的 M3 主题变量 */
+:root { --bg: #fff; --fg: #1f1f1f; --muted: #444746; --hover: #f0f4f9; --line: #dadce0; --blue: #0b57d0; --active: #c2e7ff; --onactive: #001d35; --card: #f0f4f9; --error: #b3261e; --success: #006c35; }
+@media(prefers-color-scheme: dark) { :root { --bg: #1f1f1f; --fg: #e3e3e3; --muted: #c4c7c5; --hover: #383838; --line: #444; --blue: #a8c7fa; --active: #0842a0; --onactive: #d3e3fd; --card: #2c2c2c; --error: #f2b8b5; --success: #80da88; } }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Roboto,"Google Sans",Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;}
+a{color:inherit;text-decoration:none}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;height:72px;width:100%;}
+.logo{display:flex;align-items:center;font-size:24px;font-weight:400;gap:8px}
+.icons{display:flex;align-items:center;gap:16px}
+.icons button{border:0;background:none;padding:8px;border-radius:50%;cursor:pointer;color:var(--fg);display:flex;transition: background 0.2s;}
+.icons button:hover{background:var(--hover)}
+.icons .avatar-small{width:32px;height:32px;border-radius:50%;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:16px;}
+
+main{display:flex;width:100%;flex:1;}
+nav{width: 280px;flex-shrink: 0;padding: 16px 12px 24px 24px;display: flex;flex-direction: column;}
+nav ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;}
+nav a{display:flex;align-items:center;gap:16px;padding:8px 16px 8px 8px;border-radius:100px;font-size:14px;font-weight:500;color:var(--muted);transition: background .2s, color .2s;}
+nav a:hover{background:var(--hover);color:var(--fg);}
+nav a[aria-current="page"]{background:var(--active);color:var(--onactive);}
+nav .icon-wrap{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s;}
+nav .icon-wrap span{font-size:20px;}
+
+/* 右侧表单 */
+.content{flex:1;display:flex;flex-direction:column;padding:24px 40px 80px 40px;max-width: 900px;margin: 0 auto;}
+h1{font-size:28px;font-weight:500;margin:8px 0 24px;padding:0 8px}
+
+.form-card { background: var(--card); border-radius: 24px; padding: 32px; max-width: 500px; margin: 0 auto; width: 100%; }
+.form-group { margin-bottom: 24px; }
+.form-group label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+.form-group input { 
+    width: 100%; padding: 16px; font-size: 16px; color: var(--fg); background: var(--bg); 
+    border: 1px solid var(--line); border-radius: 12px; outline: none; transition: border-color 0.2s;
+}
+.form-group input:focus { border-color: var(--blue); border-width: 2px; padding: 15px; }
+
+.alert { padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 24px; display: none; }
+.alert.error { background: #fce8e6; color: var(--error); display: block; }
+.alert.success { background: #e6f4ea; color: var(--success); display: block; }
+@media(prefers-color-scheme: dark) { .alert.error { background: #4d1a1a; } .alert.success { background: #00391a; } }
+
+.btn { width: 100%; padding: 16px; border-radius: 100px; font-size: 16px; font-weight: 500; color: var(--onactive); background: var(--active); border: none; cursor: pointer; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.8; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media(max-width: 900px) {
+  main{padding:0}
+  nav{display:none}
+  header{padding:16px}
+  .content{padding:16px}
+  h1 { padding: 0 16px; }
+  .form-card { padding: 24px; border-radius: 16px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span>hg 密码</span></div>
+  <div class="icons">
+    <button aria-label="帮助" onclick="window.open('https://support.hg1.dpdns.org', '_blank')"><span class="material-symbols-outlined">help</span></button>
+    <div class="avatar-small" id="topAvatar">...</div>
+  </div>
+</header>
+
+<main>
+  <nav>
+    <ul>
+      <li><a href="/account/"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">home</span></div>首页</a></li>
+      <li><a href="/account/info/"><div class="icon-wrap" style="background:#e6f4ea;color:#188038"><span class="material-symbols-outlined">badge</span></div>个人信息</a></li>
+      <li><a href="/account/security/"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">security</span></div>安全性与登录</a></li>
+      <li><a href="/account/password/" aria-current="page"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">password</span></div>hg 密码</a></li>
+      <li><a href="/account/privacy/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">shield</span></div>数据和隐私设置</a></li>
+      <li><a href="/account/share/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>用户和分享</a></li>
+    </ul>
+  </nav>
+
+  <div class="content">
+    <h1>修改密码</h1>
+    
+    <div class="form-card">
+      <div class="alert" id="msgBox"></div>
+      
+      <div class="form-group">
+        <label>当前密码</label>
+        <input type="password" id="oldPassword" placeholder="输入当前密码">
+      </div>
+      
+      <div class="form-group">
+        <label>新密码</label>
+        <input type="password" id="newPassword" placeholder="输入新密码（至少6位）">
+      </div>
+      
+      <div class="form-group">
+        <label>确认新密码</label>
+        <input type="password" id="confirmPassword" placeholder="再次输入新密码">
+      </div>
+      
+      <button class="btn" id="submitBtn">更新密码</button>
+    </div>
+  </div>
+</main>
+
+<script>
+    const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+    const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const myUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "未知用户";
+    document.getElementById("topAvatar").textContent = myUsername.charAt(0).toUpperCase();
+
+    const msgBox = document.getElementById("msgBox");
+    const btn = document.getElementById("submitBtn");
+
+    function showMsg(text, type) {
+        msgBox.textContent = text;
+        msgBox.className = `alert ${type}`;
+    }
+
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+        const oldPwd = document.getElementById("oldPassword").value;
+        const newPwd = document.getElementById("newPassword").value;
+        const confirmPwd = document.getElementById("confirmPassword").value;
+
+        // 基础校验
+        if (!oldPwd || !newPwd || !confirmPwd) {
+            return showMsg("请填写所有密码框", "error");
+        }
+        if (newPwd.length < 6) {
+            return showMsg("新密码长度不能少于 6 位", "error");
+        }
+        if (newPwd !== confirmPwd) {
+            return showMsg("两次输入的新密码不一致", "error");
+        }
+
+        btn.disabled = true;
+        btn.textContent = "验证中...";
+        msgBox.className = "alert"; // 清空提示
+
+        try {
+            // 1. 验证当前密码（通过重新登录来验证）
+            const email = `${myUsername}@hgt.l.cd`;
+            const { data: authData, error: authError } = await db.auth.signInWithPassword({
+                email: email,
+                password: oldPwd
+            });
+
+            if (authError) {
+                throw new Error("当前密码错误，请重试");
+            }
+
+            // 2. 修改密码
+            btn.textContent = "更新中...";
+            const { data: updateData, error: updateError } = await db.auth.updateUser({
+                password: newPwd
+            });
+
+            if (updateError) {
+                throw new Error("更新失败：" + updateError.message);
+            }
+
+            // 3. 成功
+            showMsg("密码修改成功！请使用新密码重新登录。", "success");
+            
+            // 清空表单
+            document.getElementById("oldPassword").value = "";
+            document.getElementById("newPassword").value = "";
+            document.getElementById("confirmPassword").value = "";
+
+            // 延迟 2 秒后退出登录，跳回首页
+            setTimeout(() => {
+                localStorage.clear();
+                sessionStorage.clear();
+                db.auth.signOut();
+                window.location.href = "/account/login/";
+            }, 2000);
+
+        } catch (error) {
+            showMsg(error.message, "error");
+            btn.disabled = false;
+            btn.textContent = "更新密码";
+        }
+    });
+</script>
+</body>
+</html>
