@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" dir="ltr">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -7,129 +7,216 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* 完全保留原版的高级 CSS 变量 */
-:root{color-scheme:light dark;--bg:#fff;--surface:#f0f4f9;--card:#fff;--on:#1f1f1f;--variant:#444746;--outline:#747775;--primary:#0b57d0;--primary-c:#d3e3fd;--secondary:#00639b;--secondary-c:#c2e7ff;--green-c:#beefbb;--green:#006c35;--warn-c:#fffade;--warn:#fcbd00;--warn-on:#2f1400;--neutral:#e9eef6;--neutral-on:#1f1f1f}
-@media(prefers-color-scheme:dark){:root{--bg:#131314;--surface:#1e1f20;--card:#282a2c;--on:#e3e3e3;--variant:#c4c7c5;--outline:#8e918f;--primary:#a8c7fa;--primary-c:#0842a0;--secondary:#7fcfff;--secondary-c:#004a77;--green-c:#00522c;--green:#80da88;--warn-c:#4d2600;--warn:#fcbd00;--warn-on:#fff2b4;--neutral:#282a2c;--neutral-on:#e3e3e3}}
+/* ================= 严格对齐主账号页的变量 ================= */
+:root {
+    --bg: #fff;
+    --fg: #1f1f1f;
+    --muted: #444746; 
+    --hover: #f0f4f9;
+    --line: #dadce0;
+    --blue: #0b57d0;
+    --active: #c2e7ff;
+    --onactive: #001d35;
+    --card: #f0f4f9;
+    /* 安全页特有状态色 */
+    --green-c: #beefbb;
+    --green: #006c35;
+    --warn-c: #fffade;
+    --warn-on: #2f1400;
+    --secondary-c: #c2e7ff;
+}
+@media(prefers-color-scheme: dark) {
+    :root {
+        --bg: #1f1f1f;
+        --fg: #e3e3e3;
+        --muted: #c4c7c5;
+        --hover: #383838;
+        --line: #444;
+        --blue: #a8c7fa;
+        --active: #0842a0;
+        --onactive: #d3e3fd;
+        --card: #2c2c2c;
+        /* 安全页特有状态色 */
+        --green-c: #00522c;
+        --green: #80da88;
+        --warn-c: #4d2600;
+        --warn-on: #fff2b4;
+        --secondary-c: #004a77;
+    }
+}
+
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:Roboto,"Google Sans",Arial,sans-serif;background:var(--bg);color:var(--on);min-height:100vh;display:flex;flex-direction:column}
-a{text-decoration:none;color:inherit}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Roboto,"Google Sans",Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh}
+a{color:inherit;text-decoration:none}
 .ms{font-family:"Material Symbols Outlined";font-size:24px;line-height:1;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
-header{display:flex;align-items:center;gap:8px;padding:8px 12px;min-height:56px;border-bottom:1px solid var(--outline)}
-header .logo{font-size:20px;font-weight:500;margin-left:4px}
-header .spacer{flex:1}
-.icon-btn{background:none;border:none;cursor:pointer;color:var(--variant);padding:8px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
-.icon-btn:hover{background:var(--neutral)}
-.avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-c);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:16px;}
-.layout{display:flex;flex:1}
-.sidebar{width:280px;padding:16px 8px;flex-shrink:0;display:none}
-@media(min-width:900px){.sidebar{display:block}}
-.sidebar a{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:9999px;color:var(--on);font-size:.875rem;font-weight:500;margin:4px 0}
-.sidebar a .ms{color:var(--variant)}
-.sidebar a.active{background:var(--card);color:var(--on)}
-.sidebar a.active .ms{color:var(--secondary)}
-.sidebar a:hover:not(.active){background:var(--neutral)}
-main{flex:1;max-width:720px;margin:0 auto;padding:16px;width:100%}
-h1{font-size:1.75rem;font-weight:500;margin:8px 0 16px;padding:0 8px}
-h2{font-size:1rem;font-weight:500;margin:0;color:var(--on)}
-.sub{font-size:.875rem;color:var(--variant);margin:4px 0 0}
+
+/* ================= 顶栏 ================= */
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;height:72px;width:100%;max-width:1100px;margin:0 auto}
+.header-left{display:flex;align-items:center;gap:8px}
+.header-left .logo{font-size:24px;font-weight:400;margin-left:4px}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--fg);padding:8px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:background .2s}
+.icon-btn:hover{background:var(--hover)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:16px;}
+
+main{display:flex;width:100%;max-width:1100px;margin:0 auto;flex:1;padding:0 24px;gap:40px}
+
+/* ================= 侧边栏 ================= */
+nav{width:260px;flex-shrink:0;padding-top:16px;display:none}
+@media(min-width:900px){nav{display:block}}
+nav ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;}
+nav a{display:flex;align-items:center;gap:16px;padding:8px 16px 8px 8px;border-radius:100px;font-size:14px;font-weight:500;color:var(--muted);transition:background .2s, color .2s}
+nav a:hover{background:var(--hover);color:var(--fg)}
+nav a[aria-current="page"]{background:var(--active);color:var(--onactive)}
+nav .icon-wrap{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s}
+nav .icon-wrap span{font-size:20px;}
+nav a:hover .icon-wrap{ opacity: 0.9; }
+
+/* ================= 右侧内容 ================= */
+.content{flex:1;max-width:720px;padding:24px 0 80px;width:100%}
+h1{font-size:28px;font-weight:500;margin:8px 0 24px;padding:0 8px}
+h2{font-size:16px;font-weight:500;margin:0;color:var(--fg)}
+.sub{font-size:14px;color:var(--muted);margin:4px 0 0}
+
 .section{margin:24px 0;display:flex;flex-direction:column;gap:12px}
 .section>.head{padding:0 8px}
-.card{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:12px 16px;min-height:56px;color:var(--on)}
-.card:first-of-type{border-top-left-radius:20px;border-top-right-radius:20px}
-.card:last-of-type{border-bottom-left-radius:20px;border-bottom-right-radius:20px}
-.card:hover{background:var(--neutral)}
-.card .ico{width:40px;display:flex;justify-content:center;color:var(--variant);flex-shrink:0}
-.card .body{flex:1;min-width:0}
-.card .title{font-size:1rem;font-weight:500}
-.card .desc{font-size:.875rem;color:var(--variant);margin-top:2px}
-.card .meta{margin-left:auto;display:flex;align-items:center}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:52px;background:var(--neutral);color:var(--neutral-on);font-size:.875rem;font-weight:500;margin-top:6px}
+
+/* 卡片样式 */
+.card{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:16px;padding:16px;min-height:64px;color:var(--fg);transition:background 0.2s}
+.card:hover{background:var(--hover)}
+.card .ico{width:40px;display:flex;justify-content:center;color:var(--muted);flex-shrink:0}
+.card .body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.card .title{font-size:15px;font-weight:500}
+.card .desc{font-size:13px;color:var(--muted);margin-top:4px; line-height: 1.4;}
+
+/* 状态药丸 */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:8px;background:var(--hover);color:var(--muted);font-size:13px;font-weight:500;margin-top:8px;align-self:flex-start;}
 .chip.ok{background:var(--green-c);color:var(--green)}
 .chip.warn{background:var(--warn-c);color:var(--warn-on)}
-.chip.info{background:var(--secondary-c);color:var(--on)}
-.chip .ms{font-size:18px}
-.badge{background:var(--neutral);color:var(--neutral-on);border-radius:12px;padding:6px 10px;font-size:.875rem;font-weight:500}
-.tools{display:flex;flex-wrap:wrap;gap:8px;padding:0 8px}
-.tool{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--outline);border-radius:8px;padding:6px 12px;font-size:.875rem;font-weight:500;background:none;color:var(--on);cursor:pointer}
-.tool:hover{background:var(--neutral)}
-.tool .ms{font-size:18px;color:var(--primary)}
-footer{padding:16px;text-align:center;font-size:.875rem;color:var(--variant);display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
-footer a{padding:8px 10px;color:var(--variant)}
-footer a:hover{text-decoration:underline}
+.chip.info{background:var(--secondary-c);color:var(--onactive)}
+.chip .ms{font-size:16px}
+
+.badge{background:var(--hover);color:var(--muted);border-radius:12px;padding:6px 10px;font-size:13px;font-weight:500}
+
+/* 小按钮 */
+.tools{display:flex;flex-wrap:wrap;gap:8px;padding:0 8px;margin-top:8px}
+.tool{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px 16px;font-size:14px;font-weight:500;background:none;color:var(--fg);cursor:pointer;transition:background 0.2s;}
+.tool:hover{background:var(--hover)}
+.tool .ms{font-size:18px;color:var(--blue)}
+
+/* 底部 */
+footer{padding:24px;text-align:center;font-size:13px;color:var(--muted);display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+footer a{color:var(--muted)}
+footer a:hover{text-decoration:underline;color:var(--fg)}
 </style>
 </head>
 <body>
+
 <header>
-<span class="ms" style="cursor:pointer" onclick="history.back()">arrow_back</span>
-<a href="/account/" class="logo">hg 账号</a>
-<span class="spacer"></span>
-<button class="icon-btn" aria-label="帮助" onclick="window.open('https://support.hg1.dpdns.org', '_blank')"><span class="ms">help</span></button>
-<div class="avatar" id="topAvatar">...</div>
+  <div class="header-left">
+    <span class="ms" style="cursor:pointer" onclick="history.back()">arrow_back</span>
+    <a href="/account/" class="logo">hg 账号</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <button class="icon-btn" aria-label="帮助" onclick="window.open('https://support.hg1.dpdns.org', '_blank')"><span class="ms">help</span></button>
+    <div class="avatar" id="topAvatar">...</div>
+  </div>
 </header>
 
-<div class="layout">
-<nav class="sidebar">
-<a href="/account/"><span class="ms">home</span>首页</a>
-<a href="/account/info/"><span class="ms">person</span>个人信息</a>
-<a href="/account/security/" class="active"><span class="ms">security</span>安全性与登录</a>
-<a href="/account/privacy/"><span class="ms">shield</span>数据和隐私设置</a>
-<a href="/account/share/"><span class="ms">group</span>用户和分享</a>
-</nav>
-
 <main>
-<h1>安全性与登录</h1>
+  <!-- 补全左侧导航栏 -->
+  <nav>
+    <ul>
+      <li><a href="/account/"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="ms">home</span></div>首页</a></li>
+      <li><a href="/account/info/"><div class="icon-wrap" style="background:#e6f4ea;color:#188038"><span class="ms">badge</span></div>个人信息</a></li>
+      <li><a href="/account/security/" aria-current="page"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="ms">security</span></div>安全性与登录</a></li>
+      <li><a href="/account/privacy/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="ms">shield</span></div>数据和隐私设置</a></li>
+      <li><a href="/account/share/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="ms">group</span></div>用户和分享</a></li>
+    </ul>
+  </nav>
 
-<div class="section">
-<a href="#" class="card">
-<span class="ico"><span class="ms" style="color:var(--green)">security</span></span>
-<span class="body"><span class="title">您有安全提示</span><span class="desc">系统根据安全检查结果给出了安全提示</span></span>
-</a>
-</div>
+  <div class="content">
+    <h1>安全性与登录</h1>
 
-<div class="section">
-<div class="head"><h2>您的 hg 账号登录选项</h2><p class="sub">请务必及时更新这些信息，确保您始终都能访问自己的 hg 账号</p></div>
-<a href="/account/security/two-step-verification/" class="card">
-  <span class="ico"><span class="ms">lock</span></span>
-  <span class="body">
-    <span class="title">两步验证</span>
-    <span id="mfaStatusChip" class="chip"><span class="ms">sync</span>检测中...</span>
-  </span>
-</a>
-<a href="/account/password/" class="card"><span class="ico"><span class="ms">password</span></span><span class="body"><span class="title">密码</span><span class="desc">上次更改时间：近期</span></span></a>
-<a href="/account/security/authenticator/" class="card" id="authenticatorCard" style="display: none;"><span class="ico"><span class="ms">qr_code_scanner</span></span><span class="body"><span class="title">身份验证器</span><span class="desc">已绑定 TOTP 验证</span></span></a>
-<a href="/account/security/recovery-email/" class="card"><span class="ico"><span class="ms">mail</span></span><span class="body"><span class="title">虚拟辅助邮箱</span><span class="desc" id="virtualEmail">加载中...</span></span></a>
-<div class="tools">
-<a href="/account/security/backup-codes/" class="tool"><span class="ms">description</span>备用验证码</a>
-</div>
-</div>
+    <div class="section">
+      <a href="#" class="card">
+        <span class="ico"><span class="ms" style="color:var(--green)">security</span></span>
+        <span class="body"><span class="title">您有安全提示</span><span class="desc">系统根据安全检查结果给出了安全提示</span></span>
+      </a>
+    </div>
 
-<div class="section">
-<div class="head"><h2>您的设备</h2><p class="sub">您已登录账号的设备</p></div>
-<a href="/account/security/device-activity/" class="card"><span class="ico"><span class="ms">laptop_windows</span></span><span class="body"><span class="title">Windows 计算机</span><span class="desc">Windows 系统</span></span></a>
-<a href="/account/security/device-activity/" class="card"><span class="ico"><span class="ms">phone_android</span></span><span class="body"><span class="title">移动设备</span><span class="desc">Android / iOS</span></span></a>
-<a href="/account/security/device-activity/" class="card"><span class="body"><span class="title">管理所有设备</span></span><span class="meta"><span class="badge">1</span></span></a>
-</div>
+    <div class="section">
+      <div class="head"><h2>您的 hg 账号登录选项</h2><p class="sub">请务必及时更新这些信息，确保您始终都能访问自己的 hg 账号</p></div>
+      
+      <a href="/account/security/two-step-verification/" class="card">
+        <span class="ico"><span class="ms">lock</span></span>
+        <span class="body">
+          <span class="title">两步验证</span>
+          <span id="mfaStatusChip" class="chip"><span class="ms">sync</span>检测中...</span>
+        </span>
+      </a>
+      
+      <a href="/account/password/" class="card">
+        <span class="ico"><span class="ms">password</span></span>
+        <span class="body"><span class="title">密码</span><span class="desc">上次更改时间：近期</span></span>
+      </a>
+      
+      <a href="/account/security/authenticator/" class="card" id="authenticatorCard" style="display: none;">
+        <span class="ico"><span class="ms">qr_code_scanner</span></span>
+        <span class="body"><span class="title">身份验证器</span><span class="desc">已绑定 TOTP 验证</span></span>
+      </a>
+      
+      <a href="/account/security/recovery-email/" class="card">
+        <span class="ico"><span class="ms">mail</span></span>
+        <span class="body"><span class="title">虚拟辅助邮箱</span><span class="desc" id="virtualEmail">加载中...</span></span>
+      </a>
+      
+      <div class="tools">
+        <a href="/account/security/backup-codes/" class="tool"><span class="ms">description</span>备用验证码</a>
+      </div>
+    </div>
 
-<div class="section">
-<a href="/account/security/safe-browsing/" class="card"><span class="ico"><span class="ms">vpn_lock</span></span><span class="body"><span class="title">为您的账号开启增强型安全浏览</span><span class="desc">享受更符合个人需求的安全保障，防范危险的网站、下载内容和扩展程序。</span><span class="chip warn"><span class="ms">do_not_disturb_on</span>已关闭</span></span></a>
-</div>
+    <div class="section">
+      <div class="head"><h2>您的设备</h2><p class="sub">您已登录账号的设备</p></div>
+      <a href="/account/security/device-activity/" class="card">
+        <span class="ico"><span class="ms">laptop_windows</span></span>
+        <span class="body"><span class="title">Windows 计算机</span><span class="desc">Windows 系统</span></span>
+      </a>
+      <a href="/account/security/device-activity/" class="card">
+        <span class="ico"><span class="ms">phone_android</span></span>
+        <span class="body"><span class="title">移动设备</span><span class="desc">Android / iOS</span></span>
+      </a>
+      <a href="/account/security/device-activity/" class="card">
+        <span class="body"><span class="title">管理所有设备</span></span>
+        <span class="meta"><span class="badge">1</span></span>
+      </a>
+    </div>
 
-<div class="tools">
-<button class="tool"><span class="ms">search</span>搜索 hg 账号</button>
-<button class="tool" onclick="window.open('https://support.hg1.dpdns.org', '_blank')"><span class="ms">help</span>获取帮助</button>
-</div>
+    <div class="section">
+      <a href="/account/security/safe-browsing/" class="card">
+        <span class="ico"><span class="ms">vpn_lock</span></span>
+        <span class="body">
+          <span class="title">为您的账号开启增强型安全浏览</span>
+          <span class="desc">享受更符合个人需求的安全保障，防范危险的网站、下载内容和扩展程序。</span>
+          <span class="chip warn"><span class="ms">do_not_disturb_on</span>已关闭</span>
+        </span>
+      </a>
+    </div>
+
+    <div class="tools" style="margin-top:24px">
+      <button class="tool"><span class="ms">search</span>搜索 hg 账号</button>
+      <button class="tool" onclick="window.open('https://support.hg1.dpdns.org', '_blank')"><span class="ms">help</span>获取帮助</button>
+    </div>
+  </div>
 </main>
-</div>
 
 <footer>
-<a href="https://support.hg1.dpdns.org/privacy/">隐私权</a>
-<a href="https://support.hg1.dpdns.org/terms/">条款</a>
-<a href="https://support.hg1.dpdns.org">帮助</a>
-<a href="#">关于</a>
+  <a href="https://support.hg1.dpdns.org/privacy/">隐私权</a>
+  <a href="https://support.hg1.dpdns.org/terms/">条款</a>
+  <a href="https://support.hg1.dpdns.org">帮助</a>
+  <a href="#">关于</a>
 </footer>
 
 <script>
-    // 动态渲染顶部头像和虚拟邮箱
     const myUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "未知用户";
     const myEmail = `${myUsername}@hgt.l.cd`;
     const myUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
@@ -138,7 +225,6 @@ footer a:hover{text-decoration:underline}
     document.getElementById("topAvatar").textContent = initial;
     document.getElementById("virtualEmail").textContent = myEmail;
 
-    // 动态查询 2FA 状态（走 Wasmer 代理）
     const SUPABASE_URL = "https://hgai-61677.wasmer.app/proxy";
     const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
 
@@ -153,15 +239,13 @@ footer a:hover{text-decoration:underline}
             const authCard = document.getElementById("authenticatorCard");
 
             if (data && data.length > 0 && data[0].totp_enabled) {
-                // 已开启
                 chip.className = "chip ok";
                 chip.innerHTML = '<span class="ms">check_circle</span>已启用';
-                authCard.style.display = "flex"; // 显示身份验证器卡片
+                authCard.style.display = "flex";
             } else {
-                // 未开启
                 chip.className = "chip warn";
                 chip.innerHTML = '<span class="ms">error</span>未开启（点击设置）';
-                authCard.style.display = "none"; // 隐藏身份验证器卡片
+                authCard.style.display = "none";
             }
         } catch (e) {
             console.error("获取 2FA 状态失败", e);
