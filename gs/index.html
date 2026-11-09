@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>geo</title>
+    <title>游戏下载中心 · hg</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -73,21 +73,19 @@
     <script>
         // ================= 配置区 =================
         
-        // 1. 你的文件列表（排在前面的先显示）
+        // 1. 你的文件列表
         const gameFiles = [
-            // ⚠️ 把这里换成你真实的 EXE 文件名（不要带 .exe 后缀），它就会变成蓝色按钮置顶
-            { name: 'player', title: 'flash应用（必装）', size: '8.91 MB', type: 'exe' },
+            // 将原本的“必装”改成了“备用”，降低攻击性
+            { name: 'player', title: 'Flash 本地播放器（备用）', size: '8.91 MB', type: 'exe', playUrl: null },
             
-            // SWF 游戏列表
-            { name: 'zg', title: '中国行政区狙击游戏', size: '156 KB', type: 'swf' },
-            { name: 'pt', title: '中国地形区拼图', size: '248 KB', type: 'swf' }
+            // SWF 游戏列表，加上游玩路由
+            { name: 'zg', title: '中国行政区狙击游戏', size: '156 KB', type: 'swf', playUrl: '/zg/' },
+            { name: 'pt', title: '中国地形区拼图', size: '248 KB', type: 'swf', playUrl: '/zg/' } 
         ]; 
 
-        // 2. 下载站的基础路径（指向你搞定的 dl 域名）
+        // 2. 下载站的基础路径
         const downloadBasePath = 'https://dl.hg1.dpdns.org'; 
         
-        // 3. “前往游玩”跳转的地址
-        const playUrl = 'https://huawei.com';
         // ==========================================
 
         const listContainer = document.getElementById('gameList');
@@ -115,9 +113,9 @@
 
                 if (game.type === 'exe') {
                     downloadBtnClass = 'btn-primary'; 
-                } else {
+                } else if (game.playUrl) {
                     playButton = `
-                        <a href="${playUrl}" target="_blank" class="btn btn-primary">
+                        <a href="${game.playUrl}" target="_blank" class="btn btn-primary">
                             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> 前往游玩
                         </a>`;
                 }
