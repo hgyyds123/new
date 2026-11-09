@@ -59,10 +59,9 @@
         }
         .hash-text:hover { background: #e8eaed; color: var(--text-primary); }
 
+        /* 仅保留下载按钮样式 */
         .btn-group { display: flex; gap: var(--space-1); }
         .btn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 var(--space-2); border-radius: var(--radius-pill); font-size: 14px; font-weight: 500; text-decoration: none; cursor: pointer; transition: background-color 0.2s, box-shadow 0.2s; border: none; outline: none; user-select: none; white-space: nowrap; }
-        .btn-secondary { background: transparent; color: var(--accent-blue); border: 1px solid var(--border-color); }
-        .btn-secondary:hover { background: rgba(66, 133, 244, 0.04); }
         .btn-primary { background: var(--accent-blue); color: #ffffff; }
         .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 1px 3px 0 rgba(66,133,244,0.3), 0 4px 8px 3px rgba(66,133,244,0.15); }
         .btn:active { transform: scale(0.96); }
@@ -95,19 +94,18 @@
     <script>
         // ================= 配置区 =================
         
-        // 1. 你的文件列表
+        // 1. 你的文件列表（去掉了 playUrl 属性）
         const gameFiles = [
             { 
                 name: 'player', 
                 title: 'Flash 本地播放器（备用）', 
                 size: '4.03 MB', 
                 type: 'zip', 
-                playUrl: null,
                 vtLink: 'https://www.virustotal.com/gui/file/5f156e1937f9cde91dccfdbabe5ea57a80dbdd5bf8d2023641e65102e940cd01',
-                hash: '5f156e1937f9cde91dccfdbabe5ea57a80dbdd5bf8d2023641e65102e940cd01' // 新增哈希值
+                hash: '5f156e1937f9cde91dccfdbabe5ea57a80dbdd5bf8d2023641e65102e940cd01'
             },
-            { name: 'zg', title: '中国行政区狙击游戏', size: '156 KB', type: 'swf', playUrl: '/zg/', vtLink: null, hash: null },
-            { name: 'pt', title: '中国地形区拼图', size: '248 KB', type: 'swf', playUrl: '/zg/', vtLink: null, hash: null } 
+            { name: 'zg', title: '中国行政区狙击游戏', size: '156 KB', type: 'swf', vtLink: null, hash: null },
+            { name: 'pt', title: '中国地形区拼图', size: '248 KB', type: 'swf', vtLink: null, hash: null } 
         ]; 
 
         // 2. 下载站的基础路径
@@ -134,23 +132,8 @@
                 // 自动拼接后缀
                 const fileUrl = `${downloadBasePath}/${game.name}.${game.type}`;
                 
-                // 按钮判断
-                let downloadBtnClass = 'btn-secondary'; 
-                let playButton = '';
-
-                if (game.type === 'exe' || game.type === 'zip') {
-                    downloadBtnClass = 'btn-primary'; 
-                } else if (game.playUrl) {
-                    playButton = `
-                        <a href="${game.playUrl}" target="_blank" class="btn btn-primary">
-                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> 前往游玩
-                        </a>`;
-                }
-
-                // 生成安全认证徽章和哈希值
+                // 生成安全认证徽章
                 let securityBadge = '';
-                let hashElement = '';
-
                 if (game.vtLink) {
                     securityBadge = `
                         <a href="${game.vtLink}" target="_blank" class="security-badge" title="查看 VirusTotal 安全扫描报告">
@@ -160,6 +143,8 @@
                     `;
                 }
 
+                // 生成哈希值
+                let hashElement = '';
                 if (game.hash) {
                     hashElement = `
                         <div class="hash-text" onclick="navigator.clipboard.writeText('${game.hash}'); alert('SHA-256 哈希值已复制！')" title="点击复制哈希值">
@@ -168,6 +153,7 @@
                     `;
                 }
 
+                // 生成 HTML (删掉了所有的"前往游玩"逻辑)
                 item.innerHTML = `
                     <div class="game-info">
                         <div class="game-icon">
@@ -181,11 +167,10 @@
                         </div>
                     </div>
                     <div class="btn-group">
-                        <a href="${fileUrl}" download class="btn ${downloadBtnClass}">
+                        <a href="${fileUrl}" download class="btn btn-primary">
                             <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> 
                             下载 ${game.type.toUpperCase()}
                         </a>
-                        ${playButton}
                     </div>
                 `;
                 listContainer.appendChild(item);
