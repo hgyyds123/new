@@ -132,6 +132,7 @@
     <script>
         // ================= 配置区 =================
         
+        // 你的文件列表（保留播放器和 SWF）
         const gameFiles = [
             { 
                 name: 'player', 
@@ -140,7 +141,9 @@
                 type: 'zip', 
                 vtLink: 'https://www.virustotal.com/gui/file/5f156e1937f9cde91dccfdbabe5ea57a80dbdd5bf8d2023641e65102e940cd01',
                 hash: '5f156e1937f9cde91dccfdbabe5ea57a80dbdd5bf8d2023641e65102e940cd01'
-            }
+            },
+            { name: 'zg', title: '中国行政区狙击游戏', size: '156 KB', type: 'swf', vtLink: null, hash: null },
+            { name: 'pt', title: '中国地形区拼图', size: '248 KB', type: 'swf', vtLink: null, hash: null } 
         ]; 
 
         const downloadBasePath = 'https://dl.hg1.dpdns.org'; 
@@ -163,8 +166,10 @@
                 const item = document.createElement('div');
                 item.className = 'game-item';
                 
+                // 自动拼接后缀
                 const fileUrl = `${downloadBasePath}/${game.name}.${game.type}`;
                 
+                // 生成安全认证徽章
                 let securityBadge = '';
                 if (game.vtLink) {
                     securityBadge = `
@@ -175,6 +180,7 @@
                     `;
                 }
 
+                // 生成哈希值
                 let hashElement = '';
                 if (game.hash) {
                     hashElement = `
@@ -184,6 +190,7 @@
                     `;
                 }
 
+                // 生成 HTML
                 item.innerHTML = `
                     <div class="game-info">
                         <div class="game-icon">
