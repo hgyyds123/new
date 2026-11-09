@@ -37,10 +37,27 @@
         .game-name { font-size: 16px; font-weight: 500; color: var(--text-primary); word-break: break-all; }
         .game-meta { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
-        /* 新增：安全认证徽章样式 */
-        .security-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #1e8e3e; background: #e6f4ea; padding: 2px 8px; border-radius: 4px; margin-top: 8px; text-decoration: none; transition: background 0.2s; }
+        /* 安全徽章样式 */
+        .security-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #1e8e3e; background: #e6f4ea; padding: 2px 8px; border-radius: 4px; margin-top: 6px; text-decoration: none; transition: background 0.2s; }
         .security-badge:hover { background: #ceead6; }
         .security-badge svg { width: 14px; height: 14px; fill: currentColor; }
+
+        /* 哈希值样式 */
+        .hash-text {
+            display: block;
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: var(--hover-bg);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 6px;
+            word-break: break-all;
+            cursor: pointer;
+            border: 1px dashed var(--border-color);
+            transition: all 0.2s;
+        }
+        .hash-text:hover { background: #e8eaed; color: var(--text-primary); }
 
         .btn-group { display: flex; gap: var(--space-1); }
         .btn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 var(--space-2); border-radius: var(--radius-pill); font-size: 14px; font-weight: 500; text-decoration: none; cursor: pointer; transition: background-color 0.2s, box-shadow 0.2s; border: none; outline: none; user-select: none; white-space: nowrap; }
@@ -80,19 +97,17 @@
         
         // 1. 你的文件列表
         const gameFiles = [
-            // 加上了 vtLink 属性，用于存放安全扫描链接
             { 
                 name: 'player', 
                 title: 'Flash 本地播放器（备用）', 
                 size: '4.03 MB', 
                 type: 'zip', 
                 playUrl: null,
-                vtLink: 'https://www.virustotal.com/gui/file/5f156e1937f9cde91dccfdbabe5ea57a80dbdd5bf8d2023641e65102e940cd01' 
+                vtLink: 'https://www.virustotal.com/gui/file/5f156e1937f9cde91dccfdbabe5ea57a80dbdd5bf8d2023641e65102e940cd01',
+                hash: '5f156e1937f9cde91dccfdbabe5ea57a80dbdd5bf8d2023641e65102e940cd01' // 新增哈希值
             },
-            
-            // SWF 游戏列表
-            { name: 'zg', title: '中国行政区狙击游戏', size: '156 KB', type: 'swf', playUrl: '/zg/', vtLink: null },
-            { name: 'pt', title: '中国地形区拼图', size: '248 KB', type: 'swf', playUrl: '/zg/', vtLink: null } 
+            { name: 'zg', title: '中国行政区狙击游戏', size: '156 KB', type: 'swf', playUrl: '/zg/', vtLink: null, hash: null },
+            { name: 'pt', title: '中国地形区拼图', size: '248 KB', type: 'swf', playUrl: '/zg/', vtLink: null, hash: null } 
         ]; 
 
         // 2. 下载站的基础路径
@@ -132,14 +147,24 @@
                         </a>`;
                 }
 
-                // 生成安全认证徽章
+                // 生成安全认证徽章和哈希值
                 let securityBadge = '';
+                let hashElement = '';
+
                 if (game.vtLink) {
                     securityBadge = `
                         <a href="${game.vtLink}" target="_blank" class="security-badge" title="查看 VirusTotal 安全扫描报告">
                             <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
                             已通过 VirusTotal 安全认证
                         </a>
+                    `;
+                }
+
+                if (game.hash) {
+                    hashElement = `
+                        <div class="hash-text" onclick="navigator.clipboard.writeText('${game.hash}'); alert('SHA-256 哈希值已复制！')" title="点击复制哈希值">
+                            SHA-256: ${game.hash}
+                        </div>
                     `;
                 }
 
@@ -152,6 +177,7 @@
                             <div class="game-name">${game.title}</div>
                             <div class="game-meta">${game.size} · ${game.type.toUpperCase()} 格式</div>
                             ${securityBadge}
+                            ${hashElement}
                         </div>
                     </div>
                     <div class="btn-group">
