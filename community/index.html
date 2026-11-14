@@ -1,18 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<style>
-  @font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; src: url('/material-symbols.woff2') format('woff2'); }
-  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; display: inline-block; }
-</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>社区 · hg</title>
     
-    <style>@font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; src: url('/assets/fonts/material-symbols.woff2') format('woff2'); }</style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -86,13 +82,22 @@
         .post-title { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
         .post-preview { font-size: 14px; color: var(--text-sub); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
+        /* ================= 投票相关样式 ================= */
+        .vote-options { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .vote-btn { background: var(--surface-variant); border: 1px solid var(--outline-variant); padding: 12px 16px; border-radius: 8px; font-size: 15px; text-align: left; color: var(--text-main); transition: background 0.2s; position: relative; overflow: hidden; display: flex; justify-content: space-between; }
+        .vote-btn:hover { background: var(--primary-container); color: var(--on-primary-container); border-color: var(--primary-container); }
+        .vote-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--primary); opacity: 0.2; z-index: 0; transition: width 0.5s; }
+        .vote-text { position: relative; z-index: 1; }
+        .vote-count { position: relative; z-index: 1; font-weight: 600; }
+
+        /* 弹窗 */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 24px; z-index: 2000; }
         .modal-overlay.active { display: flex; }
         .modal-card { background-color: var(--surface); border-radius: 24px; padding: 32px; width: 100%; max-width: 500px; }
         .modal-card h2 { font-size: 24px; font-weight: 400; margin-bottom: 24px; }
         .modal-input, .modal-textarea { width: 100%; background: transparent; border: 1px solid var(--outline-variant); border-radius: 8px; padding: 12px 16px; font-size: 16px; color: var(--text-main); margin-bottom: 16px; outline: none; }
         .modal-input:focus, .modal-textarea:focus { border: 2px solid var(--primary); padding: 11px 15px; }
-        .modal-textarea { resize: vertical; min-height: 120px; }
+        .modal-textarea { resize: vertical; min-height: 80px; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
 
         .m3-ripple { position: relative; overflow: hidden; }
@@ -159,14 +164,18 @@
                         </div>
                         <h2 id="listTitle">#闲聊</h2>
                     </div>
-                    <button class="btn-filled m3-ripple" id="newPostBtn">发新帖</button>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-text" style="border: 1px solid var(--outline-variant);" id="newVoteBtn">发起投票</button>
+                        <button class="btn-filled m3-ripple" id="newPostBtn">发新帖</button>
+                    </div>
                 </div>
                 <div class="post-list" id="postList"></div>
             </div>
         </main>
     </div>
 
-    <div class="modal-overlay" id="modalOverlay">
+    <!-- 发帖弹窗 -->
+    <div class="modal-overlay" id="postModal">
         <div class="modal-card">
             <h2>发布新帖</h2>
             <input type="text" class="modal-input" id="postTitle" placeholder="标题" maxlength="50">
@@ -174,6 +183,21 @@
             <div class="modal-actions">
                 <button class="btn-text" id="cancelPost">取消</button>
                 <button class="btn-filled" id="submitPost">发布</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 发起投票弹窗 -->
+    <div class="modal-overlay" id="voteModal">
+        <div class="modal-card">
+            <h2>发起投票</h2>
+            <input type="text" class="modal-input" id="voteTitle" placeholder="投票主题" maxlength="50">
+            <input type="text" class="modal-input" id="voteOption1" placeholder="选项 1" maxlength="30">
+            <input type="text" class="modal-input" id="voteOption2" placeholder="选项 2" maxlength="30">
+            <input type="text" class="modal-input" id="voteOption3" placeholder="选项 3（选填）" maxlength="30">
+            <div class="modal-actions">
+                <button class="btn-text" id="cancelVote">取消</button>
+                <button class="btn-filled" id="submitVote">发布投票</button>
             </div>
         </div>
     </div>
@@ -193,17 +217,18 @@
             setTimeout(() => circle.remove(), 300);
         });
 
-        // ================= 数据逻辑 =================
-        // 这里的 URL 改成了你的 Wasmer 代理
         const SUPABASE_URL = "https://hgai-61677.wasmer.app/proxy"; 
         const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
 
         let currentCategory = "闲聊";
+        let currentUser = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const cat = urlParams.get('cat');
             if (cat) showList(cat);
+            const userId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
+            if(userId) currentUser = { id: userId };
         });
 
         function showHub() {
@@ -218,107 +243,210 @@
             document.getElementById("viewList").style.display = "block";
             document.getElementById("listTitle").innerHTML = `<span style="color:var(--primary)">#</span>${category}`;
             window.history.pushState({}, '', `?cat=${encodeURIComponent(category)}`);
-            loadPosts();
+            loadContent();
         }
 
-        // 拉取帖子用轻量 Fetch
-        async function loadPosts() {
+        // 加载帖子与投票
+        async function loadContent() {
             const list = document.getElementById("postList");
             list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">加载中...</div>';
 
             try {
-                // 走代理拉取
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/posts?category=eq.${encodeURIComponent(currentCategory)}&order=created_at.desc`, {
-                    headers: {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": `Bearer ${SUPABASE_KEY}`
-                    }
-                });
-                const data = await res.json();
+                const [postsRes, votesRes] = await Promise.all([
+                    fetch(`${SUPABASE_URL}/rest/v1/posts?category=eq.${encodeURIComponent(currentCategory)}&order=created_at.desc`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    }),
+                    fetch(`${SUPABASE_URL}/rest/v1/votes?order=created_at.desc`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    })
+                ]);
+
+                const posts = await postsRes.json();
+                const votes = await votesRes.json();
+
+                let mixed = [];
+                if (Array.isArray(posts)) posts.forEach(p => mixed.push({ type: 'post', data: p }));
+                if (Array.isArray(votes)) votes.forEach(v => mixed.push({ type: 'vote', data: v }));
+                mixed.sort((a, b) => new Date(b.data.created_at) - new Date(a.data.created_at));
 
                 list.innerHTML = "";
-                if (!data || data.length === 0) {
-                    list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">还没有帖子，来发第一帖吧！</div>';
+                if (mixed.length === 0) {
+                    list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">还没有内容，来发第一帖吧！</div>';
                     return;
                 }
 
-                data.forEach(post => {
-                    const div = document.createElement("div");
-                    div.className = "post-card m3-ripple";
-                    div.innerHTML = `
-                        <div class="post-meta">
-                            <span style="font-weight:500; color:var(--text-main)">${escapeHtml(post.author_name || '匿名')}</span>
-                            <span>· ${new Date(post.created_at).toLocaleString()}</span>
-                        </div>
-                        <div class="post-title">${escapeHtml(post.title)}</div>
-                        <div class="post-preview">${escapeHtml(post.content)}</div>
-                    `;
-                    list.appendChild(div);
+                mixed.forEach(item => {
+                    if (item.type === 'post') renderPost(item.data, list);
+                    else renderVote(item.data, list);
                 });
             } catch (e) {
                 list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--error)">加载失败</div>';
             }
         }
 
-        // ================= 发帖逻辑 =================
-        const modal = document.getElementById("modalOverlay");
-        
-        document.getElementById("newPostBtn").addEventListener("click", () => {
-            modal.classList.add("active");
-        });
-        
-        document.getElementById("cancelPost").addEventListener("click", () => modal.classList.remove("active"));
+        // 渲染帖子
+        function renderPost(post, list) {
+            const div = document.createElement("div");
+            div.className = "post-card m3-ripple";
+            div.innerHTML = `
+                <div class="post-meta">
+                    <span style="font-weight:500; color:var(--text-main)">${escapeHtml(post.author_name || '匿名')}</span>
+                    <span>· ${new Date(post.created_at).toLocaleString()}</span>
+                </div>
+                <div class="post-title">${escapeHtml(post.title)}</div>
+                <div class="post-preview">${escapeHtml(post.content)}</div>
+            `;
+            list.appendChild(div);
+        }
 
+        // 渲染投票
+        function renderVote(vote, list) {
+            const div = document.createElement("div");
+            div.className = "post-card";
+            
+            let optionsHtml = '';
+            const options = Array.isArray(vote.options) ? vote.options : JSON.parse(vote.options || "[]");
+            const totalVotes = options.reduce((sum, opt) => sum + (opt.votes || 0), 0) || 1;
+
+            options.forEach((opt, idx) => {
+                const percent = Math.round(((opt.votes || 0) / totalVotes) * 100);
+                optionsHtml += `
+                    <div class="vote-btn m3-ripple" onclick="submitVote('${vote.id}', ${idx})">
+                        <div class="vote-bar" style="width: ${percent}%"></div>
+                        <span class="vote-text">${escapeHtml(opt.text)}</span>
+                        <span class="vote-count">${opt.votes || 0} 票 (${percent}%)</span>
+                    </div>
+                `;
+            });
+
+            div.innerHTML = `
+                <div class="post-meta">
+                    <span style="font-weight:500; color:var(--primary)">[投票]</span>
+                    <span style="font-weight:500; color:var(--text-main)">${escapeHtml(vote.username || '匿名')}</span>
+                    <span>· ${new Date(vote.created_at).toLocaleString()}</span>
+                </div>
+                <div class="post-title">${escapeHtml(vote.title)}</div>
+                <div class="vote-options">${optionsHtml}</div>
+            `;
+            list.appendChild(div);
+        }
+
+        // 提交投票 (RPC原子操作)
+        async function submitVote(voteId, optionIndex) {
+            const userId = localStorage.getItem("hg_user_id");
+            if (!userId) {
+                alert("请先登录后再投票！");
+                return;
+            }
+            
+            try {
+                // 1. 尝试记录投票（防重复）
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/vote_records`, {
+                    method: "POST",
+                    headers: { 
+                        "apikey": SUPABASE_KEY, 
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        vote_id: voteId,
+                        user_id: userId,
+                        option_index: optionIndex
+                    })
+                });
+                
+                if (!res.ok) {
+                    if (res.status === 409 || res.status === 400) {
+                        alert("您已经投过票了！");
+                    } else {
+                        alert("投票失败");
+                    }
+                    return;
+                }
+
+                // 2. 记录成功后，调用 RPC 函数给票数 +1
+                await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_vote`, {
+                    method: "POST",
+                    headers: { 
+                        "apikey": SUPABASE_KEY, 
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        vote_id_param: voteId,
+                        option_index_param: optionIndex
+                    })
+                });
+                
+                alert("投票成功！");
+                loadContent(); // 刷新页面数据
+            } catch (e) {
+                alert("网络异常");
+            }
+        }
+
+        // 发帖弹窗
+        const postModal = document.getElementById("postModal");
+        document.getElementById("newPostBtn").addEventListener("click", () => postModal.classList.add("active"));
+        document.getElementById("cancelPost").addEventListener("click", () => postModal.classList.remove("active"));
+        
+        // 投票弹窗
+        const voteModal = document.getElementById("voteModal");
+        document.getElementById("newVoteBtn").addEventListener("click", () => voteModal.classList.add("active"));
+        document.getElementById("cancelVote").addEventListener("click", () => voteModal.classList.remove("active"));
+
+        // 提交发帖
         document.getElementById("submitPost").addEventListener("click", async () => {
             const title = document.getElementById("postTitle").value.trim();
             const content = document.getElementById("postContent").value.trim();
             if (!title || !content) return alert("请填写完整内容");
+            if (!currentUser) return alert("请先登录！");
+            
+            const uname = localStorage.getItem("hg_username") || "匿名";
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
+                method: "POST",
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ author_id: currentUser.id, author_name: uname, category: currentCategory, title, content })
+            });
+            if (res.ok) { postModal.classList.remove("active"); loadContent(); }
+            else alert("发帖失败");
+        });
 
-            const btn = document.getElementById("submitPost");
-            btn.textContent = "发布中...";
-            btn.disabled = true;
+        // 提交投票 (发起新投票)
+        document.getElementById("submitVote").addEventListener("click", async () => {
+            const title = document.getElementById("voteTitle").value.trim();
+            const opt1 = document.getElementById("voteOption1").value.trim();
+            const opt2 = document.getElementById("voteOption2").value.trim();
+            const opt3 = document.getElementById("voteOption3").value.trim();
+            if (!title || !opt1 || !opt2) return alert("请填写投票主题和至少两个选项");
+            if (!currentUser) return alert("请先登录！");
 
-            const localUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
-            const localUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "匿名";
+            const options = [{ text: opt1, votes: 0 }, { text: opt2, votes: 0 }];
+            if (opt3) options.push({ text: opt3, votes: 0 });
 
-            if (!localUserId) {
-                alert("本地登录状态丢失，请重新登录！");
-                window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
-                return;
-            }
-
+            const uname = localStorage.getItem("hg_username") || "匿名";
+            
             try {
-                // 走代理发帖
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/votes`, {
                     method: "POST",
-                    headers: {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
-                    body: JSON.stringify({
-                        author_id: localUserId,
-                        author_name: localUsername,
-                        category: currentCategory,
-                        title: title,
-                        content: content
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        user_id: currentUser.id, 
+                        username: uname, 
+                        title: title, 
+                        options: options,
+                        record_date: new Date().toISOString().split('T')[0]
                     })
                 });
-
-                if (!res.ok) {
-                    const errText = await res.text();
-                    throw new Error(errText);
+                
+                if (res.ok) {
+                    voteModal.classList.remove("active");
+                    loadContent();
+                } else {
+                    alert("发起投票失败，可能您今天已经发起过投票了！");
                 }
-
-                modal.classList.remove("active");
-                loadPosts(); 
-
-            } catch (error) {
-                alert("发帖失败：" + error.message);
-            } finally {
-                btn.textContent = "发布";
-                btn.disabled = false;
+            } catch (e) {
+                alert("网络异常");
             }
         });
 
