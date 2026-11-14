@@ -1,17 +1,12 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<style>
-  @font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; src: url('/material-symbols.woff2') format('woff2'); }
-  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; display: inline-block; }
-</style>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>hg 账号</title>
-<style>@font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; src: url('/assets/fonts/material-symbols.woff2') format('woff2'); }</style>
 
 <style>
-  <style>
+  /* ================= 图标字体（去重后仅保留一份） ================= */
   @font-face {
     font-family: 'Material Symbols Outlined';
     font-style: normal;
@@ -26,12 +21,12 @@
     line-height: 1;
     display: inline-block;
   }
-</style>
-/* ================= 严格对齐原版变量 ================= */
-:root {
+
+  /* ================= 严格对齐原版变量 ================= */
+  :root {
     --bg: #fff;
     --fg: #1f1f1f;
-    --muted: #444746; 
+    --muted: #444746;
     --hover: #f0f4f9;
     --line: #dadce0;
     --blue: #0b57d0;
@@ -39,153 +34,193 @@
     --onactive: #001d35;
     --card: #f0f4f9;
     --surface: #f0f4f9;
-}
-@media(prefers-color-scheme: dark) {
+  }
+  @media (prefers-color-scheme: dark) {
     :root {
-        --bg: #1f1f1f; /* 统一深色背景 */
-        --fg: #e3e3e3;
-        --muted: #c4c7c5;
-        --hover: #383838;
-        --line: #444;
-        --blue: #a8c7fa;
-        --active: #0842a0;
-        --onactive: #d3e3fd;
-        --card: #2c2c2c;
-        --surface: #2c2c2c;
+      --bg: #1f1f1f;
+      --fg: #e3e3e3;
+      --muted: #c4c7c5;
+      --hover: #383838;
+      --line: #444;
+      --blue: #a8c7fa;
+      --active: #0842a0;
+      --onactive: #d3e3fd;
+      --card: #2c2c2c;
+      --surface: #2c2c2c;
     }
-}
+  }
 
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:Roboto,"Google Sans",Arial,sans-serif;display:flex;flex-direction:column;min-height:100vh;}
-a{color:inherit;text-decoration:none}
-
-/* ================= 顶栏（全屏对齐） ================= */
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;height:72px;width:100%;}
-.logo{display:flex;align-items:center;font-size:24px;font-weight:400;gap:8px}
-.icons{display:flex;align-items:center;gap:16px}
-.icons button{border:0;background:none;padding:8px;border-radius:50%;cursor:pointer;color:var(--fg);display:flex;transition: background 0.2s;}
-.icons button:hover{background:var(--hover)}
-.icons .avatar-small{width:32px;height:32px;border-radius:50%;cursor:pointer;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:16px;}
-
-/* ================= 主体布局 ================= */
-main{display:flex;width:100%;flex:1;}
-
-/* ================= 侧边栏（紧贴左侧） ================= */
-nav{
-    width: 280px;
-    flex-shrink: 0;
-    padding: 16px 12px 24px 24px; /* 左边距极小，紧贴左侧 */
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: Roboto, "Google Sans", Arial, sans-serif;
     display: flex;
     flex-direction: column;
-}
-nav ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;}
-nav a{
-    display:flex;align-items:center;gap:16px;
-    padding:8px 16px 8px 8px;
-    border-radius:100px;font-size:14px;font-weight:500;
-    color:var(--muted);
+    min-height: 100vh;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* ================= 顶栏 ================= */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    height: 72px;
+    width: 100%;
+  }
+  .logo { display: flex; align-items: center; font-size: 24px; font-weight: 400; gap: 8px; }
+  .icons { display: flex; align-items: center; gap: 16px; }
+  .icons button {
+    border: 0; background: none; padding: 8px; border-radius: 50%;
+    cursor: pointer; color: var(--fg); display: flex; transition: background 0.2s;
+  }
+  .icons button:hover { background: var(--hover); }
+  .icons .avatar-small {
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    background: var(--active); color: var(--onactive);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 500; font-size: 16px;
+  }
+
+  /* ================= 主体布局 ================= */
+  main { display: flex; width: 100%; flex: 1; }
+
+  /* ================= 侧边栏 ================= */
+  nav {
+    width: 280px;
+    flex-shrink: 0;
+    padding: 16px 12px 24px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  nav a {
+    display: flex; align-items: center; gap: 16px;
+    padding: 8px 16px 8px 8px;
+    border-radius: 100px; font-size: 14px; font-weight: 500;
+    color: var(--muted);
     transition: background .2s, color .2s;
-}
-nav a:hover{background:var(--hover);color:var(--fg);}
-nav a[aria-current="page"]{background:var(--active);color:var(--onactive);}
+  }
+  nav a:hover { background: var(--hover); color: var(--fg); }
+  nav a[aria-current="page"] { background: var(--active); color: var(--onactive); }
 
-/* 图标外圈底纹 */
-nav .icon-wrap{
-    width:32px;height:32px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;transition:background 0.2s;
-}
-nav .icon-wrap span{font-size:20px;}
+  nav .icon-wrap {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.2s;
+  }
+  nav .icon-wrap span { font-size: 20px; }
 
-/* 退出登录 */
-.logout-btn{
-    margin-top:auto;margin-bottom:0;
-    display:flex;align-items:center;gap:16px;
-    padding:8px 16px 8px 8px;border-radius:100px;
-    font-size:14px;font-weight:500;color:var(--muted);
-    cursor:pointer;transition:background .2s;
-}
-.logout-btn:hover{background:var(--hover);color:var(--fg);}
-.logout-btn .icon-wrap{background:var(--hover);color:var(--fg);}
+  .logout-btn {
+    margin-top: auto; margin-bottom: 0;
+    display: flex; align-items: center; gap: 16px;
+    padding: 8px 16px 8px 8px; border-radius: 100px;
+    font-size: 14px; font-weight: 500; color: var(--muted);
+    cursor: pointer; transition: background .2s;
+  }
+  .logout-btn:hover { background: var(--hover); color: var(--fg); }
+  .logout-btn .icon-wrap { background: var(--hover); color: var(--fg); }
 
-/* ================= 右侧内容（自适应居中） ================= */
-.content{
-    flex:1;display:flex;flex-direction:column;
-    padding:24px 40px 80px 40px;
+  /* ================= 右侧内容 ================= */
+  .content {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 24px 40px 80px 40px;
     max-width: 1040px;
     margin: 0 auto;
-}
-
-/* 宽屏用户信息 */
-.profile-card{background:transparent;padding:32px 0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;margin-bottom:24px}
-.profile-card .main-avatar{width:100px;height:100px;border-radius:50%;background:var(--active);color:var(--onactive);display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:500;}
-.profile-card h1{font-size:28px;font-weight:500;margin:0}
-.profile-card span{font-size:14px;color:var(--muted)}
-
-/* 搜索框和药丸 */
-.search-wrapper{max-width:700px;width:100%;margin:0 auto 24px;background:var(--surface);border-radius:100px;display:flex;align-items:center;padding:12px 24px;gap:16px;}
-.search-wrapper span{color:var(--muted);font-size:24px;}
-.search-wrapper input{background:none;border:none;outline:none;color:var(--fg);font-size:16px;flex:1;}
-
-.pills{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:32px;}
-.pill{border:1px solid var(--line);border-radius:8px;padding:8px 16px;font-size:14px;font-weight:500;color:var(--fg);cursor:pointer;transition:background 0.2s;background:transparent;}
-.pill:hover{background:var(--hover);}
-
-.footer-text{font-size:13px;color:var(--muted);line-height:1.6;text-align:center;max-width:700px;margin:0 auto;}
-.footer-text a{color:var(--blue);text-decoration:underline}
-
-/* ================= 手机端（卡片流） ================= */
-.mobile-cards{display:none}
-
-@media(max-width:900px){
-  main{padding:0}
-  nav{display:none} /* 手机端隐藏侧栏 */
-  header{padding:16px}
-  .content{padding:16px 16px 80px 16px}
-  .profile-card, .search-wrapper, .pills{display:none;} /* 手机端隐藏这些 */
-  
-  .mobile-cards{
-      display:flex;flex-direction:column;gap:16px;width:100%;
   }
-  
-  /* 手机端彩色卡片样式 */
-  .mobile-cards .card{
-      background:var(--card);border-radius:16px;
-      padding:16px 20px;display:flex;align-items:center;gap:16px;
-      transition:background .2s;
+
+  .profile-card {
+    background: transparent; padding: 32px 0;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; gap: 12px; margin-bottom: 24px;
   }
-  .mobile-cards .card:hover{background:var(--hover)}
-  
-  .mobile-cards .card-icon{
-      width:40px;height:40px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  .profile-card .main-avatar {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: var(--active); color: var(--onactive);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; font-weight: 500;
   }
-  .mobile-cards .card-icon span{font-size:24px;}
-  
-  .mobile-cards .card-text{display:flex;flex-direction:column;gap:4px}
-  .mobile-cards .card-text .title{font-size:16px;font-weight:500;color:var(--fg)}
-  .mobile-cards .card-text .desc{font-size:13px;color:var(--muted);line-height:1.4;}
-  
-  /* 用户信息卡片特殊样式 */
-  .mobile-cards .profile-card-mobile{
-      padding:24px;gap:16px;margin-bottom:8px;
-      display:flex;align-items:center;text-align:left;
+  .profile-card h1 { font-size: 28px; font-weight: 500; margin: 0; }
+  .profile-card span { font-size: 14px; color: var(--muted); }
+
+  .search-wrapper {
+    max-width: 700px; width: 100%; margin: 0 auto 24px;
+    background: var(--surface); border-radius: 100px;
+    display: flex; align-items: center; padding: 12px 24px; gap: 16px;
   }
-  .mobile-cards .profile-card-mobile .main-avatar{
-      width:64px;height:64px;font-size:28px;
-      background:var(--active);color:var(--onactive);
+  .search-wrapper span { color: var(--muted); font-size: 24px; }
+  .search-wrapper input {
+    background: none; border: none; outline: none;
+    color: var(--fg); font-size: 16px; flex: 1;
   }
-  .mobile-cards .profile-card-mobile h1{
-      font-size:22px;font-weight:500;margin:0;
+
+  .pills {
+    display: flex; gap: 12px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 32px;
   }
-  
-  /* 卡片分组效果（模拟原版紧凑拼接） */
-  .mobile-cards .group{display:flex;flex-direction:column;gap:2px;}
-  .mobile-cards .group .card{border-radius:4px;}
-  .mobile-cards .group .card:first-child{border-radius:16px 16px 4px 4px}
-  .mobile-cards .group .card:last-child{border-radius:4px 4px 16px 16px}
-  .mobile-cards .group .card:only-child{border-radius:16px}
-}
+  .pill {
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 16px; font-size: 14px; font-weight: 500;
+    color: var(--fg); cursor: pointer; transition: background 0.2s;
+    background: transparent;
+  }
+  .pill:hover { background: var(--hover); }
+
+  .footer-text {
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+    text-align: center; max-width: 700px; margin: 0 auto;
+  }
+  .footer-text a { color: var(--blue); text-decoration: underline; }
+
+  /* ================= 手机端（卡片流） ================= */
+  .mobile-cards { display: none; }
+
+  @media (max-width: 900px) {
+    main { padding: 0; }
+    nav { display: none; }
+    header { padding: 16px; }
+    .content { padding: 16px 16px 80px 16px; }
+    .profile-card, .search-wrapper, .pills { display: none; }
+
+    .mobile-cards { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+
+    .mobile-cards .card {
+      background: var(--card); border-radius: 16px;
+      padding: 16px 20px; display: flex; align-items: center; gap: 16px;
+      transition: background .2s;
+    }
+    .mobile-cards .card:hover { background: var(--hover); }
+
+    .mobile-cards .card-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .mobile-cards .card-icon span { font-size: 24px; }
+
+    .mobile-cards .card-text { display: flex; flex-direction: column; gap: 4px; }
+    .mobile-cards .card-text .title { font-size: 16px; font-weight: 500; color: var(--fg); }
+    .mobile-cards .card-text .desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+    .mobile-cards .profile-card-mobile {
+      padding: 24px; gap: 16px; margin-bottom: 8px;
+      display: flex; align-items: center; text-align: left;
+    }
+    .mobile-cards .profile-card-mobile .main-avatar {
+      width: 64px; height: 64px; font-size: 28px;
+      background: var(--active); color: var(--onactive);
+    }
+    .mobile-cards .profile-card-mobile h1 { font-size: 22px; font-weight: 500; margin: 0; }
+
+    .mobile-cards .group { display: flex; flex-direction: column; gap: 2px; }
+    .mobile-cards .group .card { border-radius: 4px; }
+    .mobile-cards .group .card:first-child { border-radius: 16px 16px 4px 4px; }
+    .mobile-cards .group .card:last-child { border-radius: 4px 4px 16px 16px; }
+    .mobile-cards .group .card:only-child { border-radius: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -212,7 +247,7 @@ nav .icon-wrap span{font-size:20px;}
       <li><a href="/account/privacy/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">shield</span></div>数据和隐私设置</a></li>
       <li><a href="/account/share/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>用户和分享</a></li>
     </ul>
-    
+
     <div class="logout-btn" id="desktopLogoutBtn">
       <div class="icon-wrap"><span class="material-symbols-outlined">logout</span></div>退出登录
     </div>
@@ -302,14 +337,14 @@ nav .icon-wrap span{font-size:20px;}
         window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
     } else {
         const initial = myUsername.charAt(0).toUpperCase();
-        
+
         document.getElementById("topAvatar").textContent = initial;
         document.getElementById("mainAvatarDesktop").textContent = initial;
         document.getElementById("mainAvatarMobile").textContent = initial;
-        
+
         document.getElementById("userNameDesktop").textContent = myUsername;
         document.getElementById("userEmailDesktop").textContent = myEmail;
-        
+
         document.getElementById("userNameMobile").textContent = myUsername;
         document.getElementById("userEmailMobile").textContent = myEmail;
     }
@@ -322,7 +357,7 @@ nav .icon-wrap span{font-size:20px;}
         sessionStorage.clear();
         window.location.href = "/";
     }
-    
+
     document.getElementById("desktopLogoutBtn").addEventListener("click", doLogout);
     document.getElementById("mobileLogoutBtn").addEventListener("click", doLogout);
 </script>
