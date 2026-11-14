@@ -7,15 +7,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>hg · 首页</title>
     
-    <!-- 字体与图标 -->
-    <style>@font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; src: url('/assets/fonts/material-symbols.woff2') format('woff2'); }</style>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
+    <!-- 本地图标字体 -->
+    <style>
+      @font-face {
+        font-family: 'Material Symbols Outlined';
+        font-style: normal;
+        font-weight: 400;
+        src: url('/material-symbols.woff2') format('woff2');
+      }
+      .material-symbols-outlined {
+        font-family: 'Material Symbols Outlined';
+        font-weight: normal;
+        font-style: normal;
+        font-size: 24px;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+      }
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* =================  1. 浅色模式 ================= */
+        /* ================= 1. 浅色模式 ================= */
         :root {
             --bg-color: #F8F9FA;
             --surface: #FFFFFF;
@@ -330,7 +348,6 @@
         });
 
         // 动态渲染头部登录状态
-        // 重要更新：使用 CONFIG 和 Wasmer 代理
         const SUPABASE_URL = CONFIG.SUPABASE_URL;
         const SUPABASE_KEY = CONFIG.SUPABASE_KEY;
         
