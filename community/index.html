@@ -185,17 +185,14 @@
             loadContent();
         }
 
-        // 核心修复：一次性拉取所有数据
         async function loadContent() {
             const list = document.getElementById("postList");
             list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">加载中...</div>';
 
             try {
-                // 如果是“全部”，不仅拉帖子，还要拉所有分类的帖子；投票也一样
                 let postUrl = `${SUPABASE_URL}/rest/v1/posts?order=created_at.desc`;
                 let voteUrl = `${SUPABASE_URL}/rest/v1/votes?order=created_at.desc`;
                 
-                // 过滤分类
                 if (currentCategory !== "全部") {
                     postUrl += `&category=eq.${encodeURIComponent(currentCategory)}`;
                     voteUrl += `&category=eq.${encodeURIComponent(currentCategory)}`;
@@ -214,8 +211,23 @@
                 const allComments = await commentsRes.json();
 
                 let mixed = [];
-                if (Array.isArray(posts)) posts.forEach(p => mixed.push({ type: 'post', data: p }));
-                if (Array.isArray(votes)) votes.forEach(v => mixed.push({ type: 'vote', data: v }));
+                
+                if (Array.isArray(posts)) {
+                    posts.forEach(p => {
+                        if (!p.category) p.category = "闲聊"; // 兜底，防止null报错
+                        mixed.push({ type: 'post', data: p });
+                    });
+                }
+                
+                if (Array.isArray(votes)) {
+                    votes.forEach(v => {
+                        if (!v.category) v.category = "闲聊"; // 兜底
+                        if (currentCategory === "全部" || v.category === currentCategory) {
+                            mixed.push({ type: 'vote', data: v });
+                        }
+                    });
+                }
+                
                 mixed.sort((a, b) => new Date(b.data.created_at) - new Date(a.data.created_at));
 
                 list.innerHTML = "";
@@ -234,7 +246,6 @@
             }
         }
 
-        // 纯本地渲染
         function renderItem(item, comments, list) {
             const data = item.data;
             const div = document.createElement("div");
@@ -249,7 +260,12 @@
                 });
             }
 
-            const likes = Array.isArray(data.likes) ? data.likes : (data.likes ? JSON.parse(data.likes) : []);
+            // 容错处理 likes
+            let likes = [];
+            try {
+                likes = Array.isArray(data.likes) ? data.likes : (data.likes ? JSON.parse(data.likes) : []);
+            } catch(e) { likes = []; }
+            
             const hasLiked = currentUser && likes.includes(currentUser.id);
 
             let html = '';
@@ -264,7 +280,11 @@
                 `;
             } else {
                 let optsHtml = '';
-                const options = Array.isArray(data.options) ? data.options : JSON.parse(data.options || "[]");
+                let options = [];
+                try {
+                    options = Array.isArray(data.options) ? data.options : JSON.parse(data.options || "[]");
+                } catch(e) { options = []; }
+                
                 const totalVotes = options.reduce((sum, opt) => sum + (opt.votes || 0), 0) || 1;
                 options.forEach((opt, idx) => {
                     const percent = Math.round(((opt.votes || 0) / totalVotes) * 100);
@@ -325,6 +345,7 @@
             });
         }
 
+        // 提交投票
         window.submitVote = async (e, voteId, optionIndex) => {
             e.stopPropagation();
             const userId = localStorage.getItem("hg_user_id");
@@ -350,6 +371,7 @@
             } catch (e) {}
         };
 
+        // 提交回复
         window.submitComment = async (postId) => {
             const input = document.getElementById(`reply-input-${postId}`);
             const content = input.value.trim();
@@ -367,6 +389,7 @@
             } catch (e) { alert("回复失败"); }
         };
 
+        // 双击点赞（修复容错）
         async function doLike(type, id, element, likesArr, hasLiked) {
             if (!currentUser) return alert("请先登录");
             const heart = document.createElement('div');
@@ -381,11 +404,20 @@
             else { newLikes.push(currentUser.id); }
 
             const table = type === 'post' ? 'posts' : 'votes';
-            await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
-                method: "PATCH",
-                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ likes: newLikes })
-            });
+            
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+                    method: "PATCH",
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ likes: newLikes })
+                });
+                if (!res.ok) {
+                    alert("点赞失败，请确认数据库是否开启了 UPDATE 权限");
+                }
+            } catch(e) {
+                alert("网络异常");
+            }
+            
             loadContent();
         }
 
@@ -421,7 +453,7 @@
             loadContent();
         };
 
-        // 发起投票（修复分类问题）
+        // 发起投票（带分类）
         document.getElementById('newVoteBtn').onclick = () => document.getElementById('voteModal').classList.add('active');
         document.getElementById('cancelVote').onclick = () => document.getElementById('voteModal').classList.remove('active');
         document.getElementById('submitVoteBtn').onclick = async () => {
