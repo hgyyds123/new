@@ -237,7 +237,7 @@
                 }
 
                 mixed.forEach(item => {
-                    const itemComments = Array.isArray(allComments) ? allComments.filter(c => c.post_id === item.data.id) : [];
+                    const itemComments = Array.isArray(allComments) ? allComments.filter(c => String(c.post_id) === String(item.data.id)) : [];
                     renderItem(item, itemComments, list);
                 });
             } catch (e) {
