@@ -510,15 +510,28 @@
             const title = document.getElementById('voteTitle').value.trim();
             const o1 = document.getElementById('voteOption1').value.trim();
             const o2 = document.getElementById('voteOption2').value.trim();
-            if(!title || !o1 || !o2) return alert("填写完整");
+            if(!title || !o1 || !o2) return alert("填写完整（标题和前两个选项必填）");
             const options = [{text:o1,votes:0},{text:o2,votes:0}];
             const o3 = document.getElementById('voteOption3').value.trim();
             if(o3) options.push({text:o3,votes:0});
-            await fetch(`${SUPABASE_URL}/rest/v1/votes`, {
-                method: "POST",
-                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ user_id: currentUser.id, username: localStorage.getItem("hg_username")||"匿名", title, options, category: currentCategory==="全部"?"闲聊":currentCategory, record_date: new Date().toISOString().split('T')[0] })
-            });
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/votes`, {
+                    method: "POST",
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: currentUser.id, username: localStorage.getItem("hg_username")||"匿名", title, options, category: currentCategory==="全部"?"闲聊":currentCategory, record_date: new Date().toISOString().split('T')[0] })
+                });
+                if (!res.ok) {
+                    // 关键诊断：创建失败不再静默关弹窗（那会伪装成"发布成功但投票没出现"）
+                    const raw = await res.text().catch(() => "<读不到响应体>");
+                    console.error("创建投票失败 HTTP", res.status, raw);
+                    alert(`创建投票失败 HTTP ${res.status}\n${raw.slice(0, 500)}`);
+                    return; // 弹窗保持打开，方便重试
+                }
+            } catch (e) {
+                console.error(e);
+                alert(`创建投票网络异常: ${e && e.message ? e.message : e}`);
+                return;
+            }
             document.getElementById('voteModal').classList.remove('active');
             loadContent();
         };
