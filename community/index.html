@@ -360,8 +360,13 @@
                 });
                 
                 if (!res.ok) {
-                    // 重复投或者没权限
-                    return alert("您已投过票或网络异常");
+                    // 关键诊断：区分"重复投票"(唯一键冲突)和真实失败，不再笼统报错
+                    const raw = await res.text().catch(() => "<读不到响应体>");
+                    console.error("投票记录写入失败 HTTP", res.status, raw);
+                    if (res.status === 409 || raw.includes("duplicate key")) {
+                        return alert("您已投过票");
+                    }
+                    return alert(`投票失败 HTTP ${res.status}\n${raw.slice(0, 300)}`);
                 }
                 
                 // 2. 拉取最新投票数据
@@ -376,12 +381,18 @@
                 // 3. 对应选项票数 +1
                 options[optionIndex].votes = (options[optionIndex].votes || 0) + 1;
                 
-                // 4. 覆盖更新回去
-                await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
+                // 4. 覆盖更新回去（必须检查结果：此前 PATCH 失败是静默的，会导致"投票成功"但票数永远不涨）
+                const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
                     method: "PATCH",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ options: options })
                 });
+                if (!patchRes.ok) {
+                    const raw = await patchRes.text().catch(() => "<读不到响应体>");
+                    console.error("票数写回失败 HTTP", patchRes.status, raw);
+                    alert(`票数写回失败 HTTP ${patchRes.status}\n${raw.slice(0, 300)}`);
+                    return;
+                }
                 
                 alert("投票成功");
                 loadContent();
@@ -417,13 +428,14 @@
                     input.value = ""; // 清空输入框
                     loadContent(); // 刷新数据
                 } else {
-                    const err = await res.json();
-                    console.error("回复失败:", err);
-                    alert("回复失败，请检查数据库权限");
+                    // 关键诊断：无论代理返回 JSON 还是 HTML 错误页，都把真实状态码和响应体显示出来
+                    const raw = await res.text().catch(() => "<读不到响应体>");
+                    console.error("回复失败 HTTP", res.status, raw);
+                    alert(`回复失败 HTTP ${res.status}\n${raw.slice(0, 500)}`);
                 }
             } catch (e) { 
                 console.error(e);
-                alert("网络异常"); 
+                alert(`网络异常: ${e && e.message ? e.message : e}`);
             }
         };
 
