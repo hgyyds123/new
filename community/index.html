@@ -64,6 +64,19 @@
         .comments-section { background: var(--bg-color); border-top: 1px solid var(--outline-variant); padding: 16px 20px; display: none; }
         .comments-section.active { display: block; }
         .v-badge { width: 15px; height: 15px; vertical-align: -2px; margin-left: 3px; }
+        .comment-time { color: var(--text-sub); font-size: 12px; margin-left: 8px; }
+        .comment-like { cursor: pointer; color: var(--text-sub); font-size: 13px; margin-left: 12px; user-select: none; }
+        .comment-like.liked { color: var(--primary); font-weight: bold; }
+        .comment-replies { margin-left: 24px; border-left: 2px solid var(--outline-variant); padding-left: 10px; margin-top: 8px; }
+        .replying-tag { display: inline-block; background: var(--primary-container); color: var(--on-primary-container); border-radius: 8px; padding: 2px 10px; font-size: 12px; margin-right: 6px; cursor: pointer; }
+        .pin-tag { color: var(--primary); font-weight: 700; margin-right: 6px; }
+        .notif-badge { background: var(--error); color: #FFFFFF; border-radius: 9px; font-size: 11px; padding: 1px 6px; margin-left: 2px; vertical-align: middle; }
+        .notif-badge:empty { display: none; }
+        .notif-panel { position: fixed; top: 68px; right: 16px; width: 320px; max-height: 360px; overflow-y: auto; background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); z-index: 200; padding: 8px; }
+        .notif-item { padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+        .notif-item:hover { background: var(--surface-variant); }
+        .notif-empty { text-align: center; color: var(--text-sub); padding: 24px 0; font-size: 13px; }
+        .post-img { max-width: 100%; border-radius: 12px; margin-top: 8px; display: block; }
         .comment-item { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--outline-variant); }
         .comment-item:last-child { border-bottom: none; margin-bottom: 0; }
         .comment-meta { font-size: 12px; color: var(--primary); font-weight: 500; }
@@ -96,10 +109,14 @@
             <div class="brand" onclick="showHub()"><span style="color:var(--primary); font-weight:700;">hg</span> 社区</div>
         </div>
         <div class="nav-actions">
+            <button class="btn-text" id="notifBtn" style="display:none;"><span class="material-symbols-outlined" style="font-size:20px; vertical-align:middle;">notifications</span><span id="notifBadge" class="notif-badge"></span></button>
             <button class="btn-text" id="newVoteBtn">发起投票</button>
             <button class="btn-filled" id="newPostBtn">发新帖</button>
         </div>
     </header>
+
+    <!-- 通知面板 -->
+    <div class="notif-panel" id="notifPanel" style="display:none;"></div>
 
     <div class="layout">
         <aside class="sidebar">
@@ -116,6 +133,9 @@
 
     <!-- 右键菜单 -->
     <div class="context-menu" id="contextMenu">
+        <div class="context-item" id="pinBtn" style="display:none;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">push_pin</span> <span id="pinLabel">置顶</span>
+        </div>
         <div class="context-item" id="deleteBtn">
             <span class="material-symbols-outlined" style="font-size: 18px;">delete</span> 删除
         </div>
@@ -127,6 +147,7 @@
             <h2>发布新帖</h2>
             <input type="text" class="modal-input" id="postTitle" placeholder="标题" maxlength="50">
             <textarea class="modal-textarea" id="postContent" placeholder="正文内容..." maxlength="2000" rows="4"></textarea>
+            <input type="file" class="modal-input" id="postImage" accept="image/*" style="font-size: 13px; padding: 8px;">
             <div class="modal-actions">
                 <button class="btn-text" id="cancelPost">取消</button>
                 <button class="btn-filled" id="submitPost">发布</button>
@@ -183,6 +204,7 @@
             } catch(e) {}
 
             loadContent();
+            startNotifPolling();
         });
 
         function showHub() { window.location.href = "/"; }
@@ -240,7 +262,13 @@
                     });
                 }
                 
-                mixed.sort((a, b) => new Date(b.data.created_at) - new Date(a.data.created_at));
+                mixed.sort((a, b) => {
+                    // 置顶帖永远在前，其余按时间倒序
+                    const pa = (a.type === 'post' && a.data.is_pinned) ? 1 : 0;
+                    const pb = (b.type === 'post' && b.data.is_pinned) ? 1 : 0;
+                    if (pa !== pb) return pb - pa;
+                    return new Date(b.data.created_at) - new Date(a.data.created_at);
+                });
 
                 list.innerHTML = "";
                 if (mixed.length === 0) {
@@ -268,7 +296,7 @@
             if (isAdmin) {
                 div.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
-                    showContextMenu(e.clientX, e.clientY, item.type, data.id);
+                    showContextMenu(e.clientX, e.clientY, item);
                 });
             }
 
@@ -285,9 +313,10 @@
             if (item.type === 'post') {
                 html = `
                     <div class="post-main">
-                        <div class="post-meta"><span>${nameHtml(data.author_id, data.author_name)}</span><span>· ${new Date(data.created_at).toLocaleString()}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-meta">${data.is_pinned ? '<span class="pin-tag">[置顶]</span>' : ''}<span>${nameHtml(data.author_id, data.author_name)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;">💬 ${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
                         <div class="post-title">${escapeHtml(data.title)}</div>
                         <div class="post-preview">${escapeHtml(data.content)}</div>
+                        ${data.image_url ? `<img class="post-img" src="${escapeHtml(data.image_url)}" loading="lazy" alt="">` : ''}
                     </div>
                 `;
             } else {
@@ -310,27 +339,42 @@
                 });
                 html = `
                     <div class="post-main">
-                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${nameHtml(data.user_id, data.username)}</span><span>· ${new Date(data.created_at).toLocaleString()}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${nameHtml(data.user_id, data.username)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;">💬 ${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
                         <div class="post-title">${escapeHtml(data.title)}</div>
                         <div class="vote-options">${optsHtml}</div>
                     </div>
                 `;
             }
 
+            // 评论区：楼中楼（按 parent_id 分组）+ 评论点赞 + 相对时间
             let commentsHtml = `<div class="comments-section">`;
             if (comments && comments.length > 0) {
-                comments.forEach(c => {
-                    commentsHtml += `
+                const jsStr = s => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const tops = comments.filter(c => !c.parent_id);
+                const renderComment = (c, rootId) => {
+                    let lk = [];
+                    try { lk = Array.isArray(c.likes) ? c.likes : (c.likes ? JSON.parse(c.likes) : []); } catch(e) { lk = []; }
+                    return `
                         <div class="comment-item">
-                            <div class="comment-meta">${nameHtml(c.user_id, c.username)}</div>
+                            <div class="comment-meta">${nameHtml(c.user_id, c.username)}<span class="comment-time">${timeAgo(c.created_at)}</span><span class="comment-like" data-likes='${JSON.stringify(lk)}' onclick="likeComment(event, '${c.id}')">👍 ${lk.length}</span><span class="comment-like" onclick="setReplyTarget(event, '${data.id}', '${rootId}', '${jsStr(c.username)}', '${jsStr(c.user_id || '')}')">回复</span></div>
                             <div class="comment-text">${escapeHtml(c.content)}</div>
                         </div>
                     `;
+                };
+                tops.forEach(c => {
+                    commentsHtml += renderComment(c, c.id);
+                    const kids = comments.filter(k => k.parent_id === c.id);
+                    if (kids.length > 0) {
+                        commentsHtml += `<div class="comment-replies">`;
+                        kids.forEach(k => { commentsHtml += renderComment(k, c.id); });
+                        commentsHtml += `</div>`;
+                    }
                 });
             }
             commentsHtml += `
                     <div class="reply-box">
-                        <input type="text" placeholder="写回复..." id="reply-input-${data.id}">
+                        <span class="replying-tag" id="replying-tag-${data.id}" style="display:none;" onclick="clearReplyTarget(event, '${data.id}')"></span>
+                        <input type="text" placeholder="写回复..." id="reply-input-${data.id}" data-post-author="${data.author_id || data.user_id || ''}">
                         <button onclick="submitComment('${data.id}')">发送</button>
                     </div>
                 </div>
@@ -414,42 +458,60 @@
             }
         };
 
-        // 提交回复（修复无法回复的问题）
+        // 提交回复（支持楼中楼 parent_id + 回复通知）
         window.submitComment = async (postId) => {
             const input = document.getElementById(`reply-input-${postId}`);
             const content = input.value.trim();
             if (!content) return;
-            
+
             const userId = localStorage.getItem("hg_user_id");
             const uname = localStorage.getItem("hg_username") || "匿名";
             if (!userId) return alert("请先登录");
 
+            const parentId = input.dataset.parent || null;
+            const parentAuthor = input.dataset.parentAuthor || null;
+            const postAuthor = input.dataset.postAuthor || null;
+
             try {
+                const body = { post_id: postId, user_id: userId, username: uname, content: content };
+                if (parentId) body.parent_id = parentId;
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
                     method: "POST",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        post_id: postId, // 确保 UUID 格式传入
-                        user_id: userId, 
-                        username: uname, 
-                        content: content 
-                    })
+                    body: JSON.stringify(body)
                 });
 
                 if (res.ok) {
-                    input.value = ""; // 清空输入框
-                    loadContent(); // 刷新数据
+                    // 回复通知：通知帖主（自己发的不通知）
+                    if (postAuthor) notify(postAuthor, 'reply', postId, uname, content);
+                    // 楼中楼回复时：通知被回复的评论作者（若与帖主相同则只发一条）
+                    if (parentId && parentAuthor && parentAuthor !== postAuthor) notify(parentAuthor, 'reply', postId, uname, content);
+                    input.value = "";
+                    clearReplyTarget(null, postId);
+                    loadContent();
                 } else {
                     // 关键诊断：无论代理返回 JSON 还是 HTML 错误页，都把真实状态码和响应体显示出来
                     const raw = await res.text().catch(() => "<读不到响应体>");
                     console.error("回复失败 HTTP", res.status, raw);
                     alert(`回复失败 HTTP ${res.status}\n${raw.slice(0, 500)}`);
                 }
-            } catch (e) { 
+            } catch (e) {
                 console.error(e);
                 alert(`网络异常: ${e && e.message ? e.message : e}`);
             }
         };
+
+        // 通知工具：写入 notifications 表（自己触发的不通知；失败不影响主流程）
+        async function notify(targetUserId, type, postId, actorName, content) {
+            if (!targetUserId || (currentUser && targetUserId === currentUser.id)) return;
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/notifications`, {
+                    method: "POST",
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: targetUserId, type: type, post_id: String(postId), actor_name: actorName, content: String(content || '').slice(0, 60) })
+                });
+            } catch (e) { console.error(e); }
+        }
 
         // 双击点赞（修复容错）
         async function doLike(type, id, element, likesArr, hasLiked) {
@@ -484,14 +546,40 @@
         }
 
         let currentContext = null;
-        function showContextMenu(x, y, type, id) {
+        function showContextMenu(x, y, item) {
             const menu = document.getElementById('contextMenu');
             menu.style.left = `${x}px`; menu.style.top = `${y}px`; menu.classList.add('active');
-            currentContext = { type, id };
+            currentContext = { type: item.type, id: item.data.id };
+            // 置顶仅帖子支持（投票不参与置顶）
+            const pinBtn = document.getElementById('pinBtn');
+            if (item.type === 'post') {
+                pinBtn.style.display = "";
+                document.getElementById('pinLabel').textContent = item.data.is_pinned ? "取消置顶" : "置顶";
+            } else {
+                pinBtn.style.display = "none";
+            }
+            document.getElementById('pinBtn').onclick = async () => {
+                const pinned = !item.data.is_pinned;
+                try {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/posts?id=eq.${item.data.id}`, {
+                        method: "PATCH",
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({ is_pinned: pinned })
+                    });
+                    if (!res.ok) {
+                        const raw = await res.text().catch(() => "");
+                        alert(`置顶操作失败 HTTP ${res.status}\n${raw.slice(0, 300)}`);
+                    }
+                } catch (e) {
+                    alert(`网络异常: ${e && e.message ? e.message : e}`);
+                }
+                menu.classList.remove('active');
+                loadContent();
+            };
             document.getElementById('deleteBtn').onclick = async () => {
                 if (!confirm("确定删除？")) return;
-                const table = type === 'post' ? 'posts' : 'votes';
-                await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+                const table = item.type === 'post' ? 'posts' : 'votes';
+                await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${item.data.id}`, {
                     method: "DELETE", headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
                 });
                 menu.classList.remove('active');
@@ -506,11 +594,38 @@
             const title = document.getElementById('postTitle').value.trim();
             const content = document.getElementById('postContent').value.trim();
             if(!title || !content) return alert("填写完整");
+            // 图片上传（走代理转发 Storage；桶 community，公开读）
+            let imageUrl = "";
+            const file = document.getElementById('postImage').files[0];
+            if (file) {
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+                if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return alert("图片格式仅支持 jpg / png / gif / webp");
+                const path = `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+                try {
+                    const upRes = await fetch(`${SUPABASE_URL}/storage/v1/object/community/${path}`, {
+                        method: "POST",
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": file.type || "application/octet-stream" },
+                        body: file
+                    });
+                    if (!upRes.ok) {
+                        const raw = await upRes.text().catch(() => "");
+                        alert(`图片上传失败 HTTP ${upRes.status}\n${raw.slice(0, 300)}`);
+                        return;
+                    }
+                    imageUrl = `${SUPABASE_URL}/storage/v1/object/public/community/${path}`;
+                } catch (e) {
+                    alert(`图片上传网络异常: ${e && e.message ? e.message : e}`);
+                    return;
+                }
+            }
+            const postBody = { author_id: currentUser.id, author_name: localStorage.getItem("hg_username")||"匿名", category: currentCategory==="全部"?"闲聊":currentCategory, title, content };
+            if (imageUrl) postBody.image_url = imageUrl; // 未建列时不传，避免整帖发不出去
             await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
                 method: "POST",
                 headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ author_id: currentUser.id, author_name: localStorage.getItem("hg_username")||"匿名", category: currentCategory==="全部"?"闲聊":currentCategory, title, content })
+                body: JSON.stringify(postBody)
             });
+            document.getElementById('postImage').value = "";
             document.getElementById('postModal').classList.remove('active');
             loadContent();
         };
@@ -558,6 +673,130 @@
             const n = escapeHtml(fallback || '匿名');
             return adminIds.has(id) ? `${n} ${V_SVG}` : n;
         }
+
+        // 相对时间：刚刚 / N 分钟前 / 昨天 / N 天前
+        function timeAgo(s) {
+            if (!s) return "";
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return "";
+            const diff = (Date.now() - d.getTime()) / 1000;
+            if (diff < 60) return "刚刚";
+            if (diff < 3600) return Math.floor(diff / 60) + " 分钟前";
+            if (diff < 86400) return Math.floor(diff / 3600) + " 小时前";
+            if (diff < 86400 * 2) return "昨天";
+            if (diff < 86400 * 30) return Math.floor(diff / 86400) + " 天前";
+            return d.toLocaleDateString();
+        }
+
+        // 评论点赞（乐观更新，失败弹真实报错）
+        window.likeComment = async (e, cid) => {
+            e.stopPropagation();
+            if (!currentUser) return alert("请先登录");
+            const el = e.currentTarget;
+            let likes = [];
+            try { likes = JSON.parse(el.getAttribute('data-likes') || '[]'); } catch (err) { likes = []; }
+            const liked = likes.includes(currentUser.id);
+            const newLikes = liked ? likes.filter(u => u !== currentUser.id) : [...likes, currentUser.id];
+            el.setAttribute('data-likes', JSON.stringify(newLikes));
+            el.classList.toggle('liked', !liked);
+            el.textContent = `👍 ${newLikes.length}`;
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${cid}`, {
+                    method: "PATCH",
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ likes: newLikes })
+                });
+                if (!res.ok) {
+                    const raw = await res.text().catch(() => "");
+                    alert(`评论点赞失败 HTTP ${res.status}\n${raw.slice(0, 300)}`);
+                }
+            } catch (err) {
+                alert(`网络异常: ${err && err.message ? err.message : err}`);
+            }
+        };
+
+        // 楼中楼：设定回复目标（root 评论），点输入框旁的标签可取消
+        window.setReplyTarget = (e, postId, parentId, parentName, parentAuthor) => {
+            if (e) e.stopPropagation();
+            const input = document.getElementById(`reply-input-${postId}`);
+            const tag = document.getElementById(`replying-tag-${postId}`);
+            if (!input) return;
+            input.dataset.parent = parentId;
+            input.dataset.parentAuthor = parentAuthor || '';
+            input.placeholder = `回复 @${parentName}：`;
+            if (tag) { tag.textContent = `回复 @${parentName} ×`; tag.style.display = "inline-block"; }
+            input.focus();
+        };
+        window.clearReplyTarget = (e, postId) => {
+            if (e) e.stopPropagation();
+            const input = document.getElementById(`reply-input-${postId}`);
+            const tag = document.getElementById(`replying-tag-${postId}`);
+            if (!input) return;
+            delete input.dataset.parent;
+            delete input.dataset.parentAuthor;
+            input.placeholder = "写回复...";
+            if (tag) { tag.textContent = ""; tag.style.display = "none"; }
+        };
+
+        // 回复通知：铃铛 + 10 秒轮询（与聊天室轮询思路一致，间隔放宽）
+        let notifTimer = null;
+        function startNotifPolling() {
+            if (!currentUser || notifTimer) return;
+            document.getElementById('notifBtn').style.display = "";
+            const refresh = async () => {
+                try {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${currentUser.id}&is_read=eq.false&select=id`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    });
+                    const arr = await res.json();
+                    document.getElementById('notifBadge').textContent = Array.isArray(arr) && arr.length > 0 ? String(arr.length) : "";
+                } catch (e) {}
+            };
+            refresh();
+            notifTimer = setInterval(refresh, 10000);
+        }
+
+        document.getElementById('notifBtn').onclick = async () => {
+            const panel = document.getElementById('notifPanel');
+            if (panel.style.display === "none") {
+                panel.style.display = "block";
+                panel.innerHTML = '<div class="notif-empty">加载中...</div>';
+                try {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${currentUser.id}&order=created_at.desc&limit=20`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    });
+                    const arr = await res.json();
+                    if (!Array.isArray(arr) || arr.length === 0) {
+                        panel.innerHTML = '<div class="notif-empty">暂无通知</div>';
+                    } else {
+                        panel.innerHTML =
+                            `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 12px;"><b style="font-size:13px;">通知</b><span class="comment-like" onclick="markAllRead(event)">全部已读</span></div>` +
+                            arr.map(n => `<div class="notif-item"><b>${escapeHtml(n.actor_name || '有人')}</b> ${n.type === 'reply' ? '回复了你的帖子' : '有了新动态'}：<br>${escapeHtml(n.content || '')}<br><span class="comment-time">${timeAgo(n.created_at)}</span></div>`).join('');
+                        markAllRead(null, true); // 打开面板即全部已读
+                    }
+                } catch (e) {
+                    panel.innerHTML = '<div class="notif-empty">加载失败</div>';
+                }
+            } else {
+                panel.style.display = "none";
+            }
+        };
+        window.markAllRead = async (e, silent) => {
+            if (e) e.stopPropagation();
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${currentUser.id}&is_read=eq.false`, {
+                    method: "PATCH",
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ is_read: true })
+                });
+                document.getElementById('notifBadge').textContent = "";
+            } catch (err) {}
+        };
+        // 点击面板外关闭通知面板
+        document.addEventListener('click', (e) => {
+            const p = document.getElementById('notifPanel');
+            if (p && p.style.display !== "none" && !p.contains(e.target) && !e.target.closest('#notifBtn')) p.style.display = "none";
+        });
 
         function escapeHtml(str) {
             return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
