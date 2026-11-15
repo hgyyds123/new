@@ -6,10 +6,6 @@
     <title>社区 · hg</title>
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -28,169 +24,99 @@
             }
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Roboto', 'Noto Sans SC', sans-serif; min-height: 100vh; display: flex; flex-direction: column; transition: background-color 0.3s, color 0.3s; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Roboto', 'Noto Sans SC', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
         a { text-decoration: none; color: inherit; }
         button { font-family: inherit; border: none; background: none; cursor: pointer; }
 
-        .top-bar { height: 64px; background-color: var(--bg-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--outline-variant); }
+        .top-bar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--outline-variant); background: var(--bg-color); }
         .nav-left { display: flex; align-items: center; gap: 16px; }
-        .icon-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;}
-        .icon-btn:hover { background-color: var(--surface-variant); }
-        .brand { font-size: 22px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer;}
-        .top-search { flex: 1; max-width: 600px; margin: 0 24px; background-color: var(--surface); height: 48px; border-radius: 8px; display: flex; align-items: center; padding: 0 16px; border: 1px solid var(--outline-variant); transition: border 0.2s; }
-        .top-search:focus-within { border-color: var(--primary); }
-        .top-search input { flex: 1; background: transparent; border: none; outline: none; font-size: 15px; color: var(--text-main); }
-        .nav-actions { display: flex; gap: 12px; align-items: center; }
+        .brand { font-size: 22px; font-weight: 500; cursor: pointer;}
+        .nav-actions { display: flex; gap: 12px; }
         .btn-text { font-size: 14px; font-weight: 500; color: var(--primary); padding: 8px 16px; border-radius: 9999px; }
-        .btn-filled { background-color: var(--primary); color: var(--on-primary); font-size: 14px; font-weight: 500; padding: 8px 20px; border-radius: 9999px; }
+        .btn-filled { background-color: var(--primary); color: var(--on-primary); font-size: 14px; padding: 8px 20px; border-radius: 9999px; }
 
         .layout { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
-        .sidebar { width: 260px; background-color: var(--bg-color); padding: 24px 16px; border-right: 1px solid var(--outline-variant); display: flex; flex-direction: column; gap: 8px; }
-        .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 9999px; font-size: 14px; font-weight: 500; color: var(--text-sub); cursor: pointer; transition: background 0.2s; }
-        .sidebar-item:hover { background-color: var(--surface-variant); color: var(--text-main); }
-        .sidebar-item.active { background-color: var(--primary-container); color: var(--on-primary-container); }
+        .sidebar { width: 200px; padding: 24px 16px; border-right: 1px solid var(--outline-variant); }
+        .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 9999px; font-size: 14px; font-weight: 500; color: var(--text-sub); cursor: pointer; margin-bottom: 8px; }
+        .sidebar-item:hover { background: var(--surface-variant); }
+        .sidebar-item.active { background: var(--primary-container); color: var(--on-primary-container); }
 
-        .main-content { flex: 1; padding: 48px; display: flex; flex-direction: column; }
-        @media (max-width: 900px) {
-            .sidebar { display: none; }
-            .top-search { display: none; }
-            .main-content { padding: 24px 16px; }
-        }
+        .main-content { flex: 1; padding: 32px; display: flex; flex-direction: column; align-items: center; }
+        .post-list { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 16px; }
 
-        .view-hub { display: block; }
-        .hero { text-align: center; margin-bottom: 64px; }
-        .hero-title { font-size: 20px; font-weight: 400; color: var(--text-sub); margin-bottom: 8px; }
-        .hero h1 { font-size: 48px; font-weight: 400; margin-bottom: 24px; }
-        .hero p { font-size: 16px; color: var(--text-sub); max-width: 720px; margin: 0 auto 32px; }
-        
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
-        .category-card { background-color: var(--surface); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 32px 24px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; align-items: center; gap: 16px; }
-        .category-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .category-icon { width: 56px; height: 56px; border-radius: 50%; background-color: var(--surface-variant); display: flex; align-items: center; justify-content: center; }
-        .category-icon .material-symbols-outlined { font-size: 28px; color: var(--primary); }
-
-        .view-list { display: none; }
-        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;}
-        .list-header h2 { font-size: 28px; font-weight: 400; display: flex; align-items: center; gap: 12px;}
-        .back-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-sub); font-weight: 500; padding: 8px 16px; border-radius: 99px;}
-        .back-btn:hover { background-color: var(--surface-variant); }
-
-        .post-list { display: flex; flex-direction: column; gap: 12px; }
-        .post-card { background-color: var(--surface); border-radius: 12px; padding: 20px; border: 1px solid var(--outline-variant); cursor: pointer; transition: background 0.2s; position: relative; }
-        .post-card:hover { background-color: var(--surface-variant); }
-        .post-meta { display: flex; gap: 12px; font-size: 13px; color: var(--text-sub); margin-bottom: 8px; align-items: center;}
+        /* 卡片样式 */
+        .post-card { background: var(--surface); border-radius: 16px; border: 1px solid var(--outline-variant); overflow: hidden; transition: transform 0.1s; user-select: none; }
+        .post-main { padding: 20px; cursor: pointer; }
+        .post-meta { display: flex; gap: 12px; font-size: 13px; color: var(--text-sub); margin-bottom: 8px; }
         .post-title { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
-        .post-preview { font-size: 14px; color: var(--text-sub); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .post-preview { font-size: 14px; color: var(--text-sub); }
 
-        /* ================= 投票相关样式 ================= */
+        /* 投票专属 */
         .vote-options { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
-        .vote-btn { background: var(--surface-variant); border: 1px solid var(--outline-variant); padding: 12px 16px; border-radius: 8px; font-size: 15px; text-align: left; color: var(--text-main); transition: background 0.2s; position: relative; overflow: hidden; display: flex; justify-content: space-between; }
-        .vote-btn:hover { background: var(--primary-container); color: var(--on-primary-container); border-color: var(--primary-container); }
-        .vote-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--primary); opacity: 0.2; z-index: 0; transition: width 0.5s; }
-        .vote-text { position: relative; z-index: 1; }
-        .vote-count { position: relative; z-index: 1; font-weight: 600; }
+        .vote-btn { background: var(--surface-variant); border: 1px solid var(--outline-variant); padding: 12px; border-radius: 8px; position: relative; overflow: hidden; display: flex; justify-content: space-between; font-size: 15px; }
+        .vote-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--primary); opacity: 0.2; }
 
-        /* ================= 右键菜单 ================= */
-        .context-menu {
-            position: fixed; display: none; background: var(--surface); border: 1px solid var(--outline-variant);
-            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px; z-index: 3000; min-width: 120px;
-        }
-        .context-menu.active { display: block; }
-        .context-item {
-            padding: 10px 16px; border-radius: 4px; font-size: 14px; color: var(--error); font-weight: 500; cursor: pointer;
-            display: flex; align-items: center; gap: 8px; transition: background 0.2s;
-        }
-        .context-item:hover { background: rgba(179, 38, 30, 0.1); }
+        /* 点赞飘心动画 */
+        .heart-anim { position: absolute; font-size: 40px; color: var(--error); pointer-events: none; animation: floatUp 0.8s ease-out forwards; opacity: 0; z-index: 10;}
+        @keyframes floatUp { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 30% { transform: translate(-50%, -80%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -150%) scale(1); opacity: 0; } }
+
+        /* 评论区 */
+        .comments-section { background: var(--bg-color); border-top: 1px solid var(--outline-variant); padding: 16px 20px; display: none; }
+        .comments-section.active { display: block; }
+        .comment-item { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--outline-variant); }
+        .comment-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .comment-meta { font-size: 12px; color: var(--primary); font-weight: 500; }
+        .comment-text { font-size: 14px; color: var(--text-main); }
+        
+        /* 回复输入框 */
+        .reply-box { display: flex; gap: 8px; margin-top: 12px; }
+        .reply-box input { flex: 1; padding: 10px 16px; border-radius: 20px; border: 1px solid var(--outline-variant); background: var(--surface); color: var(--text-main); outline: none; }
+        .reply-box button { padding: 0 16px; border-radius: 20px; background: var(--primary); color: var(--on-primary); font-weight: 500; }
 
         /* 弹窗 */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 24px; z-index: 2000; }
         .modal-overlay.active { display: flex; }
-        .modal-card { background-color: var(--surface); border-radius: 24px; padding: 32px; width: 100%; max-width: 500px; }
-        .modal-card h2 { font-size: 24px; font-weight: 400; margin-bottom: 24px; }
-        .modal-input, .modal-textarea { width: 100%; background: transparent; border: 1px solid var(--outline-variant); border-radius: 8px; padding: 12px 16px; font-size: 16px; color: var(--text-main); margin-bottom: 16px; outline: none; }
-        .modal-input:focus, .modal-textarea:focus { border: 2px solid var(--primary); padding: 11px 15px; }
-        .modal-textarea { resize: vertical; min-height: 80px; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .modal-card { background: var(--surface); border-radius: 24px; padding: 24px; width: 100%; max-width: 500px; }
+        .modal-input, .modal-textarea { width: 100%; padding: 12px; border: 1px solid var(--outline-variant); border-radius: 8px; background: transparent; color: var(--text-main); margin-bottom: 12px; outline: none; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
 
-        .m3-ripple { position: relative; overflow: hidden; }
-        .ripple-circle { position: absolute; border-radius: 50%; background-color: rgba(128,128,128,0.3); transform: scale(0); animation: ripple-anim 0.3s linear; pointer-events: none; }
-        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+        /* 右键菜单 */
+        .context-menu { position: fixed; display: none; background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px; z-index: 3000; min-width: 120px; }
+        .context-menu.active { display: block; }
+        .context-item { padding: 10px 16px; border-radius: 4px; font-size: 14px; color: var(--error); font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .context-item:hover { background: rgba(179, 38, 30, 0.1); }
     </style>
 </head>
 <body>
 
     <header class="top-bar">
         <div class="nav-left">
-            <a href="/" class="icon-btn"><span class="material-symbols-outlined">arrow_back</span></a>
+            <a href="/" class="material-symbols-outlined" style="color:var(--text-main);">arrow_back</a>
             <div class="brand" onclick="showHub()"><span style="color:var(--primary); font-weight:700;">hg</span> 社区</div>
         </div>
-        <div class="top-search">
-            <span class="material-symbols-outlined">search</span>
-            <input type="text" placeholder="搜索讨论话题...">
-        </div>
         <div class="nav-actions">
-            <a href="/account/" class="btn-text">账号</a>
+            <button class="btn-text" id="newVoteBtn">发起投票</button>
+            <button class="btn-filled" id="newPostBtn">发新帖</button>
         </div>
     </header>
 
     <div class="layout">
         <aside class="sidebar">
-            <div class="sidebar-item" onclick="showHub()"><span class="material-symbols-outlined">home</span> 社区首页</div>
-            <div class="sidebar-title">标签分类</div>
-            <div class="sidebar-item" onclick="showList('闲聊')"><span class="material-symbols-outlined">chat</span> #闲聊</div>
-            <div class="sidebar-item" onclick="showList('求助')"><span class="material-symbols-outlined">help</span> #求助</div>
-            <div class="sidebar-item" onclick="showList('分享')"><span class="material-symbols-outlined">lightbulb</span> #分享</div>
+            <div class="sidebar-item active" id="tab-all" onclick="showList('全部')"><span class="material-symbols-outlined">public</span> 全部</div>
+            <div class="sidebar-item" id="tab-chat" onclick="showList('闲聊')"><span class="material-symbols-outlined">chat</span> #闲聊</div>
+            <div class="sidebar-item" id="tab-help" onclick="showList('求助')"><span class="material-symbols-outlined">help</span> #求助</div>
+            <div class="sidebar-item" id="tab-share" onclick="showList('分享')"><span class="material-symbols-outlined">lightbulb</span> #分享</div>
         </aside>
 
         <main class="main-content">
-            <div class="view-hub" id="viewHub">
-                <div class="hero">
-                    <div class="hero-title">欢迎来到</div>
-                    <h1>hg 社区论坛</h1>
-                    <p>这是进行技术交流、分享日常、寻求帮助的集中地。选择下方对应的版块进入。</p>
-                </div>
-                <div class="card-grid">
-                    <div class="category-card m3-ripple" onclick="showList('闲聊')">
-                        <div class="category-icon"><span class="material-symbols-outlined">chat_bubble</span></div>
-                        <h3>闲聊灌水</h3>
-                        <p>日常交流、分享趣事、随便聊聊的轻松版块。</p>
-                    </div>
-                    <div class="category-card m3-ripple" onclick="showList('求助')">
-                        <div class="category-icon"><span class="material-symbols-outlined">help</span></div>
-                        <h3>求助问答</h3>
-                        <p>遇到代码报错、网站配置问题？在这里发帖寻求帮助。</p>
-                    </div>
-                    <div class="category-card m3-ripple" onclick="showList('分享')">
-                        <div class="category-icon"><span class="material-symbols-outlined">lightbulb</span></div>
-                        <h3>经验分享</h3>
-                        <p>分享你的开发心得、好用的工具，或者优秀的个人项目。</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="view-list" id="viewList">
-                <div class="list-header">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <div class="back-btn m3-ripple" onclick="showHub()">
-                            <span class="material-symbols-outlined">arrow_back</span> 返回
-                        </div>
-                        <h2 id="listTitle">#闲聊</h2>
-                    </div>
-                    <div style="display: flex; gap: 12px;">
-                        <button class="btn-text" style="border: 1px solid var(--outline-variant);" id="newVoteBtn">发起投票</button>
-                        <button class="btn-filled m3-ripple" id="newPostBtn">发新帖</button>
-                    </div>
-                </div>
-                <div class="post-list" id="postList"></div>
-            </div>
+            <div class="post-list" id="postList"></div>
         </main>
     </div>
 
     <!-- 右键菜单 -->
     <div class="context-menu" id="contextMenu">
-        <div class="context-item" onclick="deleteContent()">
-            <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
-            删除
+        <div class="context-item" id="deleteBtn">
+            <span class="material-symbols-outlined" style="font-size: 18px;">delete</span> 删除
         </div>
     </div>
 
@@ -199,7 +125,7 @@
         <div class="modal-card">
             <h2>发布新帖</h2>
             <input type="text" class="modal-input" id="postTitle" placeholder="标题" maxlength="50">
-            <textarea class="modal-textarea" id="postContent" placeholder="正文内容..." maxlength="2000"></textarea>
+            <textarea class="modal-textarea" id="postContent" placeholder="正文内容..." maxlength="2000" rows="4"></textarea>
             <div class="modal-actions">
                 <button class="btn-text" id="cancelPost">取消</button>
                 <button class="btn-filled" id="submitPost">发布</button>
@@ -217,86 +143,62 @@
             <input type="text" class="modal-input" id="voteOption3" placeholder="选项 3（选填）" maxlength="30">
             <div class="modal-actions">
                 <button class="btn-text" id="cancelVote">取消</button>
-                <button class="btn-filled" id="submitVote">发布投票</button>
+                <button class="btn-filled" id="submitVoteBtn">发布投票</button>
             </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('click', function(e) {
-            const target = e.target.closest('.m3-ripple');
-            if (!target) return;
-            const rect = target.getBoundingClientRect();
-            const circle = document.createElement('span');
-            circle.classList.add('ripple-circle');
-            const size = Math.max(rect.width, rect.height);
-            circle.style.width = circle.style.height = size + 'px';
-            circle.style.left = (e.clientX - rect.left - size / 2) + 'px';
-            circle.style.top = (e.clientY - rect.top - size / 2) + 'px';
-            target.appendChild(circle);
-            setTimeout(() => circle.remove(), 300);
-        });
-
         const SUPABASE_URL = "https://hgai-61677.wasmer.app/proxy"; 
         const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentCategory = "闲聊";
+        let currentCategory = "全部";
         let currentUser = null;
         let isAdmin = false;
-        let currentContextData = null; // 记录右键选中的是帖子还是投票
 
         window.addEventListener('DOMContentLoaded', async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const cat = urlParams.get('cat');
-            if (cat) showList(cat);
-
-            // 获取登录状态和权限
-            const userId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
+            const userId = localStorage.getItem("hg_user_id");
             if (userId) {
                 currentUser = { id: userId };
-                // 查管理员权限
                 try {
                     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=is_admin`, {
                         headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
                     });
                     const data = await res.json();
-                    if (data && data.length > 0 && data[0].is_admin) {
-                        isAdmin = true;
-                    }
+                    if (data && data.length > 0 && data[0].is_admin) isAdmin = true;
                 } catch(e) {}
             }
+            loadContent();
         });
 
-        function showHub() {
-            document.getElementById("viewHub").style.display = "block";
-            document.getElementById("viewList").style.display = "none";
-            window.history.pushState({}, '', window.location.pathname);
-        }
+        function showHub() { window.location.href = "/"; }
 
         function showList(category) {
             currentCategory = category;
-            document.getElementById("viewHub").style.display = "none";
-            document.getElementById("viewList").style.display = "block";
-            document.getElementById("listTitle").innerHTML = `<span style="color:var(--primary)">#</span>${category}`;
-            window.history.pushState({}, '', `?cat=${encodeURIComponent(category)}`);
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            if(category === '全部') document.getElementById('tab-all').classList.add('active');
+            if(category === '闲聊') document.getElementById('tab-chat').classList.add('active');
+            if(category === '求助') document.getElementById('tab-help').classList.add('active');
+            if(category === '分享') document.getElementById('tab-share').classList.add('active');
             loadContent();
         }
 
-        // 加载内容
         async function loadContent() {
             const list = document.getElementById("postList");
-            list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">加载中...</div>';
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">加载中...</div>';
 
             try {
+                let postUrl = `${SUPABASE_URL}/rest/v1/posts?order=created_at.desc`;
+                let voteUrl = `${SUPABASE_URL}/rest/v1/votes?order=created_at.desc`;
+                if (currentCategory !== "全部") {
+                    postUrl += `&category=eq.${encodeURIComponent(currentCategory)}`;
+                }
+
                 const [postsRes, votesRes] = await Promise.all([
-                    fetch(`${SUPABASE_URL}/rest/v1/posts?category=eq.${encodeURIComponent(currentCategory)}&order=created_at.desc`, {
-                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-                    }),
-                    fetch(`${SUPABASE_URL}/rest/v1/votes?order=created_at.desc`, {
-                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-                    })
+                    fetch(postUrl, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
+                    fetch(voteUrl, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } })
                 ]);
 
                 const posts = await postsRes.json();
@@ -309,107 +211,147 @@
 
                 list.innerHTML = "";
                 if (mixed.length === 0) {
-                    list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">还没有内容，来发第一帖吧！</div>';
+                    list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub);">暂无内容</div>';
                     return;
                 }
 
-                mixed.forEach(item => {
-                    if (item.type === 'post') renderPost(item.data, list);
-                    else renderVote(item.data, list);
-                });
+                for (const item of mixed) {
+                    await renderItem(item, list);
+                }
             } catch (e) {
-                list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--error)">加载失败</div>';
+                list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--error);">加载失败</div>';
             }
         }
 
-        // 渲染帖子
-        function renderPost(post, list) {
-            const div = document.createElement("div");
-            div.className = "post-card m3-ripple";
-            // 管理员右键绑定
-            if (isAdmin) {
-                div.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    showContextMenu(e.clientX, e.clientY, 'post', post.id);
-                });
-            }
-            div.innerHTML = `
-                <div class="post-meta">
-                    <span style="font-weight:500; color:var(--text-main)">${escapeHtml(post.author_name || '匿名')}</span>
-                    <span>· ${new Date(post.created_at).toLocaleString()}</span>
-                </div>
-                <div class="post-title">${escapeHtml(post.title)}</div>
-                <div class="post-preview">${escapeHtml(post.content)}</div>
-            `;
-            list.appendChild(div);
-        }
-
-        // 渲染投票
-        function renderVote(vote, list) {
+        // 渲染帖子/投票
+        async function renderItem(item, list) {
+            const data = item.data;
             const div = document.createElement("div");
             div.className = "post-card";
-            // 管理员右键绑定
+            div.setAttribute('data-id', data.id);
+            div.setAttribute('data-type', item.type);
+
+            // 双击点赞
+            let lastTap = 0;
+            div.querySelector('.post-main')?.addEventListener('click', (e) => {}); // 占位
+
+            // 右键删除
             if (isAdmin) {
                 div.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
-                    showContextMenu(e.clientX, e.clientY, 'vote', vote.id);
+                    showContextMenu(e.clientX, e.clientY, item.type, data.id);
                 });
             }
-            
-            let optionsHtml = '';
-            const options = Array.isArray(vote.options) ? vote.options : JSON.parse(vote.options || "[]");
-            const totalVotes = options.reduce((sum, opt) => sum + (opt.votes || 0), 0) || 1;
 
-            options.forEach((opt, idx) => {
-                const percent = Math.round(((opt.votes || 0) / totalVotes) * 100);
-                optionsHtml += `
-                    <div class="vote-btn m3-ripple" onclick="submitVote('${vote.id}', ${idx})">
-                        <div class="vote-bar" style="width: ${percent}%"></div>
-                        <span class="vote-text">${escapeHtml(opt.text)}</span>
-                        <span class="vote-count">${opt.votes || 0} 票 (${percent}%)</span>
+            // 获取评论
+            const commRes = await fetch(`${SUPABASE_URL}/rest/v1/comments?post_id=eq.${data.id}&order=created_at.asc`, {
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+            });
+            const comments = await commRes.json();
+
+            // 点赞数据
+            const likes = Array.isArray(data.likes) ? data.likes : (data.likes ? JSON.parse(data.likes) : []);
+            const hasLiked = likes.includes(currentUser?.id);
+
+            let html = '';
+
+            if (item.type === 'post') {
+                html = `
+                    <div class="post-main">
+                        <div class="post-meta"><span>${escapeHtml(data.author_name || '匿名')}</span><span>· ${new Date(data.created_at).toLocaleString()}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-title">${escapeHtml(data.title)}</div>
+                        <div class="post-preview">${escapeHtml(data.content)}</div>
                     </div>
                 `;
-            });
+            } else {
+                let optsHtml = '';
+                const options = Array.isArray(data.options) ? data.options : JSON.parse(data.options || "[]");
+                const totalVotes = options.reduce((sum, opt) => sum + (opt.votes || 0), 0) || 1;
+                options.forEach((opt, idx) => {
+                    const percent = Math.round(((opt.votes || 0) / totalVotes) * 100);
+                    optsHtml += `
+                        <div class="vote-btn" onclick="submitVote(event, '${data.id}', ${idx})">
+                            <div class="vote-bar" style="width: ${percent}%"></div>
+                            <span style="position:relative; z-index:1;">${escapeHtml(opt.text)}</span>
+                            <span style="position:relative; z-index:1; font-weight:bold;">${opt.votes || 0} 票</span>
+                        </div>
+                    `;
+                });
+                html = `
+                    <div class="post-main">
+                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${escapeHtml(data.username || '匿名')}</span><span>· ${new Date(data.created_at).toLocaleString()}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-title">${escapeHtml(data.title)}</div>
+                        <div class="vote-options">${optsHtml}</div>
+                    </div>
+                `;
+            }
 
-            div.innerHTML = `
-                <div class="post-meta">
-                    <span style="font-weight:500; color:var(--primary)">[投票]</span>
-                    <span style="font-weight:500; color:var(--text-main)">${escapeHtml(vote.username || '匿名')}</span>
-                    <span>· ${new Date(vote.created_at).toLocaleString()}</span>
+            // 评论与输入区
+            let commentsHtml = `<div class="comments-section">`;
+            if (comments && comments.length > 0) {
+                comments.forEach(c => {
+                    commentsHtml += `
+                        <div class="comment-item">
+                            <div class="comment-meta">${escapeHtml(c.username || '匿名')}</div>
+                            <div class="comment-text">${escapeHtml(c.content)}</div>
+                        </div>
+                    `;
+                });
+            }
+            commentsHtml += `
+                    <div class="reply-box">
+                        <input type="text" placeholder="写回复..." id="reply-input-${data.id}">
+                        <button onclick="submitComment('${data.id}')">发送</button>
+                    </div>
                 </div>
-                <div class="post-title">${escapeHtml(vote.title)}</div>
-                <div class="vote-options">${optionsHtml}</div>
             `;
+
+            div.innerHTML = html + commentsHtml;
             list.appendChild(div);
+
+            // 绑定双击点赞和单击展开事件
+            const mainArea = div.querySelector('.post-main');
+            let clickTimer = null;
+
+            mainArea.addEventListener('click', (e) => {
+                // 如果是点投票选项，不触发展开和点赞
+                if (e.target.closest('.vote-btn')) return;
+
+                // 判断双击
+                if (e.detail === 2) {
+                    clearTimeout(clickTimer);
+                    doLike(item.type, data.id, mainArea, likes, hasLiked);
+                } else {
+                    // 延迟判断单击
+                    clickTimer = setTimeout(() => {
+                        const section = div.querySelector('.comments-section');
+                        section.classList.toggle('active');
+                    }, 250);
+                }
+            });
         }
 
-        // 提交投票
-        async function submitVote(voteId, optionIndex) {
+        // 提交投票（防冒泡）
+        window.submitVote = async (e, voteId, optionIndex) => {
+            e.stopPropagation(); // 阻止触发卡片点击
             const userId = localStorage.getItem("hg_user_id");
-            if (!userId) return alert("请先登录后再投票！");
-            
+            if (!userId) return alert("请先登录");
+
+            // 简化的投票逻辑
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/vote_records`, {
                     method: "POST",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ vote_id: voteId, user_id: userId, option_index: optionIndex })
                 });
-                
-                if (!res.ok) {
-                    if (res.status === 409 || res.status === 400) alert("您已经投过票了！");
-                    else alert("投票失败");
-                    return;
-                }
+                if (!res.ok) return alert("您已投过票");
 
                 const getRes = await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
                 });
                 const voteData = await getRes.json();
-                if (!voteData || voteData.length === 0) return;
-
                 let options = voteData[0].options;
                 if (typeof options === 'string') options = JSON.parse(options);
-
                 options[optionIndex].votes = (options[optionIndex].votes || 0) + 1;
 
                 await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
@@ -417,126 +359,118 @@
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ options: options })
                 });
-                
-                alert("投票成功！");
                 loadContent();
-            } catch (e) { alert("网络异常"); }
+            } catch (e) {}
+        };
+
+        // 提交评论
+        window.submitComment = async (postId) => {
+            const input = document.getElementById(`reply-input-${postId}`);
+            const content = input.value.trim();
+            if (!content) return;
+            const userId = localStorage.getItem("hg_user_id");
+            const uname = localStorage.getItem("hg_username") || "匿名";
+            if (!userId) return alert("请先登录");
+
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
+                    method: "POST",
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ post_id: postId, user_id: userId, username: uname, content: content })
+                });
+                loadContent();
+            } catch (e) { alert("回复失败"); }
+        };
+
+        // 双击点赞
+        async function doLike(type, id, element, likesArr, hasLiked) {
+            if (!currentUser) return alert("请先登录");
+            
+            // 飘心动画
+            const heart = document.createElement('div');
+            heart.className = 'heart-anim';
+            heart.innerHTML = '❤️';
+            heart.style.left = '50%';
+            heart.style.top = '50%';
+            element.appendChild(heart);
+            setTimeout(() => heart.remove(), 800);
+
+            let newLikes = [...likesArr];
+            if (hasLiked) {
+                newLikes = newLikes.filter(uid => uid !== currentUser.id);
+            } else {
+                newLikes.push(currentUser.id);
+            }
+
+            const table = type === 'post' ? 'posts' : 'votes';
+            await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+                method: "PATCH",
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ likes: newLikes })
+            });
+            
+            loadContent(); // 重新加载
         }
 
-        // ================= 管理员右键菜单逻辑 =================
+        // 右键菜单
+        let currentContext = null;
         function showContextMenu(x, y, type, id) {
             const menu = document.getElementById('contextMenu');
             menu.style.left = `${x}px`;
             menu.style.top = `${y}px`;
             menu.classList.add('active');
-            currentContextData = { type, id };
-        }
+            currentContext = { type, id };
 
-        // 点击空白处关闭菜单
-        document.addEventListener('click', () => {
-            document.getElementById('contextMenu').classList.remove('active');
-            currentContextData = null;
-        });
-
-        // 执行删除
-        async function deleteContent() {
-            if (!currentContextData) return;
-            const { type, id } = currentContextData;
-            if (!confirm("确定要永久删除这条记录吗？")) return;
-
-            const table = type === 'post' ? 'posts' : 'votes';
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+            document.getElementById('deleteBtn').onclick = async () => {
+                if (!confirm("确定删除？")) return;
+                const table = type === 'post' ? 'posts' : 'votes';
+                await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
                     method: "DELETE",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
                 });
-                if (res.ok) {
-                    alert("删除成功！");
-                    loadContent();
-                } else {
-                    alert("删除失败，权限不足！");
-                }
-            } catch (e) { alert("网络异常"); }
+                menu.classList.remove('active');
+                loadContent();
+            };
         }
 
-        // 发帖弹窗
-        const postModal = document.getElementById("postModal");
-        document.getElementById("newPostBtn").addEventListener("click", () => postModal.classList.add("active"));
-        document.getElementById("cancelPost").addEventListener("click", () => postModal.classList.remove("active"));
-        
-        // 投票弹窗
-        const voteModal = document.getElementById("voteModal");
-        document.getElementById("newVoteBtn").addEventListener("click", () => voteModal.classList.add("active"));
-        document.getElementById("cancelVote").addEventListener("click", () => voteModal.classList.remove("active"));
+        document.addEventListener('click', () => {
+            document.getElementById('contextMenu').classList.remove('active');
+        });
 
-        // 提交发帖 (管理员可无限发)
-        document.getElementById("submitPost").addEventListener("click", async () => {
-            const title = document.getElementById("postTitle").value.trim();
-            const content = document.getElementById("postContent").value.trim();
-            if (!title || !content) return alert("请填写完整内容");
-            if (!currentUser) return alert("请先登录！");
-            
-            const uname = localStorage.getItem("hg_username") || "匿名";
-            
-            // 如果不是管理员，这里可以加每日限制判断（目前帖子没做限制，投票做了）
-            
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
+        // 弹窗逻辑
+        document.getElementById('newPostBtn').onclick = () => document.getElementById('postModal').classList.add('active');
+        document.getElementById('cancelPost').onclick = () => document.getElementById('postModal').classList.remove('active');
+        document.getElementById('submitPost').onclick = async () => {
+            const title = document.getElementById('postTitle').value.trim();
+            const content = document.getElementById('postContent').value.trim();
+            if(!title || !content) return alert("填写完整");
+            await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
                 method: "POST",
                 headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ author_id: currentUser.id, author_name: uname, category: currentCategory, title, content })
+                body: JSON.stringify({ author_id: currentUser.id, author_name: localStorage.getItem("hg_username")||"匿名", category: currentCategory==="全部"?"闲聊":currentCategory, title, content })
             });
-            if (res.ok) { postModal.classList.remove("active"); loadContent(); }
-            else alert("发帖失败");
-        });
+            document.getElementById('postModal').classList.remove('active');
+            loadContent();
+        };
 
-        // 提交投票 (发起新投票 - 管理员绕过一天一次限制)
-        document.getElementById("submitVote").addEventListener("click", async () => {
-            const title = document.getElementById("voteTitle").value.trim();
-            const opt1 = document.getElementById("voteOption1").value.trim();
-            const opt2 = document.getElementById("voteOption2").value.trim();
-            const opt3 = document.getElementById("voteOption3").value.trim();
-            if (!title || !opt1 || !opt2) return alert("请填写投票主题和至少两个选项");
-            if (!currentUser) return alert("请先登录！");
-
-            const options = [{ text: opt1, votes: 0 }, { text: opt2, votes: 0 }];
-            if (opt3) options.push({ text: opt3, votes: 0 });
-
-            const uname = localStorage.getItem("hg_username") || "匿名";
-            
-            try {
-                // 如果不是管理员，这里去查今天发过没（前端强校验）
-                if (!isAdmin) {
-                    const today = new Date().toISOString().split('T')[0];
-                    const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/votes?user_id=eq.${currentUser.id}&record_date=eq.${today}`, {
-                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-                    });
-                    const checkData = await checkRes.json();
-                    if (checkData && checkData.length > 0) {
-                        alert("您今天已经发起过投票了！管理员可无限发起。");
-                        return;
-                    }
-                }
-
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/votes`, {
-                    method: "POST",
-                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        user_id: currentUser.id, 
-                        username: uname, 
-                        title: title, 
-                        options: options,
-                        record_date: new Date().toISOString().split('T')[0]
-                    })
-                });
-                
-                if (res.ok) {
-                    voteModal.classList.remove("active");
-                    loadContent();
-                } else {
-                    alert("发起投票失败！");
-                }
-            } catch (e) { alert("网络异常"); }
-        });
+        document.getElementById('newVoteBtn').onclick = () => document.getElementById('voteModal').classList.add('active');
+        document.getElementById('cancelVote').onclick = () => document.getElementById('voteModal').classList.remove('active');
+        document.getElementById('submitVoteBtn').onclick = async () => {
+            const title = document.getElementById('voteTitle').value.trim();
+            const o1 = document.getElementById('voteOption1').value.trim();
+            const o2 = document.getElementById('voteOption2').value.trim();
+            if(!title || !o1 || !o2) return alert("填写完整");
+            const options = [{text:o1,votes:0},{text:o2,votes:0}];
+            const o3 = document.getElementById('voteOption3').value.trim();
+            if(o3) options.push({text:o3,votes:0});
+            await fetch(`${SUPABASE_URL}/rest/v1/votes`, {
+                method: "POST",
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: currentUser.id, username: localStorage.getItem("hg_username")||"匿名", title, options, record_date: new Date().toISOString().split('T')[0] })
+            });
+            document.getElementById('voteModal').classList.remove('active');
+            loadContent();
+        };
 
         function escapeHtml(str) {
             return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
