@@ -76,7 +76,7 @@
         .back-btn:hover { background-color: var(--surface-variant); }
 
         .post-list { display: flex; flex-direction: column; gap: 12px; }
-        .post-card { background-color: var(--surface); border-radius: 12px; padding: 20px; border: 1px solid var(--outline-variant); cursor: pointer; transition: background 0.2s; }
+        .post-card { background-color: var(--surface); border-radius: 12px; padding: 20px; border: 1px solid var(--outline-variant); cursor: pointer; transition: background 0.2s; position: relative; }
         .post-card:hover { background-color: var(--surface-variant); }
         .post-meta { display: flex; gap: 12px; font-size: 13px; color: var(--text-sub); margin-bottom: 8px; align-items: center;}
         .post-title { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
@@ -89,6 +89,18 @@
         .vote-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--primary); opacity: 0.2; z-index: 0; transition: width 0.5s; }
         .vote-text { position: relative; z-index: 1; }
         .vote-count { position: relative; z-index: 1; font-weight: 600; }
+
+        /* ================= 右键菜单 ================= */
+        .context-menu {
+            position: fixed; display: none; background: var(--surface); border: 1px solid var(--outline-variant);
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px; z-index: 3000; min-width: 120px;
+        }
+        .context-menu.active { display: block; }
+        .context-item {
+            padding: 10px 16px; border-radius: 4px; font-size: 14px; color: var(--error); font-weight: 500; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; transition: background 0.2s;
+        }
+        .context-item:hover { background: rgba(179, 38, 30, 0.1); }
 
         /* 弹窗 */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 24px; z-index: 2000; }
@@ -174,6 +186,14 @@
         </main>
     </div>
 
+    <!-- 右键菜单 -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-item" onclick="deleteContent()">
+            <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+            删除
+        </div>
+    </div>
+
     <!-- 发帖弹窗 -->
     <div class="modal-overlay" id="postModal">
         <div class="modal-card">
@@ -219,16 +239,34 @@
 
         const SUPABASE_URL = "https://hgai-61677.wasmer.app/proxy"; 
         const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentCategory = "闲聊";
         let currentUser = null;
+        let isAdmin = false;
+        let currentContextData = null; // 记录右键选中的是帖子还是投票
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const cat = urlParams.get('cat');
             if (cat) showList(cat);
+
+            // 获取登录状态和权限
             const userId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
-            if(userId) currentUser = { id: userId };
+            if (userId) {
+                currentUser = { id: userId };
+                // 查管理员权限
+                try {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=is_admin`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    });
+                    const data = await res.json();
+                    if (data && data.length > 0 && data[0].is_admin) {
+                        isAdmin = true;
+                    }
+                } catch(e) {}
+            }
         });
 
         function showHub() {
@@ -246,7 +284,7 @@
             loadContent();
         }
 
-        // 加载帖子与投票
+        // 加载内容
         async function loadContent() {
             const list = document.getElementById("postList");
             list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub)">加载中...</div>';
@@ -288,6 +326,13 @@
         function renderPost(post, list) {
             const div = document.createElement("div");
             div.className = "post-card m3-ripple";
+            // 管理员右键绑定
+            if (isAdmin) {
+                div.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    showContextMenu(e.clientX, e.clientY, 'post', post.id);
+                });
+            }
             div.innerHTML = `
                 <div class="post-meta">
                     <span style="font-weight:500; color:var(--text-main)">${escapeHtml(post.author_name || '匿名')}</span>
@@ -303,6 +348,13 @@
         function renderVote(vote, list) {
             const div = document.createElement("div");
             div.className = "post-card";
+            // 管理员右键绑定
+            if (isAdmin) {
+                div.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    showContextMenu(e.clientX, e.clientY, 'vote', vote.id);
+                });
+            }
             
             let optionsHtml = '';
             const options = Array.isArray(vote.options) ? vote.options : JSON.parse(vote.options || "[]");
@@ -331,40 +383,24 @@
             list.appendChild(div);
         }
 
-        // 提交投票（纯 Fetch 拉取覆盖写入）
+        // 提交投票
         async function submitVote(voteId, optionIndex) {
             const userId = localStorage.getItem("hg_user_id");
-            if (!userId) {
-                alert("请先登录后再投票！");
-                return;
-            }
+            if (!userId) return alert("请先登录后再投票！");
             
             try {
-                // 1. 先记录你投了票（防止重复投）
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/vote_records`, {
                     method: "POST",
-                    headers: { 
-                        "apikey": SUPABASE_KEY, 
-                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        vote_id: voteId,
-                        user_id: userId,
-                        option_index: optionIndex
-                    })
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ vote_id: voteId, user_id: userId, option_index: optionIndex })
                 });
                 
                 if (!res.ok) {
-                    if (res.status === 409 || res.status === 400) {
-                        alert("您已经投过票了！");
-                    } else {
-                        alert("投票失败");
-                    }
+                    if (res.status === 409 || res.status === 400) alert("您已经投过票了！");
+                    else alert("投票失败");
                     return;
                 }
 
-                // 2. 拉取最新数据
                 const getRes = await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
                 });
@@ -374,26 +410,53 @@
                 let options = voteData[0].options;
                 if (typeof options === 'string') options = JSON.parse(options);
 
-                // 3. 给票数 +1
                 options[optionIndex].votes = (options[optionIndex].votes || 0) + 1;
 
-                // 4. 覆盖写入数据库
                 await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
                     method: "PATCH",
-                    headers: { 
-                        "apikey": SUPABASE_KEY, 
-                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ options: options })
                 });
                 
                 alert("投票成功！");
                 loadContent();
-            } catch (e) {
-                console.error(e);
-                alert("网络异常");
-            }
+            } catch (e) { alert("网络异常"); }
+        }
+
+        // ================= 管理员右键菜单逻辑 =================
+        function showContextMenu(x, y, type, id) {
+            const menu = document.getElementById('contextMenu');
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            menu.classList.add('active');
+            currentContextData = { type, id };
+        }
+
+        // 点击空白处关闭菜单
+        document.addEventListener('click', () => {
+            document.getElementById('contextMenu').classList.remove('active');
+            currentContextData = null;
+        });
+
+        // 执行删除
+        async function deleteContent() {
+            if (!currentContextData) return;
+            const { type, id } = currentContextData;
+            if (!confirm("确定要永久删除这条记录吗？")) return;
+
+            const table = type === 'post' ? 'posts' : 'votes';
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+                    method: "DELETE",
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                });
+                if (res.ok) {
+                    alert("删除成功！");
+                    loadContent();
+                } else {
+                    alert("删除失败，权限不足！");
+                }
+            } catch (e) { alert("网络异常"); }
         }
 
         // 发帖弹窗
@@ -406,7 +469,7 @@
         document.getElementById("newVoteBtn").addEventListener("click", () => voteModal.classList.add("active"));
         document.getElementById("cancelVote").addEventListener("click", () => voteModal.classList.remove("active"));
 
-        // 提交发帖
+        // 提交发帖 (管理员可无限发)
         document.getElementById("submitPost").addEventListener("click", async () => {
             const title = document.getElementById("postTitle").value.trim();
             const content = document.getElementById("postContent").value.trim();
@@ -414,6 +477,9 @@
             if (!currentUser) return alert("请先登录！");
             
             const uname = localStorage.getItem("hg_username") || "匿名";
+            
+            // 如果不是管理员，这里可以加每日限制判断（目前帖子没做限制，投票做了）
+            
             const res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
                 method: "POST",
                 headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
@@ -423,7 +489,7 @@
             else alert("发帖失败");
         });
 
-        // 提交投票 (发起新投票)
+        // 提交投票 (发起新投票 - 管理员绕过一天一次限制)
         document.getElementById("submitVote").addEventListener("click", async () => {
             const title = document.getElementById("voteTitle").value.trim();
             const opt1 = document.getElementById("voteOption1").value.trim();
@@ -438,6 +504,19 @@
             const uname = localStorage.getItem("hg_username") || "匿名";
             
             try {
+                // 如果不是管理员，这里去查今天发过没（前端强校验）
+                if (!isAdmin) {
+                    const today = new Date().toISOString().split('T')[0];
+                    const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/votes?user_id=eq.${currentUser.id}&record_date=eq.${today}`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    });
+                    const checkData = await checkRes.json();
+                    if (checkData && checkData.length > 0) {
+                        alert("您今天已经发起过投票了！管理员可无限发起。");
+                        return;
+                    }
+                }
+
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/votes`, {
                     method: "POST",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
@@ -454,11 +533,9 @@
                     voteModal.classList.remove("active");
                     loadContent();
                 } else {
-                    alert("发起投票失败，可能您今天已经发起过投票了！");
+                    alert("发起投票失败！");
                 }
-            } catch (e) {
-                alert("网络异常");
-            }
+            } catch (e) { alert("网络异常"); }
         });
 
         function escapeHtml(str) {
