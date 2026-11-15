@@ -76,14 +76,14 @@ nav{
     flex-direction: column;
 }
 nav ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;}
-nav a{
+nav a, .logout-btn {
     display:flex;align-items:center;gap:16px;
     padding:8px 16px 8px 8px;
     border-radius:100px;font-size:14px;font-weight:500;
     color:var(--muted);
     transition: background .2s, color .2s;
 }
-nav a:hover{background:var(--hover);color:var(--fg);}
+nav a:hover, .logout-btn:hover{background:var(--hover);color:var(--fg);}
 nav a[aria-current="page"]{background:var(--active);color:var(--onactive);}
 
 nav .icon-wrap{
@@ -93,16 +93,16 @@ nav .icon-wrap{
 }
 nav .icon-wrap span{font-size:20px;}
 
-/* 退出登录 */
-.logout-btn{
-    margin-top:auto;margin-bottom:0;
-    display:flex;align-items:center;gap:16px;
-    padding:8px 16px 8px 8px;border-radius:100px;
-    font-size:14px;font-weight:500;color:var(--muted);
-    cursor:pointer;transition:background .2s;
+/* 返回主站与退出登录的特殊位置控制 */
+.back-home-btn {
+    margin-top: auto; 
+    margin-bottom: 8px;
 }
-.logout-btn:hover{background:var(--hover);color:var(--fg);}
-.logout-btn .icon-wrap{background:var(--hover);color:var(--fg);}
+.logout-btn {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+.logout-btn .icon-wrap { background: var(--hover); color: var(--fg); }
 
 /* ================= 右侧内容 ================= */
 .content{
@@ -204,6 +204,12 @@ nav .icon-wrap span{font-size:20px;}
       <li><a href="/account/share/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>用户和分享</a></li>
     </ul>
     
+    <!-- 新增：返回主站按钮 -->
+    <a href="/" class="back-home-btn">
+      <div class="icon-wrap" style="background:var(--hover);color:var(--fg)"><span class="material-symbols-outlined">arrow_back</span></div>
+      返回主站
+    </a>
+
     <div class="logout-btn" id="desktopLogoutBtn">
       <div class="icon-wrap"><span class="material-symbols-outlined">logout</span></div>退出登录
     </div>
@@ -270,6 +276,13 @@ nav .icon-wrap span{font-size:20px;}
           <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>
           <div class="card-text"><div class="title">用户和分享</div><div class="desc">通讯录、已屏蔽的用户、个人资料</div></div>
         </a>
+        
+        <!-- 新增：手机端返回主站卡片 -->
+        <a href="/" class="card">
+          <div class="card-icon" style="background:var(--hover);color:var(--fg)"><span class="material-symbols-outlined">arrow_back</span></div>
+          <div class="card-text"><div class="title">返回主站</div><div class="desc">回到 hg 首页</div></div>
+        </a>
+
         <!-- 退出登录放最后 -->
         <div class="card" id="mobileLogoutBtn" style="cursor:pointer;">
           <div class="card-icon" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">logout</span></div>
