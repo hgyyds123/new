@@ -46,7 +46,7 @@
 
         /* 卡片样式 */
         .post-card { background: var(--surface); border-radius: 16px; border: 1px solid var(--outline-variant); overflow: hidden; transition: transform 0.1s; user-select: none; position: relative; }
-        .post-main { padding: 20px; cursor: pointer; }
+        .post-main { padding: 20px; cursor: pointer; touch-action: manipulation; }
         .post-meta { display: flex; gap: 12px; font-size: 13px; color: var(--text-sub); margin-bottom: 8px; }
         .post-title { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
         .post-preview { font-size: 14px; color: var(--text-sub); }
@@ -65,8 +65,18 @@
         .comments-section.active { display: block; }
         .v-badge { width: 15px; height: 15px; vertical-align: -2px; margin-left: 3px; }
         .comment-time { color: var(--text-sub); font-size: 12px; margin-left: 8px; }
-        .comment-like { cursor: pointer; color: var(--text-sub); font-size: 13px; margin-left: 12px; user-select: none; }
+        .comment-like { cursor: pointer; color: var(--text-sub); font-size: 13px; margin-left: 12px; user-select: none; display: inline-flex; align-items: center; gap: 4px; }
+        .comment-like .like-ic { font-size: 16px; }
         .comment-like.liked { color: var(--primary); font-weight: bold; }
+        .comment-like.liked .like-ic { font-variation-settings: 'FILL' 1; }
+        .meta-ic { font-size: 15px; vertical-align: -3px; margin-right: 3px; }
+        #navToggle { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9999px; color: var(--text-main); }
+        #navToggle:hover { background: var(--surface-variant); }
+        #navToggle .material-symbols-outlined { font-size: 24px; }
+        #drawerBackdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 900; }
+        @media (min-width: 769px) {
+            body.nav-collapsed .sidebar { display: none; }
+        }
         .comment-replies { margin-left: 24px; border-left: 2px solid var(--outline-variant); padding-left: 10px; margin-top: 8px; }
         .replying-tag { display: inline-block; background: var(--primary-container); color: var(--on-primary-container); border-radius: 8px; padding: 2px 10px; font-size: 12px; margin-right: 6px; cursor: pointer; }
         .pin-tag { color: var(--primary); font-weight: 700; margin-right: 6px; }
@@ -99,12 +109,39 @@
         .context-menu.active { display: block; }
         .context-item { padding: 10px 16px; border-radius: 4px; font-size: 14px; color: var(--error); font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .context-item:hover { background: rgba(179, 38, 30, 0.1); }
+
+        /* ===== 移动端适配（≤768px：侧栏变顶部横向频道条，顶栏收紧不折行） ===== */
+        @media (max-width: 768px) {
+            .top-bar { height: 56px; padding: 0 12px; }
+            .nav-left { gap: 8px; min-width: 0; }
+            .brand { font-size: 17px; white-space: nowrap; }
+            .nav-actions { gap: 4px; }
+            .btn-text { font-size: 13px; padding: 6px 10px; white-space: nowrap; }
+            .btn-filled { font-size: 13px; padding: 6px 12px; white-space: nowrap; }
+            .layout { flex-direction: column; }
+            .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 83.333vw; max-width: 340px; transform: translateX(-105%); transition: transform 0.25s ease; z-index: 1000; background: var(--surface); border-right: 1px solid var(--outline-variant); padding-top: 18px; display: flex; flex-direction: column; overflow-y: auto; }
+            body.drawer-open .sidebar { transform: translateX(0); box-shadow: 8px 0 24px rgba(0,0,0,0.3); }
+            .sidebar-item { flex: 0 0 auto; margin: 0 12px 8px; padding: 12px 16px; white-space: nowrap; }
+            .main-content { padding: 14px 12px 24px; }
+            .post-list { gap: 12px; }
+            .post-main { padding: 14px; }
+            .post-meta { flex-wrap: wrap; row-gap: 2px; }
+            .post-title { font-size: 16px; }
+            .vote-btn { font-size: 14px; padding: 10px 12px; }
+            .comments-section { padding: 12px 14px; }
+            .comment-replies { margin-left: 14px; padding-left: 8px; }
+            .reply-box input { padding: 8px 12px; }
+            .notif-panel { top: 58px; right: 8px; width: calc(100vw - 16px); }
+            .modal-overlay { padding: 12px; }
+            .modal-card { padding: 16px; max-height: 86vh; overflow-y: auto; }
+        }
     </style>
 </head>
 <body>
 
     <header class="top-bar">
         <div class="nav-left">
+            <button id="navToggle" aria-label="导航菜单"><span class="material-symbols-outlined">menu</span></button>
             <a href="/" class="material-symbols-outlined" style="color:var(--text-main);">arrow_back</a>
             <div class="brand" onclick="showHub()"><span style="color:var(--primary); font-weight:700;">hg</span> 社区</div>
         </div>
@@ -117,6 +154,9 @@
 
     <!-- 通知面板 -->
     <div class="notif-panel" id="notifPanel" style="display:none;"></div>
+
+    <!-- 移动端抽屉遮罩（右侧 1/6 阴影区） -->
+    <div id="drawerBackdrop"></div>
 
     <div class="layout">
         <aside class="sidebar">
@@ -217,7 +257,29 @@
             if(category === '求助') document.getElementById('tab-help').classList.add('active');
             if(category === '分享') document.getElementById('tab-share').classList.add('active');
             loadContent();
+            closeDrawer(); // 手机端选完分类自动收起抽屉
         }
+
+        // 左侧导航：桌面端可收缩；移动端为抽屉（覆盖全屏，右侧 1/6 阴影，点阴影或选分类收起）
+        const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+        function closeDrawer() {
+            document.body.classList.remove('drawer-open');
+            document.getElementById('drawerBackdrop').style.display = 'none';
+        }
+        document.getElementById('navToggle').onclick = () => {
+            if (isMobile()) {
+                const open = !document.body.classList.contains('drawer-open');
+                document.body.classList.toggle('drawer-open', open);
+                document.getElementById('drawerBackdrop').style.display = open ? 'block' : 'none';
+            } else {
+                document.body.classList.toggle('nav-collapsed');
+            }
+        };
+        document.getElementById('drawerBackdrop').onclick = closeDrawer;
+        window.matchMedia('(max-width: 768px)').addEventListener('change', () => {
+            closeDrawer();
+            document.body.classList.remove('nav-collapsed');
+        });
 
         async function loadContent() {
             const list = document.getElementById("postList");
@@ -313,7 +375,7 @@
             if (item.type === 'post') {
                 html = `
                     <div class="post-main">
-                        <div class="post-meta">${data.is_pinned ? '<span class="pin-tag">[置顶]</span>' : ''}<span>${nameHtml(data.author_id, data.author_name)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;">💬 ${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-meta">${data.is_pinned ? '<span class="pin-tag">[置顶]</span>' : ''}<span>${nameHtml(data.author_id, data.author_name)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;"><span class="meta-ic material-symbols-outlined">chat_bubble</span>${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
                         <div class="post-title">${escapeHtml(data.title)}</div>
                         <div class="post-preview">${escapeHtml(data.content)}</div>
                         ${data.image_url ? `<img class="post-img" src="${escapeHtml(data.image_url)}" loading="lazy" alt="">` : ''}
@@ -339,7 +401,7 @@
                 });
                 html = `
                     <div class="post-main">
-                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${nameHtml(data.user_id, data.username)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;">💬 ${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${nameHtml(data.user_id, data.username)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;"><span class="meta-ic material-symbols-outlined">chat_bubble</span>${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
                         <div class="post-title">${escapeHtml(data.title)}</div>
                         <div class="vote-options">${optsHtml}</div>
                     </div>
@@ -356,7 +418,7 @@
                     try { lk = Array.isArray(c.likes) ? c.likes : (c.likes ? JSON.parse(c.likes) : []); } catch(e) { lk = []; }
                     return `
                         <div class="comment-item">
-                            <div class="comment-meta">${nameHtml(c.user_id, c.username)}<span class="comment-time">${timeAgo(c.created_at)}</span><span class="comment-like" data-likes='${JSON.stringify(lk)}' onclick="likeComment(event, '${c.id}')">👍 ${lk.length}</span><span class="comment-like" onclick="setReplyTarget(event, '${data.id}', '${rootId}', '${jsStr(c.username)}', '${jsStr(c.user_id || '')}')">回复</span></div>
+                            <div class="comment-meta">${nameHtml(c.user_id, c.username)}<span class="comment-time">${timeAgo(c.created_at)}</span><span class="comment-like" data-likes='${JSON.stringify(lk)}' onclick="likeComment(event, '${c.id}')"><span class="material-symbols-outlined like-ic">thumb_up</span><span class="like-count">${lk.length}</span></span><span class="comment-like" onclick="setReplyTarget(event, '${data.id}', '${rootId}', '${jsStr(c.username)}', '${jsStr(c.user_id || '')}')">回复</span></div>
                             <div class="comment-text">${escapeHtml(c.content)}</div>
                         </div>
                     `;
@@ -518,7 +580,7 @@
             if (!currentUser) return alert("请先登录");
             const heart = document.createElement('div');
             heart.className = 'heart-anim';
-            heart.innerHTML = '❤️';
+            heart.innerHTML = '<span class="material-symbols-outlined" style="font-size: 40px; font-variation-settings: \'FILL\' 1;">favorite</span>';
             heart.style.left = '50%'; heart.style.top = '50%';
             element.appendChild(heart);
             setTimeout(() => heart.remove(), 800);
@@ -699,7 +761,7 @@
             const newLikes = liked ? likes.filter(u => u !== currentUser.id) : [...likes, currentUser.id];
             el.setAttribute('data-likes', JSON.stringify(newLikes));
             el.classList.toggle('liked', !liked);
-            el.textContent = `👍 ${newLikes.length}`;
+            el.querySelector('.like-count').textContent = String(newLikes.length);
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${cid}`, {
                     method: "PATCH",
