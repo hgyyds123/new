@@ -345,48 +345,86 @@
             });
         }
 
-        // 提交投票
+        // 提交投票（防止事件冒泡）
         window.submitVote = async (e, voteId, optionIndex) => {
             e.stopPropagation();
             const userId = localStorage.getItem("hg_user_id");
             if (!userId) return alert("请先登录");
+            
             try {
+                // 1. 尝试记录投票（防重复）
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/vote_records`, {
                     method: "POST",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ vote_id: voteId, user_id: userId, option_index: optionIndex })
                 });
-                if (!res.ok) return alert("您已投过票");
+                
+                if (!res.ok) {
+                    // 重复投或者没权限
+                    return alert("您已投过票或网络异常");
+                }
+                
+                // 2. 拉取最新投票数据
                 const getRes = await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
                 const voteData = await getRes.json();
+                
+                if(!voteData || voteData.length === 0) return;
+                
                 let options = voteData[0].options;
                 if (typeof options === 'string') options = JSON.parse(options);
+                
+                // 3. 对应选项票数 +1
                 options[optionIndex].votes = (options[optionIndex].votes || 0) + 1;
+                
+                // 4. 覆盖更新回去
                 await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
                     method: "PATCH",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ options: options })
                 });
+                
+                alert("投票成功");
                 loadContent();
-            } catch (e) {}
+            } catch (e) { 
+                console.error(e);
+                alert("网络异常"); 
+            }
         };
 
-        // 提交回复
+        // 提交回复（修复无法回复的问题）
         window.submitComment = async (postId) => {
             const input = document.getElementById(`reply-input-${postId}`);
             const content = input.value.trim();
             if (!content) return;
+            
             const userId = localStorage.getItem("hg_user_id");
             const uname = localStorage.getItem("hg_username") || "匿名";
             if (!userId) return alert("请先登录");
+
             try {
-                await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
                     method: "POST",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ post_id: postId, user_id: userId, username: uname, content: content })
+                    body: JSON.stringify({ 
+                        post_id: postId, // 确保 UUID 格式传入
+                        user_id: userId, 
+                        username: uname, 
+                        content: content 
+                    })
                 });
-                loadContent();
-            } catch (e) { alert("回复失败"); }
+
+                if (res.ok) {
+                    input.value = ""; // 清空输入框
+                    loadContent(); // 刷新数据
+                } else {
+                    const err = await res.json();
+                    console.error("回复失败:", err);
+                    alert("回复失败，请检查数据库权限");
+                }
+            } catch (e) { 
+                console.error(e);
+                alert("网络异常"); 
+            }
         };
 
         // 双击点赞（修复容错）
@@ -412,7 +450,7 @@
                     body: JSON.stringify({ likes: newLikes })
                 });
                 if (!res.ok) {
-                    alert("点赞失败，请确认数据库是否开启了 UPDATE 权限");
+                    alert("点赞失败，请检查数据库权限");
                 }
             } catch(e) {
                 alert("网络异常");
