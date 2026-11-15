@@ -63,6 +63,7 @@
         /* 评论区 */
         .comments-section { background: var(--bg-color); border-top: 1px solid var(--outline-variant); padding: 16px 20px; display: none; }
         .comments-section.active { display: block; }
+        .v-badge { width: 15px; height: 15px; vertical-align: -2px; margin-left: 3px; }
         .comment-item { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--outline-variant); }
         .comment-item:last-child { border-bottom: none; margin-bottom: 0; }
         .comment-meta { font-size: 12px; color: var(--primary); font-weight: 500; }
@@ -157,6 +158,7 @@
         let currentCategory = "全部";
         let currentUser = null;
         let isAdmin = false;
+        let adminIds = new Set(); // 蓝V认证：所有管理员的 auth UUID 集合
 
         window.addEventListener('DOMContentLoaded', async () => {
             const userId = localStorage.getItem("hg_user_id");
@@ -170,6 +172,16 @@
                     if (data && data.length > 0 && data[0].is_admin) isAdmin = true;
                 } catch(e) {}
             }
+
+            // 蓝V：拉取所有管理员 ID（无论是否登录都拉，游客也能看到认证标）
+            try {
+                const aRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_admin=eq.true&select=id`, {
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                });
+                const admins = await aRes.json();
+                if (Array.isArray(admins)) adminIds = new Set(admins.map(a => a.id));
+            } catch(e) {}
+
             loadContent();
         });
 
@@ -273,7 +285,7 @@
             if (item.type === 'post') {
                 html = `
                     <div class="post-main">
-                        <div class="post-meta"><span>${escapeHtml(data.author_name || '匿名')}</span><span>· ${new Date(data.created_at).toLocaleString()}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-meta"><span>${nameHtml(data.author_id, data.author_name)}</span><span>· ${new Date(data.created_at).toLocaleString()}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
                         <div class="post-title">${escapeHtml(data.title)}</div>
                         <div class="post-preview">${escapeHtml(data.content)}</div>
                     </div>
@@ -298,7 +310,7 @@
                 });
                 html = `
                     <div class="post-main">
-                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${escapeHtml(data.username || '匿名')}</span><span>· ${new Date(data.created_at).toLocaleString()}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${nameHtml(data.user_id, data.username)}</span><span>· ${new Date(data.created_at).toLocaleString()}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
                         <div class="post-title">${escapeHtml(data.title)}</div>
                         <div class="vote-options">${optsHtml}</div>
                     </div>
@@ -310,7 +322,7 @@
                 comments.forEach(c => {
                     commentsHtml += `
                         <div class="comment-item">
-                            <div class="comment-meta">${escapeHtml(c.username || '匿名')}</div>
+                            <div class="comment-meta">${nameHtml(c.user_id, c.username)}</div>
                             <div class="comment-text">${escapeHtml(c.content)}</div>
                         </div>
                     `;
@@ -524,7 +536,11 @@
                     // 关键诊断：创建失败不再静默关弹窗（那会伪装成"发布成功但投票没出现"）
                     const raw = await res.text().catch(() => "<读不到响应体>");
                     console.error("创建投票失败 HTTP", res.status, raw);
-                    alert(`创建投票失败 HTTP ${res.status}\n${raw.slice(0, 500)}`);
+                    if (res.status === 409 || raw.includes("unique_daily_initiator")) {
+                        alert("创建投票失败：每个账号每天只能发起一个投票。\n明天再来，或先删掉今天已发的投票。");
+                    } else {
+                        alert(`创建投票失败 HTTP ${res.status}\n${raw.slice(0, 500)}`);
+                    }
                     return; // 弹窗保持打开，方便重试
                 }
             } catch (e) {
@@ -535,6 +551,13 @@
             document.getElementById('voteModal').classList.remove('active');
             loadContent();
         };
+
+        // 蓝V认证标：管理员名字后面的小蓝V（hg官方）
+        const V_SVG = `<svg class="v-badge" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1d9bf0" d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.05 3.87l-3.24-3.24 1.41-1.41 1.83 1.83 4.24-4.24 1.41 1.41-5.65 5.65z"/></svg>`;
+        function nameHtml(id, fallback) {
+            const n = escapeHtml(fallback || '匿名');
+            return adminIds.has(id) ? `${n} ${V_SVG}` : n;
+        }
 
         function escapeHtml(str) {
             return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
