@@ -45,7 +45,7 @@
         .post-list { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 16px; }
 
         /* 卡片样式 */
-        .post-card { background: var(--surface); border-radius: 16px; border: 1px solid var(--outline-variant); overflow: hidden; transition: transform 0.1s; user-select: none; }
+        .post-card { background: var(--surface); border-radius: 16px; border: 1px solid var(--outline-variant); overflow: hidden; transition: transform 0.1s; user-select: none; position: relative; }
         .post-main { padding: 20px; cursor: pointer; }
         .post-meta { display: flex; gap: 12px; font-size: 13px; color: var(--text-sub); margin-bottom: 8px; }
         .post-title { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
@@ -185,6 +185,7 @@
             loadContent();
         }
 
+        // 核心修复：一次性拉取所有数据
         async function loadContent() {
             const list = document.getElementById("postList");
             list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">加载中...</div>';
@@ -196,13 +197,18 @@
                     postUrl += `&category=eq.${encodeURIComponent(currentCategory)}`;
                 }
 
-                const [postsRes, votesRes] = await Promise.all([
+                // 1. 并发拉取帖子、投票、以及所有的评论
+                const [postsRes, votesRes, commentsRes] = await Promise.all([
                     fetch(postUrl, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
-                    fetch(voteUrl, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } })
+                    fetch(voteUrl, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
+                    fetch(`${SUPABASE_URL}/rest/v1/comments?order=created_at.asc`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    })
                 ]);
 
                 const posts = await postsRes.json();
                 const votes = await votesRes.json();
+                const allComments = await commentsRes.json();
 
                 let mixed = [];
                 if (Array.isArray(posts)) posts.forEach(p => mixed.push({ type: 'post', data: p }));
@@ -215,27 +221,24 @@
                     return;
                 }
 
-                for (const item of mixed) {
-                    await renderItem(item, list);
-                }
+                // 2. 本地渲染，不再发请求
+                mixed.forEach(item => {
+                    const itemComments = Array.isArray(allComments) ? allComments.filter(c => c.post_id === item.data.id) : [];
+                    renderItem(item, itemComments, list);
+                });
             } catch (e) {
                 list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--error);">加载失败</div>';
             }
         }
 
-        // 渲染帖子/投票
-        async function renderItem(item, list) {
+        // 纯本地渲染
+        function renderItem(item, comments, list) {
             const data = item.data;
             const div = document.createElement("div");
             div.className = "post-card";
             div.setAttribute('data-id', data.id);
             div.setAttribute('data-type', item.type);
 
-            // 双击点赞
-            let lastTap = 0;
-            div.querySelector('.post-main')?.addEventListener('click', (e) => {}); // 占位
-
-            // 右键删除
             if (isAdmin) {
                 div.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
@@ -243,15 +246,8 @@
                 });
             }
 
-            // 获取评论
-            const commRes = await fetch(`${SUPABASE_URL}/rest/v1/comments?post_id=eq.${data.id}&order=created_at.asc`, {
-                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-            });
-            const comments = await commRes.json();
-
-            // 点赞数据
             const likes = Array.isArray(data.likes) ? data.likes : (data.likes ? JSON.parse(data.likes) : []);
-            const hasLiked = likes.includes(currentUser?.id);
+            const hasLiked = currentUser && likes.includes(currentUser.id);
 
             let html = '';
 
@@ -286,7 +282,6 @@
                 `;
             }
 
-            // 评论与输入区
             let commentsHtml = `<div class="comments-section">`;
             if (comments && comments.length > 0) {
                 comments.forEach(c => {
@@ -309,20 +304,17 @@
             div.innerHTML = html + commentsHtml;
             list.appendChild(div);
 
-            // 绑定双击点赞和单击展开事件
+            // 单击展开、双击点赞
             const mainArea = div.querySelector('.post-main');
             let clickTimer = null;
 
             mainArea.addEventListener('click', (e) => {
-                // 如果是点投票选项，不触发展开和点赞
-                if (e.target.closest('.vote-btn')) return;
+                if (e.target.closest('.vote-btn')) return; // 点投票不触发
 
-                // 判断双击
-                if (e.detail === 2) {
+                if (e.detail === 2) { // 双击
                     clearTimeout(clickTimer);
                     doLike(item.type, data.id, mainArea, likes, hasLiked);
-                } else {
-                    // 延迟判断单击
+                } else { // 单击
                     clickTimer = setTimeout(() => {
                         const section = div.querySelector('.comments-section');
                         section.classList.toggle('active');
@@ -331,13 +323,10 @@
             });
         }
 
-        // 提交投票（防冒泡）
         window.submitVote = async (e, voteId, optionIndex) => {
-            e.stopPropagation(); // 阻止触发卡片点击
+            e.stopPropagation();
             const userId = localStorage.getItem("hg_user_id");
             if (!userId) return alert("请先登录");
-
-            // 简化的投票逻辑
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/vote_records`, {
                     method: "POST",
@@ -345,15 +334,11 @@
                     body: JSON.stringify({ vote_id: voteId, user_id: userId, option_index: optionIndex })
                 });
                 if (!res.ok) return alert("您已投过票");
-
-                const getRes = await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
-                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-                });
+                const getRes = await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
                 const voteData = await getRes.json();
                 let options = voteData[0].options;
                 if (typeof options === 'string') options = JSON.parse(options);
                 options[optionIndex].votes = (options[optionIndex].votes || 0) + 1;
-
                 await fetch(`${SUPABASE_URL}/rest/v1/votes?id=eq.${voteId}`, {
                     method: "PATCH",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
@@ -363,7 +348,6 @@
             } catch (e) {}
         };
 
-        // 提交评论
         window.submitComment = async (postId) => {
             const input = document.getElementById(`reply-input-${postId}`);
             const content = input.value.trim();
@@ -371,7 +355,6 @@
             const userId = localStorage.getItem("hg_user_id");
             const uname = localStorage.getItem("hg_username") || "匿名";
             if (!userId) return alert("请先登录");
-
             try {
                 await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
                     method: "POST",
@@ -382,25 +365,18 @@
             } catch (e) { alert("回复失败"); }
         };
 
-        // 双击点赞
         async function doLike(type, id, element, likesArr, hasLiked) {
             if (!currentUser) return alert("请先登录");
-            
-            // 飘心动画
             const heart = document.createElement('div');
             heart.className = 'heart-anim';
             heart.innerHTML = '❤️';
-            heart.style.left = '50%';
-            heart.style.top = '50%';
+            heart.style.left = '50%'; heart.style.top = '50%';
             element.appendChild(heart);
             setTimeout(() => heart.remove(), 800);
 
             let newLikes = [...likesArr];
-            if (hasLiked) {
-                newLikes = newLikes.filter(uid => uid !== currentUser.id);
-            } else {
-                newLikes.push(currentUser.id);
-            }
+            if (hasLiked) { newLikes = newLikes.filter(uid => uid !== currentUser.id); } 
+            else { newLikes.push(currentUser.id); }
 
             const table = type === 'post' ? 'posts' : 'votes';
             await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
@@ -408,36 +384,26 @@
                 headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ likes: newLikes })
             });
-            
-            loadContent(); // 重新加载
+            loadContent();
         }
 
-        // 右键菜单
         let currentContext = null;
         function showContextMenu(x, y, type, id) {
             const menu = document.getElementById('contextMenu');
-            menu.style.left = `${x}px`;
-            menu.style.top = `${y}px`;
-            menu.classList.add('active');
+            menu.style.left = `${x}px`; menu.style.top = `${y}px`; menu.classList.add('active');
             currentContext = { type, id };
-
             document.getElementById('deleteBtn').onclick = async () => {
                 if (!confirm("确定删除？")) return;
                 const table = type === 'post' ? 'posts' : 'votes';
                 await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
-                    method: "DELETE",
-                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    method: "DELETE", headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
                 });
                 menu.classList.remove('active');
                 loadContent();
             };
         }
+        document.addEventListener('click', () => { document.getElementById('contextMenu').classList.remove('active'); });
 
-        document.addEventListener('click', () => {
-            document.getElementById('contextMenu').classList.remove('active');
-        });
-
-        // 弹窗逻辑
         document.getElementById('newPostBtn').onclick = () => document.getElementById('postModal').classList.add('active');
         document.getElementById('cancelPost').onclick = () => document.getElementById('postModal').classList.remove('active');
         document.getElementById('submitPost').onclick = async () => {
