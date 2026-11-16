@@ -44,6 +44,16 @@
         .main-content { flex: 1; padding: 32px; display: flex; flex-direction: column; align-items: center; }
         .post-list { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 16px; }
 
+        /* 搜索框 */
+        .search-box { width: 100%; max-width: 700px; margin-bottom: 16px; position: relative; display: flex; align-items: center; }
+        .search-box > .material-symbols-outlined { position: absolute; left: 14px; font-size: 20px; color: var(--text-sub); pointer-events: none; }
+        .search-box input { width: 100%; background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 9999px; padding: 10px 40px 10px 44px; font-size: 14px; color: var(--text-main); font-family: inherit; outline: none; }
+        .search-box input:focus { border-color: var(--primary); }
+        .search-box input::placeholder { color: var(--text-sub); }
+        .search-clear { position: absolute; right: 8px; display: none; padding: 6px; border-radius: 50%; color: var(--text-sub); }
+        .search-clear:hover { background: var(--surface-variant); color: var(--text-main); }
+        .search-clear > .material-symbols-outlined { font-size: 18px; }
+
         /* 卡片样式 */
         .post-card { background: var(--surface); border-radius: 16px; border: 1px solid var(--outline-variant); overflow: hidden; transition: transform 0.1s; user-select: none; position: relative; }
         .post-main { padding: 20px; cursor: pointer; touch-action: manipulation; }
@@ -167,6 +177,11 @@
         </aside>
 
         <main class="main-content">
+            <div class="search-box">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="searchInput" placeholder="搜索标题、正文或作者..." maxlength="50" autocomplete="off">
+                <button class="search-clear" id="searchClear" aria-label="清空搜索"><span class="material-symbols-outlined">close</span></button>
+            </div>
             <div class="post-list" id="postList"></div>
         </main>
     </div>
@@ -217,6 +232,8 @@
         const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentCategory = "全部";
+        let currentSearch = "";
+        let searchTimer = null;
         let currentUser = null;
         let isAdmin = false;
         let adminIds = new Set(); // 蓝V认证：所有管理员的 auth UUID 集合
@@ -248,6 +265,30 @@
         });
 
         function showHub() { window.location.href = "/"; }
+
+        // 未登录统一跳转登录页（带 redirect 参数，登录后回本页），不用弹窗
+        const requireLogin = () => window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
+
+        // 搜索：300ms 防抖，输入变化即刷新列表（客户端过滤当前分类数据）
+        const searchInput = document.getElementById('searchInput');
+        const searchClear = document.getElementById('searchClear');
+        searchInput.addEventListener('input', () => {
+            searchClear.style.display = searchInput.value ? 'block' : 'none';
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                const kw = searchInput.value.trim();
+                if (kw === currentSearch) return;
+                currentSearch = kw;
+                loadContent();
+            }, 300);
+        });
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            searchClear.style.display = 'none';
+            searchInput.focus();
+            if (currentSearch) { currentSearch = ''; loadContent(); }
+        });
+        searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchInput.blur(); });
 
         function showList(category) {
             currentCategory = category;
@@ -332,9 +373,21 @@
                     return new Date(b.data.created_at) - new Date(a.data.created_at);
                 });
 
+                // 搜索过滤：匹配标题/正文/作者名（不区分大小写）
+                if (currentSearch) {
+                    const kw = currentSearch.toLowerCase();
+                    mixed = mixed.filter(item => {
+                        const d = item.data;
+                        const hay = `${d.title || ''} ${d.content || ''} ${d.author_name || d.username || ''}`.toLowerCase();
+                        return hay.includes(kw);
+                    });
+                }
+
                 list.innerHTML = "";
                 if (mixed.length === 0) {
-                    list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-sub);">暂无内容</div>';
+                    list.innerHTML = currentSearch
+                        ? `<div style="text-align:center; padding:40px; color:var(--text-sub);">未找到与「${escapeHtml(currentSearch)}」相关的内容</div>`
+                        : '<div style="text-align:center; padding:40px; color:var(--text-sub);">暂无内容</div>';
                     return;
                 }
 
@@ -467,7 +520,7 @@
         window.submitVote = async (e, voteId, optionIndex) => {
             e.stopPropagation();
             const userId = localStorage.getItem("hg_user_id");
-            if (!userId) return alert("请先登录");
+            if (!userId) return requireLogin();
             
             try {
                 // 1. 尝试记录投票（防重复）
@@ -528,7 +581,7 @@
 
             const userId = localStorage.getItem("hg_user_id");
             const uname = localStorage.getItem("hg_username") || "匿名";
-            if (!userId) return alert("请先登录");
+            if (!userId) return requireLogin();
 
             const parentId = input.dataset.parent || null;
             const parentAuthor = input.dataset.parentAuthor || null;
@@ -577,7 +630,7 @@
 
         // 双击点赞（修复容错）
         async function doLike(type, id, element, likesArr, hasLiked) {
-            if (!currentUser) return alert("请先登录");
+            if (!currentUser) return requireLogin();
             const heart = document.createElement('div');
             heart.className = 'heart-anim';
             heart.innerHTML = '<span class="material-symbols-outlined" style="font-size: 40px; font-variation-settings: \'FILL\' 1;">favorite</span>';
@@ -650,7 +703,7 @@
         }
         document.addEventListener('click', () => { document.getElementById('contextMenu').classList.remove('active'); });
 
-        document.getElementById('newPostBtn').onclick = () => document.getElementById('postModal').classList.add('active');
+        document.getElementById('newPostBtn').onclick = () => { if (!localStorage.getItem("hg_user_id")) return requireLogin(); document.getElementById('postModal').classList.add('active'); };
         document.getElementById('cancelPost').onclick = () => document.getElementById('postModal').classList.remove('active');
         document.getElementById('submitPost').onclick = async () => {
             const title = document.getElementById('postTitle').value.trim();
@@ -693,7 +746,7 @@
         };
 
         // 发起投票（带分类）
-        document.getElementById('newVoteBtn').onclick = () => document.getElementById('voteModal').classList.add('active');
+        document.getElementById('newVoteBtn').onclick = () => { if (!localStorage.getItem("hg_user_id")) return requireLogin(); document.getElementById('voteModal').classList.add('active'); };
         document.getElementById('cancelVote').onclick = () => document.getElementById('voteModal').classList.remove('active');
         document.getElementById('submitVoteBtn').onclick = async () => {
             const title = document.getElementById('voteTitle').value.trim();
@@ -753,7 +806,7 @@
         // 评论点赞（乐观更新，失败弹真实报错）
         window.likeComment = async (e, cid) => {
             e.stopPropagation();
-            if (!currentUser) return alert("请先登录");
+            if (!currentUser) return requireLogin();
             const el = e.currentTarget;
             let likes = [];
             try { likes = JSON.parse(el.getAttribute('data-likes') || '[]'); } catch (err) { likes = []; }
