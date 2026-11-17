@@ -705,12 +705,30 @@
         }
         document.addEventListener('click', () => { document.getElementById('contextMenu').classList.remove('active'); });
 
+        // 发布节流：请求进行中禁止重复提交；成功后 15 秒冷却（高延迟下快速连点不再刷出多条）
+        const PUBLISH_COOLDOWN = 15000;
+        let publishing = false;
+        let lastPublishAt = 0;
+        function publishBlocked() {
+            if (publishing) return true;
+            const wait = PUBLISH_COOLDOWN - (Date.now() - lastPublishAt);
+            if (wait > 0) { alert(`发布太频繁：15 秒内只能发一次，还需等待 ${Math.ceil(wait / 1000)} 秒`); return true; }
+            return false;
+        }
+
         document.getElementById('newPostBtn').onclick = () => { if (!localStorage.getItem("hg_user_id")) return requireLogin(); document.getElementById('postModal').classList.add('active'); };
         document.getElementById('cancelPost').onclick = () => document.getElementById('postModal').classList.remove('active');
         document.getElementById('submitPost').onclick = async () => {
+            if (publishBlocked()) return;
             const title = document.getElementById('postTitle').value.trim();
             const content = document.getElementById('postContent').value.trim();
             if(!title || !content) return alert("填写完整");
+            const submitBtn = document.getElementById('submitPost');
+            publishing = true;
+            submitBtn.disabled = true;
+            const oldBtnText = submitBtn.textContent;
+            submitBtn.textContent = "发布中...";
+            try {
             // 图片上传（走代理转发 Storage；桶 community，公开读）
             let imageUrl = "";
             const file = document.getElementById('postImage').files[0];
@@ -737,24 +755,42 @@
             }
             const postBody = { author_id: currentUser.id, author_name: localStorage.getItem("hg_username")||"匿名", category: currentCategory==="全部"?"闲聊":currentCategory, title, content };
             if (imageUrl) postBody.image_url = imageUrl; // 未建列时不传，避免整帖发不出去
-            await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
                 method: "POST",
                 headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
                 body: JSON.stringify(postBody)
             });
+            if (!res.ok) {
+                const raw = await res.text().catch(() => "<读不到响应体>");
+                alert(`发布失败 HTTP ${res.status}\n${raw.slice(0, 500)}`);
+                return;
+            }
+            lastPublishAt = Date.now();
             document.getElementById('postImage').value = "";
             document.getElementById('postModal').classList.remove('active');
             loadContent();
+            } finally {
+                publishing = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = oldBtnText;
+            }
         };
 
         // 发起投票（带分类）
         document.getElementById('newVoteBtn').onclick = () => { if (!localStorage.getItem("hg_user_id")) return requireLogin(); document.getElementById('voteModal').classList.add('active'); };
         document.getElementById('cancelVote').onclick = () => document.getElementById('voteModal').classList.remove('active');
         document.getElementById('submitVoteBtn').onclick = async () => {
+            if (publishBlocked()) return;
             const title = document.getElementById('voteTitle').value.trim();
             const o1 = document.getElementById('voteOption1').value.trim();
             const o2 = document.getElementById('voteOption2').value.trim();
             if(!title || !o1 || !o2) return alert("填写完整（标题和前两个选项必填）");
+            const submitBtn = document.getElementById('submitVoteBtn');
+            publishing = true;
+            submitBtn.disabled = true;
+            const oldBtnText = submitBtn.textContent;
+            submitBtn.textContent = "发布中...";
+            try {
             const options = [{text:o1,votes:0},{text:o2,votes:0}];
             const o3 = document.getElementById('voteOption3').value.trim();
             if(o3) options.push({text:o3,votes:0});
@@ -780,8 +816,14 @@
                 alert(`创建投票网络异常: ${e && e.message ? e.message : e}`);
                 return;
             }
+            lastPublishAt = Date.now();
             document.getElementById('voteModal').classList.remove('active');
             loadContent();
+            } finally {
+                publishing = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = oldBtnText;
+            }
         };
 
         // 蓝V认证标：管理员名字后面的小蓝V（hg官方）
