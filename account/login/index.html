@@ -74,7 +74,7 @@
             </div>
 
             <div class="msg" id="msg"></div>
-            <div class="guest-hint" id="guestHint">您使用的不是自己的电脑？请使用无痕模式登录。</div>
+            <div class="guest-hint" id="guestHint">您使用的不是自己的电脑？请使用无痕模式登录。</p></div>
 
             <div class="actions-row" id="actionsRow">
                 <button class="btn-text" id="switchBtn">创建账号</button>
@@ -148,6 +148,9 @@
                 sessionStorage.setItem("hg_logged_in", "true");
                 sessionStorage.setItem("hg_user_id", userId);
                 sessionStorage.setItem("hg_username", username);
+
+                // 3. 【新增】写跨子域 cookie，供 support.hg1.dpdns.org 工单系统读取
+                document.cookie = "hg_user_name=hg; domain=.hg1.dpdns.org; path=/; Secure; SameSite=Lax";
 
                 // 【抓虫测试弹窗】强制卡住，看看存进去了没
                 const l = localStorage.getItem("hg_logged_in");
