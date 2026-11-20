@@ -46,6 +46,10 @@
         .main-content { flex: 1; padding: 32px; display: flex; flex-direction: column; align-items: center; }
         .post-list { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 16px; }
 
+        /* 非阻塞消息条：替代 alert()，主题感知、不阻断操作 */
+        .msg { font-size: 14px; min-height: 20px; margin: 0 0 16px 0; color: var(--error); }
+        .msg.success { color: var(--primary); }
+
         /* 搜索框 */
         .search-box { width: 100%; max-width: 700px; margin-bottom: 16px; position: relative; display: flex; align-items: center; }
         .search-box > .material-symbols-outlined { position: absolute; left: 14px; font-size: 20px; color: var(--text-sub); pointer-events: none; }
@@ -184,6 +188,7 @@
                 <input type="text" id="searchInput" placeholder="搜索标题、正文或作者..." maxlength="50" autocomplete="off">
                 <button class="search-clear" id="searchClear" aria-label="清空搜索"><span class="material-symbols-outlined">close</span></button>
             </div>
+            <div class="msg" id="msg"></div>
             <div class="post-list" id="postList"></div>
         </main>
     </div>
@@ -239,6 +244,13 @@
         let currentUser = null;
         let isAdmin = false;
         let adminIds = new Set(); // 蓝V认证：所有管理员的 auth UUID 集合
+
+        // 非阻塞消息条（替代 alert()：主题感知、不阻断操作）
+        const msgEl = document.getElementById('msg');
+        function showMsg(text, isError = true) {
+            msgEl.textContent = text;
+            msgEl.className = isError ? 'msg' : 'msg success';
+        }
 
         window.addEventListener('DOMContentLoaded', async () => {
             const userId = localStorage.getItem("hg_user_id");
@@ -537,7 +549,7 @@
                     const raw = await res.text().catch(() => "<读不到响应体>");
                     console.error("投票记录写入失败 HTTP", res.status, raw);
                     if (res.status === 409 || raw.includes("duplicate key")) {
-                        return alert("您已投过票");
+                        return showMsg("您已投过票");
                     }
                     return alert(`投票失败 HTTP ${res.status}\n${raw.slice(0, 300)}`);
                 }
@@ -567,7 +579,7 @@
                     return;
                 }
                 
-                alert("投票成功");
+                showMsg("投票成功", false);
                 loadContent();
             } catch (e) { 
                 console.error(e);
@@ -653,7 +665,7 @@
                     body: JSON.stringify({ likes: newLikes })
                 });
                 if (!res.ok) {
-                    alert("点赞失败，请检查数据库权限");
+                    showMsg("点赞失败，请检查数据库权限");
                 }
             } catch(e) {
                 alert("网络异常");
@@ -712,7 +724,7 @@
         function publishBlocked() {
             if (publishing) return true;
             const wait = PUBLISH_COOLDOWN - (Date.now() - lastPublishAt);
-            if (wait > 0) { alert(`发布太频繁：15 秒内只能发一次，还需等待 ${Math.ceil(wait / 1000)} 秒`); return true; }
+            if (wait > 0) { showMsg(`发布太频繁：15 秒内只能发一次，还需等待 ${Math.ceil(wait / 1000)} 秒`); return true; }
             return false;
         }
 
@@ -722,7 +734,7 @@
             if (publishBlocked()) return;
             const title = document.getElementById('postTitle').value.trim();
             const content = document.getElementById('postContent').value.trim();
-            if(!title || !content) return alert("填写完整");
+            if(!title || !content) return showMsg("填写完整");
             const submitBtn = document.getElementById('submitPost');
             publishing = true;
             submitBtn.disabled = true;
@@ -734,7 +746,7 @@
             const file = document.getElementById('postImage').files[0];
             if (file) {
                 const ext = (file.name.split('.').pop() || '').toLowerCase();
-                if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return alert("图片格式仅支持 jpg / png / gif / webp");
+                if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return showMsg("图片格式仅支持 jpg / png / gif / webp");
                 const path = `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
                 try {
                     const upRes = await fetch(`${SUPABASE_URL}/storage/v1/object/community/${path}`, {
@@ -784,7 +796,7 @@
             const title = document.getElementById('voteTitle').value.trim();
             const o1 = document.getElementById('voteOption1').value.trim();
             const o2 = document.getElementById('voteOption2').value.trim();
-            if(!title || !o1 || !o2) return alert("填写完整（标题和前两个选项必填）");
+            if(!title || !o1 || !o2) return showMsg("填写完整（标题和前两个选项必填）");
             const submitBtn = document.getElementById('submitVoteBtn');
             publishing = true;
             submitBtn.disabled = true;
@@ -805,7 +817,7 @@
                     const raw = await res.text().catch(() => "<读不到响应体>");
                     console.error("创建投票失败 HTTP", res.status, raw);
                     if (res.status === 409 || raw.includes("unique_daily_initiator")) {
-                        alert("创建投票失败：每个账号每天只能发起一个投票。\n明天再来，或先删掉今天已发的投票。");
+                        showMsg("创建投票失败：每个账号每天只能发起一个投票。明天再来，或先删掉今天已发的投票。");
                     } else {
                         alert(`创建投票失败 HTTP ${res.status}\n${raw.slice(0, 500)}`);
                     }
