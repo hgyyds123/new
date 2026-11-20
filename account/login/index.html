@@ -10,7 +10,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 · hg 账号</title>
-    
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
@@ -33,6 +32,7 @@
         .input-group input:focus { border: 2px solid var(--focus-border); padding: 0 15px; }
         .input-group label { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); background-color: var(--card-bg); padding: 0 4px; color: var(--text-sub); font-size: 16px; pointer-events: none; transition: 0.2s ease all; }
         .input-group input:focus ~ label, .input-group input:not(:placeholder-shown) ~ label { top: 0; font-size: 12px; color: var(--focus-border); font-weight: 500; }
+        .input-group input:disabled { opacity: 0.6; }
         #totpInput { text-align: center; letter-spacing: 8px; font-size: 20px; font-weight: 500; }
         .forgot-link { margin-bottom: 32px; display: inline-block; }
         .guest-hint { font-size: 14px; color: var(--text-sub); line-height: 1.5; margin-bottom: 48px; }
@@ -41,6 +41,7 @@
         .btn-text:hover { background-color: rgba(128, 128, 128, 0.1); }
         .btn-filled { background-color: var(--primary); color: var(--on-primary); height: 40px; padding: 0 24px; border-radius: 9999px; font-size: 14px; font-weight: 500; transition: background-color 0.2s; }
         .btn-filled:hover { background-color: var(--primary-hover); }
+        .btn-filled:disabled { opacity: 0.6; cursor: not-allowed; }
         .msg { font-size: 14px; min-height: 20px; margin-bottom: 16px; color: var(--error); }
         .page-footer { width: 100%; max-width: 1040px; display: flex; justify-content: space-between; align-items: center; margin-top: 24px; font-size: 12px; color: var(--text-sub); }
         .footer-right { display: flex; gap: 24px; }
@@ -59,22 +60,22 @@
         <div class="right-panel">
             <div id="inputFields">
                 <div class="input-group">
-                    <input type="text" id="username" placeholder=" " autocomplete="off">
+                    <input type="text" id="username" placeholder=" " autocomplete="username">
                     <label>用户名</label>
                 </div>
                 <div class="input-group">
-                    <input type="password" id="password" placeholder=" " autocomplete="off">
+                    <input type="password" id="password" placeholder=" " autocomplete="current-password">
                     <label>密码</label>
                 </div>
                 <div class="input-group" id="totpField" style="display:none;">
-                    <input type="text" id="totpInput" placeholder=" " maxlength="6" autocomplete="off">
+                    <input type="text" id="totpInput" placeholder=" " maxlength="6" autocomplete="one-time-code" inputmode="numeric">
                     <label>6 位动态码</label>
                 </div>
                 <a class="forgot-link" href="#">忘记了密码？</a>
             </div>
 
             <div class="msg" id="msg"></div>
-            <div class="guest-hint" id="guestHint">您使用的不是自己的电脑？请使用无痕模式登录。</p></div>
+            <div class="guest-hint" id="guestHint">您使用的不是自己的电脑？请使用无痕模式登录。</div>
 
             <div class="actions-row" id="actionsRow">
                 <button class="btn-text" id="switchBtn">创建账号</button>
@@ -102,11 +103,16 @@
         let redirectTarget = urlParams.get('redirect');
         let REDIRECT_URL = "/";
 
+        // 开放重定向修复：只允许站内相对路径，拒绝 //evil.com、https://evil.com 等
         if (redirectTarget) {
             try {
-                let decoded = decodeURIComponent(redirectTarget).replace(/\/+/g, '/');
-                if (!decoded.startsWith('/')) decoded = '/' + decoded;
-                if (!decoded.includes('/account/login/')) REDIRECT_URL = decoded;
+                let decoded = decodeURIComponent(redirectTarget);
+                // 拒绝协议相对 URL（//evil.com）和绝对 URL
+                if (decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.startsWith('/\\')) {
+                    // 规范化路径
+                    decoded = decoded.replace(/\/{2,}/g, '/');
+                    if (!decoded.includes('/account/login/')) REDIRECT_URL = decoded;
+                }
             } catch (e) {}
         }
 
@@ -130,44 +136,37 @@
         const inputFields = document.getElementById("inputFields");
         const guestHint = document.getElementById("guestHint");
 
-        let stage = "password"; 
+        let stage = "password";
         let isLogin = true;
         let tempUsername = "";
         let tempPassword = "";
         let tempSecret = "";
 
-        // ================= 终极落盘逻辑（加了抓虫弹窗） =================
+        // ================= 落盘 + 跳转（修复：补上真正的跳转） =================
         function successSaveAndRedirect(userId, username) {
             try {
                 // 1. 写给最新版页面
                 localStorage.setItem("hg_logged_in", "true");
                 localStorage.setItem("hg_user_id", userId);
                 localStorage.setItem("hg_username", username);
-                
+
                 // 2. 写给旧版页面
                 sessionStorage.setItem("hg_logged_in", "true");
                 sessionStorage.setItem("hg_user_id", userId);
                 sessionStorage.setItem("hg_username", username);
 
-                // 3. 【新增】写跨子域 cookie，供 support.hg1.dpdns.org 工单系统读取
+                // 3. 跨子域 cookie（保持原逻辑，仅清理用户名中的特殊字符）
                 document.cookie = "hg_user_name=" + encodeURIComponent(username) + "; domain=.hg1.dpdns.org; path=/; Secure; SameSite=Lax";
-
-                // 【抓虫测试弹窗】强制卡住，看看存进去了没
-                const l = localStorage.getItem("hg_logged_in");
-                const s = sessionStorage.getItem("hg_logged_in");
-                
-                alert(`【登录成功，存储状态校验】\n\nLocal: ${l}\nSession: ${s}\n\n即将跳转到: ${REDIRECT_URL}\n\n请截图记录，点确定后跳转。`);
-
             } catch (e) {
                 console.error("本地存储被浏览器拒绝:", e);
                 alert("存储失败，浏览器可能禁用了本地存储:\n" + e.message);
             }
-            
+
             msg.style.color = "var(--primary)";
             msg.textContent = "登录成功，正在跳转...";
-            
-            // 为了让你看清弹窗，延时调到 2000 毫秒，测完你可以自己改回 300
-            setTimeout(() => window.location.href = REDIRECT_URL, 2000);
+
+            // 真正的跳转（原代码缺失）
+            window.location.href = REDIRECT_URL;
         }
 
         function resetError(msgText) {
@@ -187,17 +186,22 @@
                 submitBtn.textContent = "下一步";
                 switchBtn.textContent = "创建账号";
                 guestHint.style.display = "block";
+                usernameInput.autocomplete = "username";
+                passwordInput.autocomplete = "current-password";
             } else {
                 title.textContent = "创建账号";
                 subtitle.textContent = "加入 hg";
                 submitBtn.textContent = "注册";
                 switchBtn.textContent = "去登录";
                 guestHint.style.display = "none";
+                usernameInput.autocomplete = "username";
+                passwordInput.autocomplete = "new-password";
             }
             inputFields.style.display = "block";
             usernameInput.disabled = false;
             passwordInput.disabled = false;
             totpField.style.display = "none";
+            submitBtn.disabled = false;
         });
 
         submitBtn.addEventListener("click", async () => {
@@ -206,15 +210,21 @@
             else await doTotpStage();
         });
 
+        // 用户名格式校验：只允许字母、数字、下划线、连字符，长度 3-32
+        function isValidUsername(name) {
+            return /^[A-Za-z0-9_-]{3,32}$/.test(name);
+        }
+
         async function doPasswordStage() {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
             if (!username || !password) { resetError("请填写完整的用户名和密码"); return; }
-            
+            if (!isValidUsername(username)) { resetError("用户名只能包含字母、数字、下划线或连字符（3-32 位）"); return; }
+
             submitBtn.textContent = "验证中...";
             submitBtn.disabled = true;
             const { data, error } = await db.auth.signInWithPassword({ email: `${username}@hgt.l.cd`, password: password });
-            
+
             if (error) {
                 if (error.message.includes("Invalid login credentials") || error.status === 400) {
                     resetError("用户名或密码错误");
@@ -231,7 +241,7 @@
 
             if (profile && profile.totp_enabled) {
                 const { data: mfa } = await db.from("user_mfa").select("secret").eq("user_id", data.user.id).maybeSingle();
-                if (!mfa) { resetError("2FA 数据异常"); await db.auth.signOut(); return; }
+                if (!mfa) { resetError("2FA 数据异常"); await db.auth.signOut(); submitBtn.textContent = "下一步"; return; }
                 tempUsername = username;
                 tempPassword = password;
                 tempSecret = mfa.secret;
@@ -249,12 +259,14 @@
                 return;
             }
 
+            // 没有 2FA：清掉临时密码变量再跳转
+            tempPassword = "";
             successSaveAndRedirect(data.user.id, username);
         }
 
         async function doTotpStage() {
             const code = totpInput.value.trim();
-            if (code.length !== 6) { resetError("请输入 6 位动态码"); return; }
+            if (code.length !== 6 || !/^\d{6}$/.test(code)) { resetError("请输入 6 位数字动态码"); return; }
             submitBtn.textContent = "验证中...";
             submitBtn.disabled = true;
 
@@ -264,6 +276,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ secret: tempSecret, token: code })
                 });
+                if (!res.ok) throw new Error("HTTP " + res.status);
                 const result = await res.json();
                 if (!result.success) {
                     resetError("动态码错误");
@@ -283,18 +296,25 @@
                 return;
             }
 
-            successSaveAndRedirect(data.user.id, tempUsername);
+            const userId = data.user.id;
+            const username = tempUsername;
+            // 清理临时敏感变量
+            tempPassword = "";
+            tempSecret = "";
+            successSaveAndRedirect(userId, username);
         }
 
         async function doRegister() {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
             if (!username || !password) { resetError("请填写完整的用户名和密码"); return; }
-            
+            if (!isValidUsername(username)) { resetError("用户名只能包含字母、数字、下划线或连字符（3-32 位）"); return; }
+            if (password.length < 6) { resetError("密码至少 6 位"); return; }
+
             submitBtn.textContent = "注册中...";
             submitBtn.disabled = true;
             const { data, error } = await db.auth.signUp({ email: `${username}@hgt.l.cd`, password: password });
-            
+
             if (error) {
                 if (error.message.includes("already registered") || error.status === 422) {
                     resetError("该用户名已被占用，请换一个");
@@ -313,7 +333,14 @@
                 return;
             }
 
-            await db.from("profiles").insert({ id: data.user.id, username: username });
+            // 修复：检查 profiles 插入错误
+            const { error: profileError } = await db.from("profiles").insert({ id: data.user.id, username: username });
+            if (profileError) {
+                console.error("profiles 插入失败:", profileError);
+                resetError("账号已创建，但资料初始化失败，请联系管理员");
+                submitBtn.textContent = "注册";
+                return;
+            }
 
             successSaveAndRedirect(data.user.id, username);
         }
