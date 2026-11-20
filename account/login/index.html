@@ -150,7 +150,7 @@
                 sessionStorage.setItem("hg_username", username);
 
                 // 3. 【新增】写跨子域 cookie，供 support.hg1.dpdns.org 工单系统读取
-                document.cookie = "hg_user_name=hg; domain=.hg1.dpdns.org; path=/; Secure; SameSite=Lax";
+                document.cookie = "hg_user_name=" + encodeURIComponent(username) + "; domain=.hg1.dpdns.org; path=/; Secure; SameSite=Lax";
 
                 // 【抓虫测试弹窗】强制卡住，看看存进去了没
                 const l = localStorage.getItem("hg_logged_in");
