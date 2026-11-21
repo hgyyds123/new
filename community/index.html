@@ -784,6 +784,8 @@
                     if (postAuthor) notify(postAuthor, 'reply', 'post', postId, uname, content);
                     // 楼中楼回复时：通知被回复的评论作者（若与帖主相同则只发一条）
                     if (parentId && parentAuthor && parentAuthor !== postAuthor) notify(parentAuthor, 'reply', 'comment', parentId, uname, content);
+                    // @提及通知
+                    await processMentions(content, 'comment', Date.now());
                     input.value = "";
                     clearReplyTarget(null, postId);
                     loadContent();
@@ -815,6 +817,23 @@
                         content: String(content || '').slice(0, 60) 
                     })
                 });
+            } catch (e) { console.error(e); }
+        }
+
+        // @提及：解析文本里的 @用户名，写 mention 通知（被 @ 者收到）
+        async function processMentions(text, targetType, targetId) {
+            if (!text || !currentUser) return;
+            const mentions = Array.from(text.matchAll(/@([^\s@,，，。.!?]+)/g)).map(m => m[1].trim()).slice(0, 5);
+            if (mentions.length === 0) return;
+            try {
+                const ids = mentions.map(m => m).join("','");
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?username=in.(${ids})&select=id,username`, {
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                });
+                const users = await res.json();
+                if (Array.isArray(users)) {
+                    await Promise.all(users.map(u => notify(u.id, 'mention', targetType, targetId, currentUser.username || '有人', text.slice(0, 60))));
+                }
             } catch (e) { console.error(e); }
         }
 
@@ -964,6 +983,7 @@
             document.getElementById('postImage').value = "";
             document.getElementById('postModal').classList.remove('active');
             loadContent();
+            processMentions(title + ' ' + content, 'post', Date.now());
             } finally {
                 publishing = false;
                 submitBtn.disabled = false;
@@ -1025,7 +1045,8 @@
         const V_SVG = `<svg class="v-badge" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1d9bf0" d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.05 3.87l-3.24-3.24 1.41-1.41 1.83 1.83 4.24-4.24 1.41 1.41-5.65 5.65z"/></svg>`;
         function nameHtml(id, fallback) {
             const n = escapeHtml(fallback || '匿名');
-            return adminIds.has(id) ? `${n} ${V_SVG}` : n;
+            const link = `<a href="/user/${id}" style="color:inherit;text-decoration:none;">${n}</a>`;
+            return adminIds.has(id) ? `${link} ${V_SVG}` : link;
         }
 
         // 头像：有 avatar_url 用图，否则灰色占位圆
