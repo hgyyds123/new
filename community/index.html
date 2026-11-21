@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>社区 · hg</title>
     
-    <link rel="preload" href="/assets/fonts/material-symbols-subset.woff2" as="font" type="font/woff2" crossorigin>
-    <style>@font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; font-display: block; src: url('/assets/fonts/material-symbols-subset.woff2') format('woff2'); }</style>
+    <link rel="preload" href="/material-symbols.woff2" as="font" type="font/woff2" crossorigin>
+    <style>@font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; font-display: block; src: url('/material-symbols.woff2') format('woff2'); }</style>
     <style>.material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }</style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -442,7 +442,14 @@
         async function loadContent() {
             const list = document.getElementById("postList");
             list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">加载中...</div>';
-
+            if (!window.__avatarMap) {
+                try {
+                    const pr = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id,avatar_url`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+                    const ps = await pr.json();
+                    window.__avatarMap = {};
+                    (Array.isArray(ps)?ps:[]).forEach(p => { if(p.id) window.__avatarMap[p.id]=p.avatar_url; });
+                } catch(e) { window.__avatarMap = {}; }
+            }
             try {
                 let postUrl = `${SUPABASE_URL}/rest/v1/posts?order=created_at.desc`;
                 let voteUrl = `${SUPABASE_URL}/rest/v1/votes?order=created_at.desc`;
@@ -542,7 +549,7 @@
                     const w = document.getElementById('widgetFollow');
                     w.innerHTML = window.__followProfiles.map(p => `
                         <div class="widget-item">
-                            <img src="${p.avatar_url || '/assets/default-avatar.png'}" style="width:28px;height:28px;border-radius:50%;flex:0 0 auto;" onerror="this.src='/assets/default-avatar.png'">
+                            ${avatarHtml(p.id, 28)}
                             <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.username || p.id)}</span>
                             <button class="btn-text" style="font-size:11px;padding:2px 8px;" onclick="toggleFollow('${p.id}')">取消</button>
                         </div>`).join('');
@@ -583,7 +590,7 @@
                 html = `
                     <div class="post-main">
                         <div class="post-meta">${data.is_pinned ? '<span class="pin-tag">[置顶]</span>' : ''}<span>${nameHtml(data.author_id, data.author_name)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;"><span class="meta-ic material-symbols-outlined">chat_bubble</span>${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
-                        <div class="post-title">${escapeHtml(data.title)}</div>
+                        <div class="post-title" style="display:flex;align-items:center;">${avatarHtml(data.author_id, 24)}<span>${escapeHtml(data.title)}</span></div>
                         <div class="post-preview">${escapeHtml(data.content)}</div>
                         ${data.image_url ? `<img class="post-img" src="${escapeHtml(data.image_url)}" loading="lazy" alt="">` : ''}
                     </div>
@@ -609,7 +616,7 @@
                 html = `
                     <div class="post-main">
                         <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${nameHtml(data.user_id, data.username)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;"><span class="meta-ic material-symbols-outlined">chat_bubble</span>${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
-                        <div class="post-title">${escapeHtml(data.title)}</div>
+                        <div class="post-title" style="display:flex;align-items:center;">${avatarHtml(data.user_id, 24)}<span>${escapeHtml(data.title)}</span></div>
                         <div class="vote-options">${optsHtml}</div>
                     </div>
                 `;
@@ -983,6 +990,13 @@
         function nameHtml(id, fallback) {
             const n = escapeHtml(fallback || '匿名');
             return adminIds.has(id) ? `${n} ${V_SVG}` : n;
+        }
+
+        // 头像：有 avatar_url 用图，否则灰色占位圆
+        function avatarHtml(uid, size) {
+            const url = window.__avatarMap && window.__avatarMap[uid];
+            if (url) return `<img src="${escapeHtml(url)}" loading="lazy" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;flex:0 0 auto;" onerror="this.style.display='none'">`;
+            return `<span style="display:inline-block;width:${size}px;height:${size}px;border-radius:50%;background:var(--surface-variant);vertical-align:middle;margin-right:6px;flex:0 0 auto;"></span>`;
         }
 
         // 相对时间：刚刚 / N 分钟前 / 昨天 / N 天前
