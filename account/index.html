@@ -6,14 +6,14 @@
 <title>hg 账号</title>
 
 <!-- 引入本地图标字体 -->
-<link rel="preload" href="/assets/fonts/material-symbols-subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/material-symbols.woff2" as="font" type="font/woff2" crossorigin>
 <style>
   @font-face {
     font-family: 'Material Symbols Outlined';
     font-style: normal;
     font-weight: 400;
     font-display: block;
-    src: url('/assets/fonts/material-symbols-subset.woff2') format('woff2');
+    src: url('/material-symbols.woff2') format('woff2');
   }
   .material-symbols-outlined {
     font-family: 'Material Symbols Outlined';
@@ -299,40 +299,103 @@ nav .icon-wrap span{font-size:20px;}
   </div>
 </main>
 
-<script>
-    const myUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
-    const myUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "未知用户";
-    const myEmail = `${myUsername}@hgt.l.cd`;
+<script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const myUserId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
+        const myUsername = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username") || "未知用户";
+        const myEmail = `${myUsername}@hgt.l.cd`;
 
-    if (!myUserId) {
-        window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
-    } else {
-        const initial = myUsername.charAt(0).toUpperCase();
-        
-        document.getElementById("topAvatar").textContent = initial;
-        document.getElementById("mainAvatarDesktop").textContent = initial;
-        document.getElementById("mainAvatarMobile").textContent = initial;
-        
-        document.getElementById("userNameDesktop").textContent = myUsername;
-        document.getElementById("userEmailDesktop").textContent = myEmail;
-        
-        document.getElementById("userNameMobile").textContent = myUsername;
-        document.getElementById("userEmailMobile").textContent = myEmail;
-    }
+        if (!myUserId) {
+            window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
+        } else {
+            const initial = myUsername.charAt(0).toUpperCase();
+            
+            document.getElementById("topAvatar").textContent = initial;
+            document.getElementById("mainAvatarDesktop").textContent = initial;
+            document.getElementById("mainAvatarMobile").textContent = initial;
+            
+            document.getElementById("userNameDesktop").textContent = myUsername;
+            document.getElementById("userEmailDesktop").textContent = myEmail;
+            
+            document.getElementById("userNameMobile").textContent = myUsername;
+            document.getElementById("userEmailMobile").textContent = myEmail;
+            
+            // 加载已保存的头像
+            loadAvatar();
+        }
 
-    function doLogout() {
-        if (!confirm("确定要退出当前账号吗？")) return;
-        
-        // 暴力清空所有本地存储和会话存储
-        localStorage.clear();
-        sessionStorage.clear();
+        // Supabase 客户端
+        const SUPABASE_URL = CONFIG.SUPABASE_URL;
+        const SUPABASE_KEY = CONFIG.SUPABASE_KEY;
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 强制刷新并跳转，防止通过返回键退回
-        window.location.replace("/");
-    }
-    
-    document.getElementById("desktopLogoutBtn").addEventListener("click", doLogout);
-    document.getElementById("mobileLogoutBtn").addEventListener("click", doLogout);
-</script>
+        // 头像上传
+        const avatarInput = document.createElement('input');
+        avatarInput.type = 'file'; avatarInput.accept = 'image/*'; avatarInput.style.display = 'none';
+        document.body.appendChild(avatarInput);
+
+        // 所有头像元素都可点击上传
+        ['topAvatar', 'mainAvatarDesktop', 'mainAvatarMobile'].forEach(id => {
+            document.getElementById(id).onclick = () => avatarInput.click();
+        });
+
+        avatarInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file || !myUserId) return;
+            
+            const fileName = `avatars/${myUserId}/${Date.now()}_${file.name}`;
+            const { data, error } = await db.storage.from('community').upload(fileName, file, { upsert: true });
+            if (error) { alert('上传失败：' + error.message); return; }
+            
+            const url = `${SUPABASE_URL}/storage/v1/object/public/community/${fileName}`;
+            const patch = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${myUserId}`, {
+                method: 'PATCH',
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation" },
+                body: JSON.stringify({ avatar_url: url })
+            });
+            const patchRows = await patch.json().catch(() => null);
+            if (patch.ok && Array.isArray(patchRows) && patchRows.length > 0) {
+                applyAvatar(url);
+                alert('头像更新成功');
+            } else if (patch.ok) {
+                alert('保存失败：请在 Supabase SQL Editor 执行 setup_follows.sql 的 profiles_update 策略');
+            } else { alert('更新失败(' + patch.status + ')'); }
+        };
+
+        async function loadAvatar() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${myUserId}&select=avatar_url`, {
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                });
+                const data = await res.json();
+                if (data && data.length > 0 && data[0].avatar_url) {
+                    applyAvatar(data[0].avatar_url);
+                }
+            } catch(e) {}
+        }
+
+        function applyAvatar(url) {
+            ['topAvatar', 'mainAvatarDesktop', 'mainAvatarMobile'].forEach(id => {
+                const el = document.getElementById(id);
+                el.innerHTML = `<img src="${url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            });
+        }
+
+        function doLogout() {
+            if (!confirm("确定要退出当前账号吗？")) return;
+            
+            // 暴力清空所有本地存储和会话存储
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // 强制刷新并跳转，防止通过返回键退回
+            window.location.replace("/");
+        }
+        
+        document.getElementById("desktopLogoutBtn").addEventListener("click", doLogout);
+        document.getElementById("mobileLogoutBtn").addEventListener("click", doLogout);
+    </script>
 </body>
 </html>

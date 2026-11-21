@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<link rel="preload" href="/assets/fonts/material-symbols-subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/material-symbols.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  @font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; font-display: block; src: url('/assets/fonts/material-symbols-subset.woff2') format('woff2'); }
+  @font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; font-display: block; src: url('/material-symbols.woff2') format('woff2'); }
   .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; display: inline-block; }
 </style>
     <script src="/config.js"></script>
@@ -140,6 +140,53 @@
             auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
 
+        // 头像上传
+        const avatarInput = document.createElement('input');
+        avatarInput.type = 'file'; avatarInput.accept = 'image/*'; avatarInput.style.display = 'none';
+        document.body.appendChild(avatarInput);
+        document.getElementById('avatarInitial').onclick = () => avatarInput.click();
+
+        avatarInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            const { data: { session } } = await db.auth.getSession();
+            if (!file || !session || !session.user) return;
+            
+            const fileName = `avatars/${session.user.id}/${Date.now()}_${file.name}`;
+            const { data, error } = await db.storage.from('community').upload(fileName, file, { upsert: true });
+            if (error) { alert('上传失败：' + error.message); return; }
+            
+            const url = `${SUPABASE_URL}/storage/v1/object/public/community/${fileName}`;
+            const patch = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}`, {
+                method: 'PATCH',
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation" },
+                body: JSON.stringify({ avatar_url: url })
+            });
+            const patchRows = await patch.json().catch(() => null);
+            if (patch.ok && Array.isArray(patchRows) && patchRows.length > 0) {
+                applyAvatar(url);
+                alert('头像更新成功');
+            } else if (patch.ok) {
+                alert('保存失败：请在 Supabase SQL Editor 执行 setup_follows.sql 的 profiles_update 策略');
+            } else { alert('更新失败(' + patch.status + ')'); }
+        };
+
+        async function loadAvatar(userId) {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=avatar_url`, {
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                });
+                const data = await res.json();
+                if (data && data.length > 0 && data[0].avatar_url) {
+                    applyAvatar(data[0].avatar_url);
+                }
+            } catch(e) {}
+        }
+
+        function applyAvatar(url) {
+            const el = document.getElementById('avatarInitial');
+            el.innerHTML = `<img src="${url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        }
+
         async function loadUserInfo() {
             // 【最新逻辑】直接问官方 SDK 拿真实登录状态，不再查本地手写的那个变量
             const { data: { session } } = await db.auth.getSession();
@@ -158,6 +205,9 @@
             if (name && name.length > 0) {
                 document.getElementById("avatarInitial").textContent = name.charAt(0).toUpperCase();
             }
+            
+            // 加载已保存的头像
+            await loadAvatar(session.user.id);
 
             document.getElementById("logoutBtn").addEventListener("click", async (e) => {
                 e.preventDefault();
