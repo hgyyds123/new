@@ -208,6 +208,7 @@ nav .icon-wrap span{font-size:20px;}
       <li><a href="/account/password/"><div class="icon-wrap" style="background:#e8f0fe;color:#1a73e8"><span class="material-symbols-outlined">password</span></div>hg 密码</a></li>
       <li><a href="/account/privacy/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">shield</span></div>数据和隐私设置</a></li>
       <li><a href="/account/share/"><div class="icon-wrap" style="background:#fce8e6;color:#d93025"><span class="material-symbols-outlined">group</span></div>用户和分享</a></li>
+      <li id="adminMenuLi" style="display:none;"><a href="/admin/"><div class="icon-wrap" style="background:#2c3e50;color:#fff"><span class="material-symbols-outlined">dashboard</span></div>全站管理</a></li>
     </ul>
     
     <!-- 新增：返回主站按钮 -->
@@ -327,6 +328,19 @@ nav .icon-wrap span{font-size:20px;}
             
             // 加载已保存的头像
             loadAvatar();
+
+            // 检查管理员身份，显示全站管理入口
+            (async () => {
+                try {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${myUserId}&select=is_admin`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    });
+                    const data = await res.json();
+                    if (data && data.length > 0 && data[0].is_admin) {
+                        document.getElementById('adminMenuLi').style.display = '';
+                    }
+                } catch(e) {}
+            })();
         }
 
         // Supabase 客户端
