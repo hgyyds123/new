@@ -117,8 +117,7 @@
         <div class="nav-item" data-page="messages"><span class="material-symbols-outlined">chat</span> 消息管理</div>
         <div class="nav-item" data-page="reports"><span class="material-symbols-outlined">flag</span> 举报管理</div>
         <div class="nav-item" data-page="tickets"><span class="material-symbols-outlined">support_agent</span> 工单管理</div>
-        <div class="nav-item" data-page="banned"><span class="material-symbols-outlined">block</span> 封禁名单</div>
-      </nav>
+        <div class="nav-item" data-page="banned"><span class="material-symbols-outlined">block</span> 封禁名单</div>      </nav>
       <div class="sidebar-footer">
         <button class="btn-logout" onclick="logoutAdmin()">退出登录</button>
       </div>
@@ -175,10 +174,19 @@
         <div class="page-header"><div class="page-title">举报管理</div></div>
         <div class="empty">暂无举报数据（举报表尚未创建，可后续扩展）</div>
       </div>
-      <!-- 工单管理 -->
+      <!-- 工单管理：本地 tickets 表，替代 iframe -->
       <div class="page" id="page-tickets">
         <div class="page-header"><div class="page-title">工单管理</div></div>
-        <div class="ticket-iframe" style="width:100%;height:calc(100vh - 110px);border:none;"></div>
+        <div class="stats">
+          <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">inbox</span></div><div class="stat-info"><h3 id="tstatOpen">0</h3><p>待处理</p></div></div>
+          <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">reply</span></div><div class="stat-info"><h3 id="tstatReplied">0</h3><p>已回复</p></div></div>
+          <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">close</span></div><div class="stat-info"><h3 id="tstatClosed">0</h3><p>已关闭</p></div></div>
+          <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">list</span></div><div class="stat-info"><h3 id="tstatTotal">0</h3><p>总计</p></div></div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:220px">标题</th><th>用户</th><th>分类</th><th>优先级</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+          <tbody id="ticketList"></tbody>
+        </table></div>
       </div>
       <div class="page" id="page-banned">
         <div class="page-header"><div class="page-title">封禁名单</div><div class="search-bar"><input id="bannedSearch" placeholder="搜索昵称..."></div></div>
@@ -352,6 +360,7 @@
         loadComments();
         loadMessages();
         loadBanned();
+        loadTickets();
     }
 
     function escapeHtml(s) { return String(s == null ? '' : s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
@@ -530,6 +539,64 @@
             const { error } = await db.from('messages').delete().eq('id', mid);
             if (error) throw error;
             toast('已删除'); loadMessages(); loadStats();
+        } catch (e) { toast('失败: ' + e.message, true); }
+    }
+
+    async function loadTickets() {
+        try {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/tickets?select=*&order=created_at.desc&limit=200`, {
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+            });
+            const tickets = await res.json();
+            const tbody = document.getElementById('ticketList');
+            tbody.innerHTML = '';
+            const statOpen = document.getElementById('tstatOpen');
+            const statReplied = document.getElementById('tstatReplied');
+            const statClosed = document.getElementById('tstatClosed');
+            const statTotal = document.getElementById('tstatTotal');
+            if (!Array.isArray(tickets) || tickets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty">暂无工单</td></tr>';
+                statOpen.textContent = '0'; statReplied.textContent = '0'; statClosed.textContent = '0'; statTotal.textContent = '0';
+                return;
+            }
+            let open=0, replied=0, closed=0;
+            tickets.forEach(t => {
+                if (t.status === 'open') open++; else if (t.status === 'replied') replied++; else if (t.status === 'closed') closed++;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.title||'无标题')}</td>
+                    <td>${escapeHtml(t.user_name||'匿名')}</td>
+                    <td>${escapeHtml(t.category||'other')}</td>
+                    <td><span class="badge ${t.priority==='high'?'badge-error':t.priority==='low'?'badge-warn':'badge-info'}">${t.priority||'normal'}</span></td>
+                    <td><span class="badge ${t.status==='open'?'badge-warn':t.status==='replied'?'badge-success':'badge-error'}">${t.status==='open'?'待处理':t.status==='replied'?'已回复':'已关闭'}</span></td>
+                    <td style="font-size:12px;color:var(--text-sub);">${timeAgo(t.created_at)}</td>
+                    <td>
+                        <button class="btn-action" onclick="replyTicket('${escapeHtml(t.id)}', '${escapeHtml(t.title)}')">回复</button>
+                        <button class="btn-action btn-action" onclick="closeTicket('${escapeHtml(t.id)}')">${t.status==='closed'?'重新打开':'关闭'}</button>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+            statOpen.textContent = String(open); statReplied.textContent = String(replied); statClosed.textContent = String(closed); statTotal.textContent = String(tickets.length);
+        } catch (e) {
+            toast('加载工单失败', true);
+        }
+    }
+
+    async function replyTicket(ticketId, title) {
+        const text = prompt(`回复工单「${title}」：`);
+        if (!text) return;
+        try {
+            const { error } = await db.from('tickets').update({ reply: text, status: 'replied', replied_at: new Date().toISOString() }).eq('id', ticketId);
+            if (error) throw error;
+            toast('已回复'); loadTickets(); loadStats();
+        } catch (e) { toast('失败: ' + e.message, true); }
+    }
+    async function closeTicket(ticketId) {
+        const ok = await showConfirm('确认', '关闭该工单？');
+        if (!ok) return;
+        try {
+            const { error } = await db.from('tickets').update({ status: 'closed' }).eq('id', ticketId);
+            if (error) throw error;
+            toast('已关闭'); loadTickets(); loadStats();
         } catch (e) { toast('失败: ' + e.message, true); }
     }
 
