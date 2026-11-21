@@ -206,14 +206,14 @@
 
         // 用户名格式校验：只允许字母、数字、下划线、连字符，长度 3-32
         function isValidUsername(name) {
-            return /^[A-Za-z0-9_-]{3,32}$/.test(name);
+            return /^[A-Za-z0-9_-]{1,32}$/.test(name);
         }
 
         async function doPasswordStage() {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
             if (!username || !password) { resetError("请填写完整的用户名和密码"); return; }
-            if (!isValidUsername(username)) { resetError("用户名只能包含字母、数字、下划线或连字符（3-32 位）"); return; }
+            if (!isValidUsername(username)) { resetError("用户名只能包含字母、数字、下划线或连字符（1-32 位）"); return; }
             
             submitBtn.textContent = "验证中...";
             submitBtn.disabled = true;
@@ -300,7 +300,7 @@
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
             if (!username || !password) { resetError("请填写完整的用户名和密码"); return; }
-            if (!isValidUsername(username)) { resetError("用户名只能包含字母、数字、下划线或连字符（3-32 位）"); return; }
+            if (!isValidUsername(username)) { resetError("用户名只能包含字母、数字、下划线或连字符（1-32 位）"); return; }
             if (password.length < 6) { resetError("密码至少 6 位"); return; }
             
             submitBtn.textContent = "注册中...";
