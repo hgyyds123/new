@@ -37,14 +37,32 @@
         .btn-text { font-size: 14px; font-weight: 500; color: var(--primary); padding: 8px 16px; border-radius: 9999px; }
         .btn-filled { background-color: var(--primary); color: var(--on-primary); font-size: 14px; padding: 8px 20px; border-radius: 9999px; }
 
-        .layout { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
-        .sidebar { width: 200px; padding: 24px 16px; border-right: 1px solid var(--outline-variant); }
+        /* ===== 三栏布局：左固定导航 / 中 feed / 右栏 ===== */
+        .layout { display: grid; grid-template-columns: 260px minmax(0, 1fr) 290px; flex: 1; max-width: 1500px; margin: 0 auto; width: 100%; align-items: start; }
+        .sidebar { width: 100%; padding: 24px 16px; border-right: 1px solid var(--outline-variant); position: sticky; top: 64px; align-self: start; }
         .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 9999px; font-size: 14px; font-weight: 500; color: var(--text-sub); cursor: pointer; margin-bottom: 8px; }
         .sidebar-item:hover { background: var(--surface-variant); }
         .sidebar-item.active { background: var(--primary-container); color: var(--on-primary-container); }
 
-        .main-content { flex: 1; padding: 32px; display: flex; flex-direction: column; align-items: center; }
-        .post-list { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 16px; }
+        .sidebar-cta { margin: 12px 0 20px; }
+        .sidebar-cta .btn-filled { width: 100%; justify-content: center; }
+
+        .main-content { padding: 32px 24px; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+        .post-list { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 16px; }
+
+        /* 右栏 */
+        .right-bar { width: 100%; padding: 24px 16px; border-left: 1px solid var(--outline-variant); position: sticky; top: 64px; align-self: start; display: flex; flex-direction: column; gap: 20px; }
+        .widget { background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 16px; padding: 16px; }
+        .widget-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .widget-list { display: flex; flex-direction: column; gap: 8px; }
+        .widget-item { font-size: 13px; color: var(--text-sub); cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+        .widget-item:hover { color: var(--primary); }
+        .widget-item .post-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); flex: 0 0 auto; }
+        .rec-user { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+        .rec-user .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex: 0 0 auto; }
+        .rec-user .name { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rec-user .follow-btn { font-size: 12px; padding: 4px 12px; border-radius: 9999px; background: var(--primary); color: var(--on-primary); }
+        .rec-user .follow-btn.following { background: var(--surface-variant); color: var(--text-sub); }
 
         /* 顶部固定浮层：替代 alert()，滚动时消息不消失 */
         .toast {
@@ -137,7 +155,10 @@
         .context-item { padding: 10px 16px; border-radius: 4px; font-size: 14px; color: var(--error); font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .context-item:hover { background: rgba(179, 38, 30, 0.1); }
 
-        /* ===== 移动端适配（≤768px：侧栏变顶部横向频道条，顶栏收紧不折行） ===== */
+        /* ===== 响应式：768–1100px 双栏（隐藏右栏）；≤768px 单栏 + 抽屉 ===== */
+        @media (max-width: 1100px) {
+            .right-bar { display: none; }
+        }
         @media (max-width: 768px) {
             .top-bar { height: 56px; padding: 0 12px; }
             .nav-left { gap: 8px; min-width: 0; }
@@ -145,10 +166,12 @@
             .nav-actions { gap: 4px; }
             .btn-text { font-size: 13px; padding: 6px 10px; white-space: nowrap; }
             .btn-filled { font-size: 13px; padding: 6px 12px; white-space: nowrap; }
-            .layout { flex-direction: column; }
+            .layout { grid-template-columns: 1fr; }
             .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 83.333vw; max-width: 340px; transform: translateX(-105%); transition: transform 0.25s ease; z-index: 1000; background: var(--surface); border-right: 1px solid var(--outline-variant); padding-top: 18px; display: flex; flex-direction: column; overflow-y: auto; }
             body.drawer-open .sidebar { transform: translateX(0); box-shadow: 8px 0 24px rgba(0,0,0,0.3); }
             .sidebar-item { flex: 0 0 auto; margin: 0 12px 8px; padding: 12px 16px; white-space: nowrap; }
+            .sidebar-cta { margin: 16px 12px 20px; }
+            .sidebar-cta .btn-filled { width: 100%; }
             .main-content { padding: 14px 12px 24px; }
             .post-list { gap: 12px; }
             .post-main { padding: 14px; }
@@ -176,6 +199,7 @@
             <button class="btn-text" id="notifBtn" style="display:none;"><span class="material-symbols-outlined" style="font-size:20px; vertical-align:middle;">notifications</span><span id="notifBadge" class="notif-badge"></span></button>
             <button class="btn-text" id="newVoteBtn">发起投票</button>
             <button class="btn-filled" id="newPostBtn">发新帖</button>
+            <img id="userAvatar" class="avatar" src="" alt="头像" title="更换头像" style="width:32px;height:32px;border-radius:50%;cursor:pointer;margin-left:8px;" />
         </div>
     </header>
 
@@ -188,9 +212,13 @@
     <div class="layout">
         <aside class="sidebar">
             <div class="sidebar-item active" id="tab-all" onclick="showList('全部')"><span class="material-symbols-outlined">public</span> 全部</div>
+            <div class="sidebar-item" id="tab-follow" onclick="showList('关注')"><span class="material-symbols-outlined">person_add</span> 关注</div>
             <div class="sidebar-item" id="tab-chat" onclick="showList('闲聊')"><span class="material-symbols-outlined">chat</span> #闲聊</div>
             <div class="sidebar-item" id="tab-help" onclick="showList('求助')"><span class="material-symbols-outlined">help</span> #求助</div>
             <div class="sidebar-item" id="tab-share" onclick="showList('分享')"><span class="material-symbols-outlined">lightbulb</span> #分享</div>
+            <div class="sidebar-cta">
+                <button class="btn-filled" id="sidebarNewPost"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">edit</span> 发帖</button>
+            </div>
         </aside>
 
         <main class="main-content">
@@ -201,6 +229,13 @@
             </div>
             <div class="post-list" id="postList"></div>
         </main>
+
+        <aside class="right-bar">
+            <div class="widget">
+                <div class="widget-title"><span class="material-symbols-outlined" style="font-size:18px;">person</span> 来自关注</div>
+                <div class="widget-list" id="widgetFollow"></div>
+            </div>
+        </aside>
     </div>
 
     <!-- 右键菜单 -->
@@ -272,14 +307,21 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             const userId = localStorage.getItem("hg_user_id");
+            if (!userId) { document.getElementById('userAvatar').style.display = 'none'; }
             if (userId) {
                 currentUser = { id: userId };
                 try {
-                    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=is_admin`, {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=is_admin,avatar_url`, {
                         headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
                     });
                     const data = await res.json();
-                    if (data && data.length > 0 && data[0].is_admin) isAdmin = true;
+                    if (data && data.length > 0) {
+                        if (data[0].is_admin) isAdmin = true;
+                        if (data[0].avatar_url) {
+                            const avatarEl = document.getElementById('userAvatar');
+                            avatarEl.src = data[0].avatar_url;
+                        }
+                    }
                 } catch(e) {}
             }
 
@@ -292,11 +334,55 @@
                 if (Array.isArray(admins)) adminIds = new Set(admins.map(a => a.id));
             } catch(e) {}
 
+            // 头像上传
+            const avatarInput = document.createElement('input');
+            avatarInput.type = 'file'; avatarInput.accept = 'image/*'; avatarInput.style.display = 'none';
+            document.body.appendChild(avatarInput);
+            document.getElementById('userAvatar').onclick = () => avatarInput.click();
+            avatarInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file || !currentUser) return;
+                const fileName = `avatars/${currentUser.id}/${Date.now()}_${file.name}`;
+                const { data, error } = await db.storage.from('community').upload(fileName, file, { upsert: true });
+                if (error) { showMsg(error.message, true); return; }
+                const url = `${SUPABASE_URL}/storage/v1/object/public/community/${fileName}`;
+                const patch = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${currentUser.id}`, {
+                    method: 'PATCH',
+                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation" },
+                    body: JSON.stringify({ avatar_url: url })
+                });
+                if (patch.ok) { showMsg('头像更新成功'); document.getElementById('userAvatar').src = url; }
+                else { showMsg('更新失败', true); }
+            };
+
             loadContent();
             startNotifPolling();
         });
 
         function showHub() { window.location.href = "/"; }
+
+        async function toggleFollow(targetId) {
+            if (!currentUser) return;
+            const btn = event.target.closest('.widget-item button');
+            const wasFollowing = btn.textContent === '取消';
+            try {
+                if (wasFollowing) {
+                    const r = await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${currentUser.id}&followee_id=eq.${targetId}`, {
+                        method: 'DELETE', headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    });
+                    if (r.ok) { btn.textContent = '关注'; showMsg('已取消关注'); }
+                    else { showMsg('操作失败', true); }
+                } else {
+                    const r = await fetch(`${SUPABASE_URL}/rest/v1/follows`, {
+                        method: 'POST',
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({ follower_id: currentUser.id, followee_id: targetId })
+                    });
+                    if (r.ok) { btn.textContent = '取消'; showMsg('已关注'); }
+                    else { showMsg('操作失败', true); }
+                }
+            } catch(e) { showMsg('网络错误', true); }
+        }
 
         // 未登录统一跳转登录页（带 redirect 参数，登录后回本页），不用弹窗
         const requireLogin = () => window.location.href = `/account/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
@@ -325,13 +411,12 @@
         function showList(category) {
             currentCategory = category;
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-            if(category === '全部') document.getElementById('tab-all').classList.add('active');
-            if(category === '闲聊') document.getElementById('tab-chat').classList.add('active');
-            if(category === '求助') document.getElementById('tab-help').classList.add('active');
-            if(category === '分享') document.getElementById('tab-share').classList.add('active');
+            const map = {'全部':'tab-all','关注':'tab-follow','闲聊':'tab-chat','求助':'tab-help','分享':'tab-share'};
+            const t = document.getElementById(map[category]); if (t) t.classList.add('active');
             loadContent();
-            closeDrawer(); // 手机端选完分类自动收起抽屉
+            closeDrawer();
         }
+        document.getElementById('sidebarNewPost').onclick = () => document.getElementById('newPostBtn').click();
 
         // 左侧导航：桌面端可收缩；移动端为抽屉（覆盖全屏，右侧 1/6 阴影，点阴影或选分类收起）
         const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
@@ -362,7 +447,7 @@
                 let postUrl = `${SUPABASE_URL}/rest/v1/posts?order=created_at.desc`;
                 let voteUrl = `${SUPABASE_URL}/rest/v1/votes?order=created_at.desc`;
                 
-                if (currentCategory !== "全部") {
+                if (currentCategory !== "全部" && currentCategory !== "关注") {
                     postUrl += `&category=eq.${encodeURIComponent(currentCategory)}`;
                     voteUrl += `&category=eq.${encodeURIComponent(currentCategory)}`;
                 }
@@ -378,6 +463,27 @@
                 const posts = await postsRes.json();
                 const votes = await votesRes.json();
                 const allComments = await commentsRes.json();
+
+                // 关注：仅展示已关注作者的内容（无登录或 follows 表不存在时回退全部）
+                if (currentCategory === "关注" && currentUser) {
+                    try {
+                        const fr = await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${currentUser.id}&select=followee_id`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+                        const follows = await fr.json();
+                        const ids = Array.isArray(follows) ? follows.map(f => f.followee_id) : [];
+                        if (ids.length) {
+                            window.__followIds = new Set(ids);
+                            // 拉取关注的用户资料（供右栏展示 + 关注/取消按钮）
+                            const pr = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids.map(id => id).join(',')})&select=id,username,avatar_url`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+                            window.__followProfiles = await pr.json();
+                        } else {
+                            window.__followIds = null;
+                            window.__followProfiles = [];
+                        }
+                    } catch (e) { window.__followIds = null; window.__followProfiles = []; }
+                } else {
+                    window.__followIds = null;
+                    window.__followProfiles = [];
+                }
 
                 let mixed = [];
                 
@@ -397,6 +503,9 @@
                     });
                 }
                 
+                if (window.__followIds) {
+                    mixed = mixed.filter(item => window.__followIds.has(item.data.user_id || item.data.author_id));
+                }
                 mixed.sort((a, b) => {
                     // 置顶帖永远在前，其余按时间倒序
                     const pa = (a.type === 'post' && a.data.is_pinned) ? 1 : 0;
@@ -427,6 +536,19 @@
                     const itemComments = Array.isArray(allComments) ? allComments.filter(c => String(c.post_id) === String(item.data.id)) : [];
                     renderItem(item, itemComments, list);
                 });
+
+                // 右栏：关注的人
+                if (currentCategory === "全部" && currentUser && window.__followProfiles && window.__followProfiles.length) {
+                    const w = document.getElementById('widgetFollow');
+                    w.innerHTML = window.__followProfiles.map(p => `
+                        <div class="widget-item">
+                            <img src="${p.avatar_url || '/assets/default-avatar.png'}" style="width:28px;height:28px;border-radius:50%;flex:0 0 auto;" onerror="this.src='/assets/default-avatar.png'">
+                            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.username || p.id)}</span>
+                            <button class="btn-text" style="font-size:11px;padding:2px 8px;" onclick="toggleFollow('${p.id}')">取消</button>
+                        </div>`).join('');
+                } else if (currentCategory === "全部" && currentUser) {
+                    document.getElementById('widgetFollow').innerHTML = '<div class="widget-item" style="color:var(--text-sub);">暂无关注</div>';
+                }
             } catch (e) {
                 console.error(e);
                 list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--error);">加载失败</div>';
