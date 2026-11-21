@@ -115,6 +115,9 @@
         .comment-like.liked { color: var(--primary); font-weight: bold; }
         .comment-like.liked .like-ic { font-variation-settings: 'FILL' 1; }
         .meta-ic { font-size: 15px; vertical-align: -3px; margin-right: 3px; }
+        .follow-btn { background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 9999px; font-size: 12px; padding: 1px 10px; cursor: pointer; line-height: 1.4; }
+        .follow-btn.on { background: var(--surface-variant); border-color: var(--outline-variant); color: var(--text-sub); }
+        .follow-btn:hover { opacity: 0.8; }
         #navToggle { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9999px; color: var(--text-main); }
         #navToggle:hover { background: var(--surface-variant); }
         #navToggle .material-symbols-outlined { font-size: 24px; }
@@ -351,8 +354,17 @@
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation" },
                     body: JSON.stringify({ avatar_url: url })
                 });
-                if (patch.ok) { showMsg('头像更新成功'); document.getElementById('userAvatar').src = url; }
-                else { showMsg('更新失败', true); }
+                const patchRows = await patch.json().catch(() => null);
+                if (patch.ok && Array.isArray(patchRows) && patchRows.length > 0) {
+                    showMsg('头像更新成功');
+                    document.getElementById('userAvatar').src = url;
+                    if (window.__profileMap && window.__profileMap[currentUser.id]) window.__profileMap[currentUser.id].avatar_url = url;
+                    if (window.__avatarMap) window.__avatarMap[currentUser.id] = url;
+                    loadContent();
+                } else if (patch.ok) {
+                    // 200 但 0 行更新 = RLS 拦截（缺 profiles_update 策略）
+                    showMsg('保存失败：请在 Supabase SQL Editor 执行 setup_follows.sql 的 profiles_update 策略', true);
+                } else { showMsg('更新失败(' + patch.status + ')', true); }
             };
 
             loadContent();
@@ -361,27 +373,55 @@
 
         function showHub() { window.location.href = "/"; }
 
-        async function toggleFollow(targetId) {
-            if (!currentUser) return;
-            const btn = event.target.closest('.widget-item button');
-            const wasFollowing = btn.textContent === '取消';
+        // 关注按钮 HTML（帖子里作者名旁）
+        function followBtnHtml(uid) {
+            const on = window.__followSet && window.__followSet.has(uid);
+            return `<button class="follow-btn${on ? ' on' : ''}" data-uid="${uid}" onclick="toggleFollow('${uid}', event)">${on ? '已关注' : '+ 关注'}</button>`;
+        }
+
+        async function toggleFollow(targetId, ev) {
+            if (!currentUser) { showMsg('请先登录', true); return; }
+            if (ev) ev.stopPropagation();
+            const wasFollowing = window.__followSet && window.__followSet.has(targetId);
             try {
+                let r;
                 if (wasFollowing) {
-                    const r = await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${currentUser.id}&followee_id=eq.${targetId}`, {
+                    r = await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${currentUser.id}&followee_id=eq.${targetId}`, {
                         method: 'DELETE', headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
                     });
-                    if (r.ok) { btn.textContent = '关注'; showMsg('已取消关注'); }
-                    else { showMsg('操作失败', true); }
                 } else {
-                    const r = await fetch(`${SUPABASE_URL}/rest/v1/follows`, {
+                    r = await fetch(`${SUPABASE_URL}/rest/v1/follows`, {
                         method: 'POST',
-                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", "Prefer": "resolution=ignore-duplicates" },
                         body: JSON.stringify({ follower_id: currentUser.id, followee_id: targetId })
                     });
-                    if (r.ok) { btn.textContent = '取消'; showMsg('已关注'); }
-                    else { showMsg('操作失败', true); }
                 }
+                if (r.ok || r.status === 409) {
+                    if (wasFollowing) window.__followSet.delete(targetId); else window.__followSet.add(targetId);
+                    document.querySelectorAll(`.follow-btn[data-uid="${targetId}"]`).forEach(b => {
+                        const on = window.__followSet.has(targetId);
+                        b.textContent = on ? '已关注' : '+ 关注';
+                        b.classList.toggle('on', on);
+                    });
+                    renderFollowWidget();
+                    showMsg(wasFollowing ? '已取消关注' : '已关注');
+                } else { showMsg('操作失败(' + r.status + ')', true); }
             } catch(e) { showMsg('网络错误', true); }
+        }
+
+        // 右栏：关注的人
+        function renderFollowWidget() {
+            const w = document.getElementById('widgetFollow');
+            if (!w) return;
+            if (!currentUser) { w.innerHTML = '<div class="widget-item" style="color:var(--text-sub);">登录后可关注</div>'; return; }
+            const list = [...(window.__followSet || [])].map(id => window.__profileMap && window.__profileMap[id]).filter(Boolean).slice(0, 8);
+            w.innerHTML = list.length ? list.map(p => `
+                <div class="widget-item">
+                    ${avatarHtml(p.id, 28)}
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.username || '用户')}</span>
+                    <button class="btn-text" style="font-size:11px;padding:2px 8px;" onclick="toggleFollow('${p.id}', event)">取消</button>
+                </div>`).join('')
+                : '<div class="widget-item" style="color:var(--text-sub);">暂无关注，点帖子作者旁「+ 关注」</div>';
         }
 
         // 未登录统一跳转登录页（带 redirect 参数，登录后回本页），不用弹窗
@@ -442,13 +482,22 @@
         async function loadContent() {
             const list = document.getElementById("postList");
             list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">加载中...</div>';
-            if (!window.__avatarMap) {
+            // 统一预取：头像/资料映射 + 我的关注列表（登录后一次）
+            if (!window.__profileMap) {
                 try {
-                    const pr = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id,avatar_url`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+                    const pr = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id,username,avatar_url`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
                     const ps = await pr.json();
+                    window.__profileMap = {};
                     window.__avatarMap = {};
-                    (Array.isArray(ps)?ps:[]).forEach(p => { if(p.id) window.__avatarMap[p.id]=p.avatar_url; });
-                } catch(e) { window.__avatarMap = {}; }
+                    (Array.isArray(ps)?ps:[]).forEach(p => { if(p.id) { window.__profileMap[p.id]=p; window.__avatarMap[p.id]=p.avatar_url; } });
+                } catch(e) { window.__profileMap = {}; window.__avatarMap = {}; }
+            }
+            if (currentUser && !window.__followSet) {
+                try {
+                    const fr = await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${currentUser.id}&select=followee_id`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+                    const fs = await fr.json();
+                    window.__followSet = new Set(Array.isArray(fs) ? fs.map(f=>f.followee_id) : []);
+                } catch(e) { window.__followSet = new Set(); }
             }
             try {
                 let postUrl = `${SUPABASE_URL}/rest/v1/posts?order=created_at.desc`;
@@ -471,27 +520,6 @@
                 const votes = await votesRes.json();
                 const allComments = await commentsRes.json();
 
-                // 关注：仅展示已关注作者的内容（无登录或 follows 表不存在时回退全部）
-                if (currentCategory === "关注" && currentUser) {
-                    try {
-                        const fr = await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${currentUser.id}&select=followee_id`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-                        const follows = await fr.json();
-                        const ids = Array.isArray(follows) ? follows.map(f => f.followee_id) : [];
-                        if (ids.length) {
-                            window.__followIds = new Set(ids);
-                            // 拉取关注的用户资料（供右栏展示 + 关注/取消按钮）
-                            const pr = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids.map(id => id).join(',')})&select=id,username,avatar_url`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-                            window.__followProfiles = await pr.json();
-                        } else {
-                            window.__followIds = null;
-                            window.__followProfiles = [];
-                        }
-                    } catch (e) { window.__followIds = null; window.__followProfiles = []; }
-                } else {
-                    window.__followIds = null;
-                    window.__followProfiles = [];
-                }
-
                 let mixed = [];
                 
                 if (Array.isArray(posts)) {
@@ -510,8 +538,8 @@
                     });
                 }
                 
-                if (window.__followIds) {
-                    mixed = mixed.filter(item => window.__followIds.has(item.data.user_id || item.data.author_id));
+                if (currentCategory === "关注" && window.__followSet) {
+                    mixed = mixed.filter(item => window.__followSet.has(item.data.user_id || item.data.author_id));
                 }
                 mixed.sort((a, b) => {
                     // 置顶帖永远在前，其余按时间倒序
@@ -545,17 +573,7 @@
                 });
 
                 // 右栏：关注的人
-                if (currentCategory === "全部" && currentUser && window.__followProfiles && window.__followProfiles.length) {
-                    const w = document.getElementById('widgetFollow');
-                    w.innerHTML = window.__followProfiles.map(p => `
-                        <div class="widget-item">
-                            ${avatarHtml(p.id, 28)}
-                            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.username || p.id)}</span>
-                            <button class="btn-text" style="font-size:11px;padding:2px 8px;" onclick="toggleFollow('${p.id}')">取消</button>
-                        </div>`).join('');
-                } else if (currentCategory === "全部" && currentUser) {
-                    document.getElementById('widgetFollow').innerHTML = '<div class="widget-item" style="color:var(--text-sub);">暂无关注</div>';
-                }
+                renderFollowWidget();
             } catch (e) {
                 console.error(e);
                 list.innerHTML = '<div style="text-align:center; padding:40px; color:var(--error);">加载失败</div>';
@@ -589,7 +607,7 @@
             if (item.type === 'post') {
                 html = `
                     <div class="post-main">
-                        <div class="post-meta">${data.is_pinned ? '<span class="pin-tag">[置顶]</span>' : ''}<span>${nameHtml(data.author_id, data.author_name)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;"><span class="meta-ic material-symbols-outlined">chat_bubble</span>${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-meta">${data.is_pinned ? '<span class="pin-tag">[置顶]</span>' : ''}<span>${nameHtml(data.author_id, data.author_name)}</span>${currentUser && data.author_id && data.author_id !== currentUser.id ? followBtnHtml(data.author_id) : ''}<span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;"><span class="meta-ic material-symbols-outlined">chat_bubble</span>${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
                         <div class="post-title" style="display:flex;align-items:center;">${avatarHtml(data.author_id, 24)}<span>${escapeHtml(data.title)}</span></div>
                         <div class="post-preview">${escapeHtml(data.content)}</div>
                         ${data.image_url ? `<img class="post-img" src="${escapeHtml(data.image_url)}" loading="lazy" alt="">` : ''}
@@ -615,7 +633,7 @@
                 });
                 html = `
                     <div class="post-main">
-                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${nameHtml(data.user_id, data.username)}</span><span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;"><span class="meta-ic material-symbols-outlined">chat_bubble</span>${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
+                        <div class="post-meta"><span style="color:var(--primary);">[投票]</span><span>${nameHtml(data.user_id, data.username)}</span>${currentUser && data.user_id && data.user_id !== currentUser.id ? followBtnHtml(data.user_id) : ''}<span>· ${timeAgo(data.created_at)}</span><span style="margin-left:12px;"><span class="meta-ic material-symbols-outlined">chat_bubble</span>${comments.length}</span><span style="color:var(--error); margin-left:auto;">${likes.length} 赞</span></div>
                         <div class="post-title" style="display:flex;align-items:center;">${avatarHtml(data.user_id, 24)}<span>${escapeHtml(data.title)}</span></div>
                         <div class="vote-options">${optsHtml}</div>
                     </div>
