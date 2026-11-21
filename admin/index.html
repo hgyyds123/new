@@ -199,12 +199,17 @@
 </div>
 
 <script>
-    const SUPABASE_URL = CONFIG.SUPABASE_URL;
-    const SUPABASE_KEY = CONFIG.SUPABASE_KEY;
-    const { createClient } = supabase;
-    const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
-    });
+    let SUPABASE_URL = '', SUPABASE_KEY = '', db = null;
+    try {
+        SUPABASE_URL = CONFIG.SUPABASE_URL;
+        SUPABASE_KEY = CONFIG.SUPABASE_KEY;
+        const { createClient } = supabase;
+        db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
+        });
+    } catch (e) {
+        console.warn('Admin init fallback:', e);
+    }
 
     let confirmResolve = null;
 
@@ -228,10 +233,27 @@
     document.getElementById('confirmCancel').onclick = () => { confirmResolve(false); document.getElementById('confirmModal').classList.remove('active'); };
     document.getElementById('confirmOk').onclick = () => { confirmResolve(true); document.getElementById('confirmModal').classList.remove('active'); };
 
-    document.getElementById('adminLoginBtn').onclick = async () => {
+    // 登录按钮：独立绑定，不依赖上面的 db 初始化
+    document.getElementById('adminLoginBtn').addEventListener('click', async () => {
         const user = document.getElementById('adminUser').value.trim();
         const pass = document.getElementById('adminPass').value.trim();
         if (!user || !pass) return;
+
+        // 若 db 未初始化，尝试重新初始化
+        if (!db) {
+            try {
+                SUPABASE_URL = CONFIG.SUPABASE_URL;
+                SUPABASE_KEY = CONFIG.SUPABASE_KEY;
+                const { createClient } = supabase;
+                db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
+                });
+            } catch (e) {
+                toast('初始化失败: ' + e.message, true);
+                return;
+            }
+        }
+
         try {
             const { data, error } = await db.auth.signInWithPassword({ email: `${user}@hgt.l.cd`, password: pass });
             if (error) throw error;
@@ -248,11 +270,11 @@
         } catch (e) {
             document.getElementById('loginErr').style.display = 'block';
         }
-    };
+    });
     document.getElementById('adminPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('adminLoginBtn').click(); });
 
     async function logoutAdmin() {
-        await db.auth.signOut();
+        if (db) await db.auth.signOut();
         document.getElementById('adminApp').style.display = 'none';
         document.getElementById('loginPage').style.display = 'flex';
     }
