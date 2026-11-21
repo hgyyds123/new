@@ -396,14 +396,19 @@
             searchResultList.innerHTML = '<div style="padding:16px;color:var(--text-sub);">搜索中...</div>';
             searchModal.style.display = 'block';
             try {
-                const postsRes = await fetch(`${SUPABASE_URL}/rest/v1/posts?title=ilike.%25${encodeURIComponent(kw)}%25&order=created_at.desc&limit=10`, {
-                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-                });
+                const [postsRes, votesRes, usersRes] = await Promise.all([
+                    fetch(`${SUPABASE_URL}/rest/v1/posts?title=ilike.%25${encodeURIComponent(kw)}%25&order=created_at.desc&limit=10`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    }),
+                    fetch(`${SUPABASE_URL}/rest/v1/votes?title=ilike.%25${encodeURIComponent(kw)}%25&order=created_at.desc&limit=10`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    }),
+                    fetch(`${SUPABASE_URL}/rest/v1/profiles?username=ilike.%25${encodeURIComponent(kw)}%25&limit=10`, {
+                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+                    })
+                ]);
                 const posts = await postsRes.json();
-
-                const usersRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?username=ilike.%25${encodeURIComponent(kw)}%25&limit=10`, {
-                    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-                });
+                const votes = await votesRes.json();
                 const users = await usersRes.json();
 
                 let html = '';
@@ -411,6 +416,12 @@
                     html += '<div style="font-weight:600;margin-bottom:8px;font-size:12px;color:var(--text-sub);text-transform:uppercase;">帖子</div>';
                     posts.forEach(p => {
                         html += `<div style="padding:10px 12px;border-bottom:1px solid var(--outline-variant);cursor:pointer;" onclick="window.location.href='/community/'"><div style="font-weight:600;">${escapeHtml(p.title || '无标题')}</div><div style="font-size:12px;color:var(--text-sub);">${escapeHex(p.author_name || '匿名')} · ${timeAgo(p.created_at)}</div></div>`;
+                    });
+                }
+                if (Array.isArray(votes) && votes.length > 0) {
+                    html += '<div style="font-weight:600;margin-top:12px;margin-bottom:8px;font-size:12px;color:var(--text-sub);text-transform:uppercase;">投票</div>';
+                    votes.forEach(v => {
+                        html += `<div style="padding:10px 12px;border-bottom:1px solid var(--outline-variant);cursor:pointer;" onclick="window.location.href='/community/'"><div style="font-weight:600;">${escapeHtml(v.title || '无标题')}</div><div style="font-size:12px;color:var(--text-sub);">${escapeHex(v.username || '匿名')} · ${timeAgo(v.created_at)}</div></div>`;
                     });
                 }
                 if (Array.isArray(users) && users.length > 0) {
