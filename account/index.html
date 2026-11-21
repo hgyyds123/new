@@ -24,6 +24,9 @@
     display: inline-block;
   }
 </style>
+<script src="/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/notif.js"></script>
 
 <style>
 /* ================= 严格对齐原版变量 ================= */
@@ -190,6 +193,7 @@ nav .icon-wrap span{font-size:20px;}
   <div class="icons">
     <button aria-label="帮助" onclick="window.open('https://support.hg1.dpdns.org', '_blank')"><span class="material-symbols-outlined">help</span></button>
     <button aria-label="应用"><span class="material-symbols-outlined">apps</span></button>
+    <button class="icon-btn" id="notifBtn" style="display:none;"><span class="material-symbols-outlined">notifications</span><span id="notifBadge" class="notif-badge"></span></button>
     <div class="avatar-small" id="topAvatar">...</div>
   </div>
 </header>
@@ -396,6 +400,16 @@ nav .icon-wrap span{font-size:20px;}
         
         document.getElementById("desktopLogoutBtn").addEventListener("click", doLogout);
         document.getElementById("mobileLogoutBtn").addEventListener("click", doLogout);
+
+        // 统一通知铃铛（账号页）
+        if (myUserId) {
+            window.__notif.init({
+                supabaseUrl: SUPABASE_URL,
+                supabaseKey: SUPABASE_KEY,
+                db: db,
+                userId: myUserId
+            });
+        }
     </script>
 </body>
 </html>
