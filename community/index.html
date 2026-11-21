@@ -170,8 +170,8 @@
             .btn-text { font-size: 13px; padding: 6px 10px; white-space: nowrap; }
             .btn-filled { font-size: 13px; padding: 6px 12px; white-space: nowrap; }
             .layout { grid-template-columns: 1fr; }
-            .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 83.333vw; max-width: 340px; transform: translateX(-105%); transition: transform 0.25s ease; z-index: 1000; background: var(--surface); border-right: 1px solid var(--outline-variant); padding-top: 18px; display: flex; flex-direction: column; overflow-y: auto; }
-            body.drawer-open .sidebar { transform: translateX(0); box-shadow: 8px 0 24px rgba(0,0,0,0.3); }
+            .sidebar { position: fixed; left: 0; top: 0; height: 100dvh; width: 83.33vw; max-width: none; box-sizing: border-box; transform: translateX(-105%); transition: transform 0.25s ease; z-index: 1000; background: var(--surface); border-right: 1px solid var(--outline-variant); padding-top: 74px; display: flex; flex-direction: column; overflow-y: auto; }
+            body.drawer-open .sidebar { transform: translateX(0); box-shadow: 8px 0 24px rgba(0,0,0,0.45); }
             .sidebar-item { flex: 0 0 auto; margin: 0 12px 8px; padding: 12px 16px; white-space: nowrap; }
             .sidebar-cta { margin: 16px 12px 20px; }
             .sidebar-cta .btn-filled { width: 100%; }
