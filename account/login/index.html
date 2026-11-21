@@ -86,7 +86,7 @@
 
     <div class="page-footer">
         <div>简体中文 ▼</div>
-        <div class="footer-right"><a href="support.hg1.dpdns.org/">帮助</a><a href="support.hg1.dpdns.org/privacy/">隐私权</a><a href="support.hg1.dpdns.org/terms/">条款</a></div>
+        <div class="footer-right"><a href="https://support.hg1.dpdns.org/">帮助</a><a href="https://support.hg1.dpdns.org/privacy/">隐私权</a><a href="https://support.hg1.dpdns.org/terms/">条款</a></div>
     </div>
 
     <script>
@@ -213,7 +213,7 @@
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
             if (!username || !password) { resetError("请填写完整的用户名和密码"); return; }
-            if (!isValidUsername(username)) { resetError("用户名只能包含字母、数字、下划线或连字符（3-32 位）"); return; }
+            if (!isValidUsername(username)) { resetError("用户名只能包含字母、数字、下划线或连字符（1-32 位）"); return; }
             
             submitBtn.textContent = "验证中...";
             submitBtn.disabled = true;
