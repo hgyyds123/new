@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<link rel="preload" href="/assets/fonts/material-symbols-subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/material-symbols.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  @font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; font-display: block; src: url('/assets/fonts/material-symbols-subset.woff2') format('woff2'); }
+  @font-face { font-family: 'Material Symbols Outlined'; font-style: normal; font-weight: 400; font-display: block; src: url('/material-symbols.woff2') format('woff2'); }
   .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; display: inline-block; }
 </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理后台</title>
+    <title>管理后台 · hgt.l.cd</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -144,12 +144,12 @@
     <div id="root"></div>
 
     <script>
-        const SUPABASE_URL = "https://ufzywoswueqcxyopupjq.supabase.co";
+        const SUPABASE_URL = "https://hgai-61677.wasmer.app/proxy";
         const SUPABASE_KEY = "sb_publishable__aIeUQuHcERXr2KUj6KQuA_UkCYMw8p";
 
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true }
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
         });
 
         const root = document.getElementById("root");
@@ -159,16 +159,31 @@
         const convMembersCache = {};
 
         async function init() {
-            const { data: { session } } = await db.auth.getSession();
-            if (!session || !session.user) {
+            // 【兼容双认证】优先查 Supabase Auth session，无则回退 localStorage
+            let session = null;
+            let userId = null;
+            let username = null;
+
+            const { data: { session: authSession } } = await db.auth.getSession();
+            if (authSession && authSession.user) {
+                session = authSession;
+                userId = authSession.user.id;
+            } else {
+                // 回退：自定义登录体系
+                userId = localStorage.getItem("hg_user_id") || sessionStorage.getItem("hg_user_id");
+                username = localStorage.getItem("hg_username") || sessionStorage.getItem("hg_username");
+            }
+
+            if (!userId) {
                 window.location.href = "/talkroom/login/";
                 return;
             }
 
+            // 查 profiles 判断是否管理员
             const { data: profile } = await db
                 .from("profiles")
                 .select("username, is_admin")
-                .eq("id", session.user.id)
+                .eq("id", userId)
                 .maybeSingle();
 
             if (!profile || !profile.is_admin) {
@@ -180,6 +195,9 @@
                 `;
                 return;
             }
+
+            // 如果是 localStorage 登录，补全 username
+            if (!session && profile.username) username = profile.username;
 
             renderPanel();
         }
