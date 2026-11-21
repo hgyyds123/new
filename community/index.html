@@ -131,6 +131,8 @@
         .notif-badge { background: var(--error); color: #FFFFFF; border-radius: 9px; font-size: 11px; padding: 1px 6px; margin-left: 2px; vertical-align: middle; }
         .notif-badge:empty { display: none; }
         .notif-panel { position: fixed; top: 68px; right: 16px; width: 320px; max-height: 360px; overflow-y: auto; background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); z-index: 200; padding: 8px; }
+        .notif-toast { position: fixed; top: 72px; right: 16px; background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 10px 14px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 150; opacity: 0; transform: translateX(20px); transition: all 0.25s ease; cursor: pointer; max-width: 280px; }
+        .notif-toast.show { opacity: 1; transform: translateX(0); }
         .notif-item { padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
         .notif-item:hover { background: var(--surface-variant); }
         .notif-empty { text-align: center; color: var(--text-sub); padding: 24px 0; font-size: 13px; }
@@ -368,7 +370,7 @@
             };
 
             loadContent();
-            startNotifPolling();
+            startNotifRealtime();
         });
 
         function showHub() { window.location.href = "/"; }
@@ -405,6 +407,8 @@
                     });
                     renderFollowWidget();
                     showMsg(wasFollowing ? '已取消关注' : '已关注');
+                    // 关注通知
+                    if (!wasFollowing) notify(targetId, 'follow', 'profile', targetId, currentUser.username || '有人', '');
                 } else { showMsg('操作失败(' + r.status + ')', true); }
             } catch(e) { showMsg('网络错误', true); }
         }
@@ -777,9 +781,9 @@
 
                 if (res.ok) {
                     // 回复通知：通知帖主（自己发的不通知）
-                    if (postAuthor) notify(postAuthor, 'reply', postId, uname, content);
+                    if (postAuthor) notify(postAuthor, 'reply', 'post', postId, uname, content);
                     // 楼中楼回复时：通知被回复的评论作者（若与帖主相同则只发一条）
-                    if (parentId && parentAuthor && parentAuthor !== postAuthor) notify(parentAuthor, 'reply', postId, uname, content);
+                    if (parentId && parentAuthor && parentAuthor !== postAuthor) notify(parentAuthor, 'reply', 'comment', parentId, uname, content);
                     input.value = "";
                     clearReplyTarget(null, postId);
                     loadContent();
@@ -796,13 +800,20 @@
         };
 
         // 通知工具：写入 notifications 表（自己触发的不通知；失败不影响主流程）
-        async function notify(targetUserId, type, postId, actorName, content) {
+        async function notify(targetUserId, type, targetType, targetId, actorName, content) {
             if (!targetUserId || (currentUser && targetUserId === currentUser.id)) return;
             try {
                 await fetch(`${SUPABASE_URL}/rest/v1/notifications`, {
                     method: "POST",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ user_id: targetUserId, type: type, post_id: String(postId), actor_name: actorName, content: String(content || '').slice(0, 60) })
+                    body: JSON.stringify({ 
+                        user_id: targetUserId, 
+                        actor_id: currentUser ? currentUser.id : null,
+                        type: type,
+                        target_type: targetType,
+                        target_id: String(targetId),
+                        content: String(content || '').slice(0, 60) 
+                    })
                 });
             } catch (e) { console.error(e); }
         }
@@ -831,6 +842,13 @@
                 });
                 if (!res.ok) {
                     showMsg("点赞失败，请检查数据库权限");
+                } else if (!hasLiked && type === 'post') {
+                    // 帖子点赞通知作者
+                    try {
+                        const pRes = await fetch(`${SUPABASE_URL}/rest/v1/posts?id=eq.${id}&select=author_id`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+                        const pData = await pRes.json();
+                        if (pData && pData.length > 0) notify(pData[0].author_id, 'like_post', 'post', id, currentUser.username || '有人', '');
+                    } catch(e) {}
                 }
             } catch(e) {
                 alert("网络异常");
@@ -1052,6 +1070,13 @@
                 if (!res.ok) {
                     const raw = await res.text().catch(() => "");
                     alert(`评论点赞失败 HTTP ${res.status}\n${raw.slice(0, 300)}`);
+                } else if (!liked) {
+                    // 点赞时通知评论作者（需要先查评论作者）
+                    try {
+                        const cRes = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${cid}&select=user_id`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+                        const cData = await cRes.json();
+                        if (cData && cData.length > 0) notify(cData[0].user_id, 'like_comment', 'comment', cid, currentUser.username || '有人', '');
+                    } catch(e) {}
                 }
             } catch (err) {
                 alert(`网络异常: ${err && err.message ? err.message : err}`);
@@ -1081,22 +1106,56 @@
             if (tag) { tag.textContent = ""; tag.style.display = "none"; }
         };
 
-        // 回复通知：铃铛 + 10 秒轮询（与聊天室轮询思路一致，间隔放宽）
-        let notifTimer = null;
-        function startNotifPolling() {
-            if (!currentUser || notifTimer) return;
+        // 通知：Realtime 订阅 notifications 表（替代轮询）
+        let notifChannel = null;
+        let unreadCount = 0;
+
+        function startNotifRealtime() {
+            if (!currentUser || notifChannel) return;
             document.getElementById('notifBtn').style.display = "";
-            const refresh = async () => {
-                try {
-                    const res = await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${currentUser.id}&is_read=eq.false&select=id`, {
-                        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-                    });
-                    const arr = await res.json();
-                    document.getElementById('notifBadge').textContent = Array.isArray(arr) && arr.length > 0 ? String(arr.length) : "";
-                } catch (e) {}
-            };
-            refresh();
-            notifTimer = setInterval(refresh, 10000);
+
+            notifChannel = db.channel('notifications-' + currentUser.id)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${currentUser.id}`
+                }, (payload) => {
+                    unreadCount++;
+                    updateBadge();
+                    showToastNotification(payload.new);
+                })
+                .subscribe((status) => {
+                    if (status !== 'SUBSCRIBED') {
+                        console.warn('Notif Realtime status:', status);
+                    }
+                });
+
+            // 初始化未读数
+            fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${currentUser.id}&read_at=is.null&select=id`, {
+                headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+            }).then(r => r.json()).then(arr => {
+                if (Array.isArray(arr)) { unreadCount = arr.length; updateBadge(); }
+            });
+        }
+
+        function updateBadge() {
+            const badge = document.getElementById('notifBadge');
+            if (badge) badge.textContent = unreadCount > 0 ? String(unreadCount) : "";
+        }
+
+        function showToastNotification(n) {
+            // 右上角轻量提示（可选）
+            if (document.getElementById('notifPanel').style.display === 'block') return;
+            const toast = document.createElement('div');
+            toast.className = 'notif-toast';
+            const actor = n.actor_id ? '有人' : '系统';
+            const text = n.content || (n.type === 'reply' ? '回复了你' : n.type === 'like_post' ? '赞了你的帖子' : n.type === 'follow' ? '关注了你' : '有新通知');
+            toast.innerHTML = `<b>${actor}</b> ${text}`;
+            toast.onclick = () => document.getElementById('notifBtn').click();
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.classList.add('show'); }, 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
         document.getElementById('notifBtn').onclick = async () => {
@@ -1114,8 +1173,12 @@
                     } else {
                         panel.innerHTML =
                             `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 12px;"><b style="font-size:13px;">通知</b><span class="comment-like" onclick="markAllRead(event)">全部已读</span></div>` +
-                            arr.map(n => `<div class="notif-item"><b>${escapeHtml(n.actor_name || '有人')}</b> ${n.type === 'reply' ? '回复了你的帖子' : '有了新动态'}：<br>${escapeHtml(n.content || '')}<br><span class="comment-time">${timeAgo(n.created_at)}</span></div>`).join('');
-                        markAllRead(null, true); // 打开面板即全部已读
+                            arr.map(n => {
+                                const actor = n.actor_id ? '有人' : '系统';
+                                const text = n.content || (n.type === 'reply' ? '回复了你的帖子' : n.type === 'like_post' ? '赞了你的帖子' : n.type === 'like_comment' ? '赞了你的评论' : n.type === 'follow' ? '关注了你' : n.type === 'mention' ? '提到了你' : n.type === 'chat_msg' ? '发来私聊' : n.type === 'chat_request' ? '请求私聊' : '有新动态');
+                                return `<div class="notif-item"${n.read_at ? '' : ' style="background:var(--primary-container);"'}><b>${escapeHtml(actor)}</b> ${text}<br><span class="comment-time">${timeAgo(n.created_at)}</span></div>`;
+                            }).join('');
+                        unreadCount = 0; updateBadge();
                     }
                 } catch (e) {
                     panel.innerHTML = '<div class="notif-empty">加载失败</div>';
@@ -1127,12 +1190,12 @@
         window.markAllRead = async (e, silent) => {
             if (e) e.stopPropagation();
             try {
-                await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${currentUser.id}&is_read=eq.false`, {
+                await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${currentUser.id}&read_at=is.null`, {
                     method: "PATCH",
                     headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ is_read: true })
+                    body: JSON.stringify({ read_at: new Date().toISOString() })
                 });
-                document.getElementById('notifBadge').textContent = "";
+                unreadCount = 0; updateBadge();
             } catch (err) {}
         };
         // 点击面板外关闭通知面板
