@@ -175,7 +175,7 @@
             }
 
             if (!userId) {
-                window.location.href = "/talkroom/login/";
+                window.location.href = `/talkroom/login/?redirect=${encodeURIComponent(window.location.pathname)}`;
                 return;
             }
 
