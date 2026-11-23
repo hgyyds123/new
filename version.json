@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "buildNumber": 1,
+  "releaseDate": "2026-11-23",
+  "minSupported": "1.0.0",
+  "downloadUrl": "",
+  "changelog": {
+    "1.0.0": [
+      "首个版本：社区、聊天室、游戏、工单、个人主页、全局搜索"
+    ]
+  }
+}
