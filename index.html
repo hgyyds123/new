@@ -7,6 +7,8 @@
   .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; display: inline-block; }
 </style>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0b57d0">
     <script src="/config.js"></script>
     <script src="/notif.js"></script>
     <meta charset="UTF-8">
@@ -454,6 +456,77 @@
             if (diff < 2592000) return Math.floor(diff / 86400) + " 天前";
             return d.toLocaleDateString("zh-CN");
         }
+
+        // ===== PWA 注册 + 检查更新 =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(reg => {
+                console.log('SW 注册成功', reg.scope);
+                setTimeout(checkAppUpdate, 3000);
+                setInterval(checkAppUpdate, 30 * 60 * 1000);
+            }).catch(err => console.warn('SW 注册失败', err));
+
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+                    const latest = event.data.version;
+                    const current = localStorage.getItem('hg_app_version') || '1.0.0';
+                    if (compareVersion(latest, current) > 0) showUpdatePrompt(latest);
+                }
+            });
+        }
+
+        async function checkAppUpdate() {
+            try {
+                const res = await fetch('/version.json', { cache: 'no-store' });
+                const data = await res.json();
+                const current = localStorage.getItem('hg_app_version') || '1.0.0';
+                if (compareVersion(data.version, current) > 0) showUpdatePrompt(data.version, data.changelog);
+            } catch (e) {}
+        }
+
+        function compareVersion(a, b) {
+            const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+            for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+                const na = pa[i] || 0, nb = pb[i] || 0;
+                if (na > nb) return 1;
+                if (na < nb) return -1;
+            }
+            return 0;
+        }
+
+        function showUpdatePrompt(version, changelog) {
+            if (sessionStorage.getItem('update_prompted_' + version)) return;
+            sessionStorage.setItem('update_prompted_' + version, '1');
+            const changes = changelog && changelog[version] ? changelog[version].join('；') : '修复已知问题，提升稳定性';
+            const html = `
+                <div id="updateBanner" style="position:fixed;bottom:0;left:0;right:0;background:#0b57d0;color:#fff;padding:14px 20px;z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -4px 12px rgba(0,0,0,.15);animation:slideUp .3s;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;font-size:14px;margin-bottom:2px;">发现新版本 v${version}</div>
+                        <div style="font-size:12px;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(changes)}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-shrink:0;">
+                        <button onclick="dismissUpdate()" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;">稍后</button>
+                        <button onclick="applyUpdate()" style="background:#fff;color:#0b57d0;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">立即更新</button>
+                    </div>
+                </div>
+                <style>@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}</style>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        window.dismissUpdate = function() {
+            const b = document.getElementById('updateBanner');
+            if (b) b.remove();
+        };
+
+        window.applyUpdate = function() {
+            if ('caches' in window) {
+                caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
+                    localStorage.setItem('hg_app_version', '');
+                    window.location.reload();
+                });
+            } else {
+                window.location.reload();
+            }
+        };
     </script>
 </body>
 </html>
