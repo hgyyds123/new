@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>凸透镜成像演示</title>
+<style>
+  :root {
+    --md-sys-color-primary: #6750A4;
+    --md-sys-color-on-primary: #FFFFFF;
+    --md-sys-color-primary-container: #EADDFF;
+    --md-sys-color-on-primary-container: #21005D;
+    --md-sys-color-secondary: #625B71;
+    --md-sys-color-secondary-container: #E8DEF8;
+    --md-sys-color-surface: #FFFBFE;
+    --md-sys-color-surface-variant: #E7E0EC;
+    --md-sys-color-on-surface: #1C1B1F;
+    --md-sys-color-on-surface-variant: #49454F;
+    --md-sys-color-outline: #79747E;
+    --md-sys-color-outline-variant: #CAC4D0;
+    --md-sys-color-error: #B3261E;
+    --md-elevation-1: 0 1px 2px rgba(0,0,0,.3),0 1px 3px 1px rgba(0,0,0,.15);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; font-family: "Roboto", "Segoe UI", system-ui, -apple-system, sans-serif; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  body { display: grid; grid-template-columns: 340px 1fr; grid-template-rows: auto 1fr; height:100vh; overflow:hidden; }
+  header { grid-column: 1 / -1; padding: 16px 24px; display:flex; align-items:center; gap:12px; background: var(--md-sys-color-surface); border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+  header h1 { margin:0; font-size: 22px; font-weight: 500; letter-spacing: .15px; }
+  header .subtitle { color: var(--md-sys-color-on-surface-variant); font-size: 13px; }
+  .panel { background: var(--md-sys-color-surface); border-right: 1px solid var(--md-sys-color-outline-variant); overflow-y: auto; padding: 16px; display:flex; flex-direction:column; gap:16px; }
+  .card { background: var(--md-sys-color-surface); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; padding: 16px; box-shadow: var(--md-elevation-1); }
+  .card h2 { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--md-sys-color-on-surface-variant); letter-spacing: .1px; text-transform: uppercase; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom: 6px; }
+  .row label { font-size: 13px; color: var(--md-sys-color-on-surface); }
+  .row .val { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--md-sys-color-primary); font-weight: 600; min-width: 48px; text-align:right; }
+  input[type=range] { width:100%; accent-color: var(--md-sys-color-primary); }
+  .info { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.5; }
+  .info strong { font-weight: 600; }
+  .legend { display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .dot { width:12px; height:3px; border-radius:2px; }
+  .stage { position:relative; background: #FAF8FD; overflow:hidden; min-height:0; }
+  canvas { display:block; width:100%; height:100%; cursor: grab; }
+  canvas.dragging { cursor: grabbing; }
+  .readout { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .readout .item { background: var(--md-sys-color-surface-variant); border-radius: 10px; padding: 8px 10px; }
+  .readout .item .k { font-size: 11px; color: var(--md-sys-color-on-surface-variant); }
+  .readout .item .v { font-size: 15px; font-weight: 600; color: var(--md-sys-color-primary); font-variant-numeric: tabular-nums; }
+  .hint { font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>凸透镜成像演示</h1>
+    <div class="subtitle">几何光学 · 光线追迹 · 拖动物/透镜/光屏</div>
+  </div>
+</header>
+<aside class="panel">
+  <div class="card">
+    <h2>光学参数</h2>
+    <div class="row"><label>焦距 f</label><span class="val" id="vF">10.0 cm</span></div>
+    <input type="range" id="f" min="5" max="20" step="0.5" value="10">
+    <div class="row"><label>物体高度 h</label><span class="val" id="vH">6.0 cm</span></div>
+    <input type="range" id="h" min="2" max="12" step="0.5" value="6">
+  </div>
+  <div class="card">
+    <h2>位置（cm）可拖动</h2>
+    <div class="row"><label>透镜 L</label><span class="val" id="vL">0</span></div>
+    <input type="range" id="posL" min="-20" max="20" step="0.5" value="0">
+    <div class="row"><label>物体 O</label><span class="val" id="vO">-30</span></div>
+    <input type="range" id="posO" min="-60" max="-5" step="0.5" value="-30">
+    <div class="row"><label>光屏 S</label><span class="val" id="vS">20</span></div>
+    <input type="range" id="posS" min="5" max="60" step="0.5" value="20">
+  </div>
+  <div class="card">
+    <h2>成像读数</h2>
+    <div class="readout">
+      <div class="item"><div class="k">物距 u</div><div class="v" id="rU">—</div></div>
+      <div class="item"><div class="k">像距 v</div><div class="v" id="rV">—</div></div>
+      <div class="item"><div class="k">放大率 m</div><div class="v" id="rM">—</div></div>
+      <div class="item"><div class="k">像高 h'</div><div class="v" id="rHi">—</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>成像判定</h2>
+    <div class="info" id="info">—</div>
+  </div>
+  <div class="card">
+    <h2>图例</h2>
+    <div class="legend">
+      <span><span class="dot" style="background:#1976D2"></span>入射光线</span>
+      <span><span class="dot" style="background:#E65100"></span>折射光线</span>
+      <span><span class="dot" style="background:#2E7D32"></span>光轴</span>
+      <span><span class="dot" style="background:#6A1B9A"></span>虚像光线</span>
+    </div>
+    <div class="hint">提示：拖动画布中的物/透镜/光屏，或使用滑块。</div>
+  </div>
+</aside>
+<main class="stage"><canvas id="c"></canvas></main>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
+
+function resize() {
+  const r = canvas.getBoundingClientRect();
+  const w = r.width || canvas.parentElement.clientWidth || window.innerWidth - 340;
+  const h = r.height || canvas.parentElement.clientHeight || window.innerHeight - 60;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  draw();
+}
+window.addEventListener('resize', resize);
+
+const sliders = {
+  f: document.getElementById('f'),
+  h: document.getElementById('h'),
+  posL: document.getElementById('posL'),
+  posO: document.getElementById('posO'),
+  posS: document.getElementById('posS'),
+};
+function val(id){ return parseFloat(sliders[id].value); }
+function fmt(x){ return (x>=0?'+':'') + x.toFixed(1); }
+
+Object.values(sliders).forEach(s => s.addEventListener('input', update));
+
+function updateLabels() {
+  document.getElementById('vF').textContent = val('f').toFixed(1) + ' cm';
+  document.getElementById('vH').textContent = val('h').toFixed(1) + ' cm';
+  document.getElementById('vL').textContent = fmt(val('posL')) + ' cm';
+  document.getElementById('vO').textContent = fmt(val('posO')) + ' cm';
+  document.getElementById('vS').textContent = fmt(val('posS')) + ' cm';
+}
+
+let drag = null;
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const scale = currentScale();
+  const cx = rect.width/2, cy = rect.height/2;
+  const L = val('posL'), O = val('posO'), S = val('posS');
+  const targets = [
+    {id:'posL', x: cx + L*scale, y: cy, r: 18},
+    {id:'posO', x: cx + O*scale, y: cy, r: 18},
+    {id:'posS', x: cx + S*scale, y: cy, r: 18},
+  ];
+  for (const t of targets) {
+    if (Math.hypot(mx - t.x, my - t.y) < t.r) { drag = t.id; canvas.classList.add('dragging'); return; }
+  }
+});
+canvas.addEventListener('mousemove', e => {
+  if (!drag) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const cx = rect.width/2;
+  const scale = currentScale();
+  let cm = (mx - cx)/scale;
+  const sl = sliders[drag];
+  cm = Math.max(parseFloat(sl.min), Math.min(parseFloat(sl.max), cm));
+  // snap to 0.5
+  cm = Math.round(cm*2)/2;
+  sl.value = cm;
+  update();
+});
+canvas.addEventListener('mouseup', () => { drag = null; canvas.classList.remove('dragging'); });
+canvas.addEventListener('mouseleave', () => { drag = null; canvas.classList.remove('dragging'); });
+
+let lastScale = 1;
+function currentScale(){ return lastScale; }
+
+function drawCandle(x, baseY, h, scale, color, label) {
+  const H = h*scale;
+  const w = 6;
+  ctx.fillStyle = color;
+  if (H >= 0) {
+    ctx.fillRect(x - w, baseY - H, w*2, H);
+  } else {
+    ctx.fillRect(x - w, baseY, w*2, -H);
+  }
+  const topY = H >= 0 ? baseY - H : baseY + (-H);
+  const flameY = H >= 0 ? baseY - H - 10 : baseY + (-H) + 10;
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x, topY);
+  ctx.lineTo(x, topY + (H>=0?-6:6));
+  ctx.stroke();
+  ctx.fillStyle = '#FF9800';
+  ctx.beginPath();
+  ctx.ellipse(x, flameY, 4, 6, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.font = 'bold 12px system-ui'; ctx.textAlign='center';
+  ctx.fillText(label, x, baseY + (H>=0?18:-18));
+}
+
+function draw() {
+  updateLabels();
+  const rect = canvas.getBoundingClientRect();
+  const W = rect.width, H = rect.height;
+  ctx.clearRect(0,0,W,H);
+
+  const f = val('f');
+  const h = val('h');
+  const L = val('posL');
+  const O = val('posO');
+  const S = val('posS');
+
+  const scale = Math.min(W/140, H/40);
+  lastScale = scale;
+  const cx = W/2, cy = H/2;
+  function X(x){ return cx + x*scale; }
+  function Y(y){ return cy - y*scale; }
+
+  // optical axis
+  ctx.strokeStyle = '#2E7D32';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, cy); ctx.lineTo(W, cy);
+  ctx.stroke();
+
+  // ruler ticks
+  ctx.strokeStyle = '#79747E';
+  ctx.fillStyle = '#49454F';
+  ctx.font = '10px system-ui';
+  for (let x = -60; x <= 60; x += 5) {
+    const px = X(x);
+    if (px < 0 || px > W) continue;
+    ctx.beginPath();
+    ctx.moveTo(px, cy);
+    ctx.lineTo(px, cy + (x%10===0?8:4));
+    ctx.stroke();
+    if (x%10===0) {
+      ctx.textAlign = 'center';
+      ctx.fillText(x, px, cy + 20);
+    }
+  }
+
+  // lens (more curved convex)
+  const lensX = X(L);
+  const lensH = 14*scale;
+  ctx.strokeStyle = '#6750A4';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(lensX, cy - lensH);
+  ctx.quadraticCurveTo(lensX + 12, cy, lensX, cy + lensH);
+  ctx.moveTo(lensX, cy - lensH);
+  ctx.quadraticCurveTo(lensX - 12, cy, lensX, cy + lensH);
+  ctx.stroke();
+
+  // focal points: F and 2F on both sides
+  const points = [
+    {x: L - 2*f, label: '2F', color:'#9C27B0', r:3},
+    {x: L - f, label: 'F', color:'#6750A4', r:4},
+    {x: L + f, label: 'F\'', color:'#6750A4', r:4},
+    {x: L + 2*f, label: '2F\'', color:'#9C27B0', r:3},
+  ];
+  for (const p of points) {
+    const px = X(p.x);
+    if (px < 0 || px > W) continue;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(px, cy, p.r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#49454F'; ctx.font='11px system-ui'; ctx.textAlign='center';
+    ctx.fillText(p.label, px, cy + 16);
+  }
+
+  // object candle
+  const oX = X(O);
+  const oBase = Y(0);
+  drawCandle(oX, oBase, h, scale, '#1976D2', '物');
+
+  // screen
+  const sX = X(S);
+  ctx.strokeStyle = '#79747E';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6,4]);
+  ctx.beginPath();
+  ctx.moveTo(sX, cy - 14*scale);
+  ctx.lineTo(sX, cy + 14*scale);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#49454F';
+  ctx.font = '12px system-ui'; ctx.textAlign='center';
+  ctx.fillText('光屏', sX, cy - 14*scale - 6);
+
+  // physics
+  const u = L - O;
+  let v = Infinity;
+  if (Math.abs(u - f) > 1e-6) v = (u*f)/(u-f);
+  const m = (u>0 && isFinite(v)) ? -v/u : NaN;
+  const hi = isFinite(m) ? m*h : NaN;
+  const imageX = L + v;
+
+  document.getElementById('rU').textContent = isFinite(u) ? u.toFixed(1)+' cm' : '—';
+  document.getElementById('rV').textContent = isFinite(v) ? v.toFixed(1)+' cm' : '∞';
+  document.getElementById('rM').textContent = isFinite(m) ? m.toFixed(2) : '—';
+  document.getElementById('rHi').textContent = isFinite(hi) ? hi.toFixed(1)+' cm' : '—';
+
+  const info = document.getElementById('info');
+  if (u <= f) {
+    info.innerHTML = '<strong>虚像</strong>：物在焦距内，成正立放大虚像。';
+  } else if (u > f && u < 2*f) {
+    info.innerHTML = '<strong>实像</strong>：物在 f 与 2f 之间，成倒立放大实像。';
+  } else if (Math.abs(u-2*f) < 0.05) {
+    info.innerHTML = '<strong>实像</strong>：物在 2f 处，成倒立等大实像。';
+  } else {
+    info.innerHTML = '<strong>实像</strong>：物在 2f 外，成倒立缩小实像。';
+  }
+  if (Math.abs(S - imageX) < 0.6 && u > f) {
+    info.innerHTML += '<br>光屏位置与像点一致，成像清晰。';
+  }
+
+  const isReal = u > f;
+  if (isFinite(imageX)) {
+    const iX = X(imageX);
+    const iBase = Y(0);
+    const color = isReal ? '#E65100' : '#6A1B9A';
+    if (isReal) {
+      drawCandle(iX, iBase, hi, scale, color, '像');
+    } else {
+      // virtual candle dashed-ish
+      ctx.globalAlpha = 0.5;
+      drawCandle(iX, iBase, hi, scale, color, '虚像');
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // rays
+  const Fp = L + f;
+  // ray1 parallel
+  ctx.strokeStyle = '#1976D2'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(oX, Y(h)); ctx.lineTo(lensX, Y(h)); ctx.stroke();
+  const p1x = lensX, p1y = Y(h);
+  const fx = X(Fp), fy = cy;
+  const dx = fx - p1x, dy = fy - p1y;
+  const len = 500;
+  const ex = p1x + dx/Math.hypot(dx,dy)*len;
+  const ey = p1y + dy/Math.hypot(dx,dy)*len;
+  ctx.strokeStyle = '#E65100';
+  ctx.beginPath(); ctx.moveTo(p1x, p1y); ctx.lineTo(ex, ey); ctx.stroke();
+
+  // ray2 through center
+  ctx.strokeStyle = '#1976D2';
+  ctx.beginPath(); ctx.moveTo(oX, Y(h)); ctx.lineTo(lensX, cy); ctx.stroke();
+  const dx2 = lensX - oX, dy2 = cy - Y(h);
+  const ex2 = lensX + dx2*3, ey2 = cy + dy2*3;
+  ctx.strokeStyle = '#E65100';
+  ctx.beginPath(); ctx.moveTo(lensX, cy); ctx.lineTo(ex2, ey2); ctx.stroke();
+
+  // ray3 through left focal
+  const Fl = L - f;
+  const yLens3 = h + (0 - h)*(L - O)/(Fl - O);
+  ctx.strokeStyle = '#1976D2';
+  ctx.beginPath();
+  ctx.moveTo(oX, Y(h));
+  ctx.lineTo(lensX, Y(yLens3));
+  ctx.stroke();
+  ctx.strokeStyle = '#E65100';
+  ctx.beginPath();
+  ctx.moveTo(lensX, Y(yLens3));
+  ctx.lineTo(lensX + 500, Y(yLens3));
+  ctx.stroke();
+
+  if (!isReal) {
+    ctx.setLineDash([4,4]);
+    ctx.strokeStyle = '#6A1B9A'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(p1x, p1y);
+    ctx.lineTo(p1x - dx/Math.hypot(dx,dy)*200, p1y - dy/Math.hypot(dx,dy)*200);
+    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lensX, cy);
+    ctx.lineTo(lensX - dx2*2, cy - dy2*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function update() { updateLabels(); draw(); }
+
+requestAnimationFrame(() => { resize(); update(); });
+setTimeout(() => { resize(); update(); }, 100);
+</script>
+</body>
+</html>
