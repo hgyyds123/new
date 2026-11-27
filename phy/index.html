@@ -273,20 +273,6 @@ function draw() {
   const oBase = Y(0);
   drawCandle(oX, oBase, h, scale, '#1976D2', '物');
 
-  // screen
-  const sX = X(S);
-  ctx.strokeStyle = '#79747E';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([6,4]);
-  ctx.beginPath();
-  ctx.moveTo(sX, cy - 14*scale);
-  ctx.lineTo(sX, cy + 14*scale);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = '#49454F';
-  ctx.font = '12px system-ui'; ctx.textAlign='center';
-  ctx.fillText('光屏', sX, cy - 14*scale - 6);
-
   // physics
   const u = L - O;
   let v = Infinity;
@@ -294,6 +280,22 @@ function draw() {
   const m = (u>0 && isFinite(v)) ? -v/u : NaN;
   const hi = isFinite(m) ? m*h : NaN;
   const imageX = L + v;
+  const isReal = u > f;
+
+  // screen with image projection
+  const sX = X(S);
+  const aligned = isReal && isFinite(imageX) && Math.abs(S - imageX) < 0.8;
+  ctx.fillStyle = aligned ? 'rgba(255,240,200,0.9)' : 'rgba(230,230,230,0.7)';
+  ctx.fillRect(sX - 4, cy - 14*scale, 8, 28*scale);
+  ctx.strokeStyle = '#79747E';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(sX - 4, cy - 14*scale, 8, 28*scale);
+  if (aligned) {
+    drawCandle(sX, Y(0), hi, scale, '#E65100', '');
+  }
+  ctx.fillStyle = '#49454F';
+  ctx.font = '12px system-ui'; ctx.textAlign='center';
+  ctx.fillText('光屏', sX, cy - 14*scale - 6);
 
   document.getElementById('rU').textContent = isFinite(u) ? u.toFixed(1)+' cm' : '—';
   document.getElementById('rV').textContent = isFinite(v) ? v.toFixed(1)+' cm' : '∞';
@@ -313,8 +315,6 @@ function draw() {
   if (Math.abs(S - imageX) < 0.6 && u > f) {
     info.innerHTML += '<br>光屏位置与像点一致，成像清晰。';
   }
-
-  const isReal = u > f;
   if (isFinite(imageX)) {
     const iX = X(imageX);
     const iBase = Y(0);
