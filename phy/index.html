@@ -303,7 +303,9 @@ function draw() {
   document.getElementById('rHi').textContent = isFinite(hi) ? hi.toFixed(1)+' cm' : '—';
 
   const info = document.getElementById('info');
-  if (u <= f) {
+  if (Math.abs(u - f) < 0.05) {
+    info.innerHTML = '<strong>像在无穷远</strong>：物在焦点上，出射光线平行，不成像。';
+  } else if (u < f) {
     info.innerHTML = '<strong>虚像</strong>：物在焦距内，成正立放大虚像。';
   } else if (u > f && u < 2*f) {
     info.innerHTML = '<strong>实像</strong>：物在 f 与 2f 之间，成倒立放大实像。';
@@ -312,7 +314,7 @@ function draw() {
   } else {
     info.innerHTML = '<strong>实像</strong>：物在 2f 外，成倒立缩小实像。';
   }
-  if (Math.abs(S - imageX) < 0.6 && u > f) {
+  if (Math.abs(S - imageX) < 0.6 && u > f && Math.abs(u - f) > 0.05) {
     info.innerHTML += '<br>光屏位置与像点一致，成像清晰。';
   }
   if (isFinite(imageX)) {
