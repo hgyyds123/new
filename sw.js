@@ -8,6 +8,7 @@ const PRECACHE_URLS = [
   '/material-symbols.woff2',
   '/config.js',
   '/manifest.json',
+  '/version.json',
   '/account/',
   '/community/',
   '/talkroom/',
@@ -41,6 +42,11 @@ self.addEventListener('activate', event => {
 
 // 抓取：网络优先，失败后回退缓存，再失败回离线页
 self.addEventListener('fetch', event => {
+  // 只处理 GET 请求，跳过 POST/PUT/DELETE 等 API 调用
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     // 页面导航：网络优先，离线回退
     event.respondWith(
@@ -61,7 +67,7 @@ self.addEventListener('fetch', event => {
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
-        // 缓存成功的响应
+        // 只缓存成功的 GET 响应
         if (response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
