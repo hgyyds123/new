@@ -137,6 +137,8 @@
         .notif-item:hover { background: var(--surface-variant); }
         .notif-empty { text-align: center; color: var(--text-sub); padding: 24px 0; font-size: 13px; }
         .post-img { max-width: 100%; border-radius: 12px; margin-top: 8px; display: block; }
+        .post-file { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface-variant); border-radius: 8px; }
+        .post-file a { color: var(--primary); text-decoration: none; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .comment-item { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--outline-variant); }
         .comment-item:last-child { border-bottom: none; margin-bottom: 0; }
         .comment-meta { font-size: 12px; color: var(--primary); font-weight: 500; }
@@ -615,6 +617,7 @@
                         <div class="post-title" style="display:flex;align-items:center;">${avatarHtml(data.author_id, 24)}<span>${escapeHtml(data.title)}</span></div>
                         <div class="post-preview">${escapeHtml(data.content)}</div>
                         ${data.image_url ? `<img class="post-img" src="${escapeHtml(data.image_url)}" loading="lazy" alt="">` : ''}
+                        ${data.file_url ? `<div class="post-file" style="margin-top:8px;padding:8px 12px;background:var(--surface-variant);border-radius:8px;display:flex;align-items:center;gap:8px;"><span class="material-symbols-outlined" style="font-size:20px;">insert_drive_file</span><a href="${escapeHtml(data.file_url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(data.file_name || '附件')}</a></div>` : ''}
                     </div>
                 `;
             } else {
@@ -943,13 +946,15 @@
             const oldBtnText = submitBtn.textContent;
             submitBtn.textContent = "发布中...";
             try {
-            // 图片上传（走代理转发 Storage；桶 community，公开读）
+            // 文件上传（支持图片、视频、exe、sb3、swf、zip 等任意类型）
             let imageUrl = "";
+            let fileUrl = "";
+            let fileName = "";
             const file = document.getElementById('postImage').files[0];
             if (file) {
                 const ext = (file.name.split('.').pop() || '').toLowerCase();
-                if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return showMsg("图片格式仅支持 jpg / png / gif / webp");
-                const path = `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+                const path = `${isImage ? 'img' : 'file'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || 'bin'}`;
                 try {
                     const upRes = await fetch(`${SUPABASE_URL}/storage/v1/object/community/${path}`, {
                         method: "POST",
@@ -958,17 +963,20 @@
                     });
                     if (!upRes.ok) {
                         const raw = await upRes.text().catch(() => "");
-                        alert(`图片上传失败 HTTP ${upRes.status}\n${raw.slice(0, 300)}`);
+                        alert(`文件上传失败 HTTP ${upRes.status}\n${raw.slice(0, 300)}`);
                         return;
                     }
-                    imageUrl = `${SUPABASE_URL}/storage/v1/object/public/community/${path}`;
+                    const url = `${SUPABASE_URL}/storage/v1/object/public/community/${path}`;
+                    if (isImage) imageUrl = url;
+                    else { fileUrl = url; fileName = file.name; }
                 } catch (e) {
-                    alert(`图片上传网络异常: ${e && e.message ? e.message : e}`);
+                    alert(`文件上传网络异常: ${e && e.message ? e.message : e}`);
                     return;
                 }
             }
             const postBody = { author_id: currentUser.id, author_name: localStorage.getItem("hg_username")||"匿名", category: currentCategory==="全部"?"闲聊":currentCategory, title, content };
-            if (imageUrl) postBody.image_url = imageUrl; // 未建列时不传，避免整帖发不出去
+            if (imageUrl) postBody.image_url = imageUrl;
+            if (fileUrl) { postBody.file_url = fileUrl; postBody.file_name = fileName; }
             const res = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
                 method: "POST",
                 headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
